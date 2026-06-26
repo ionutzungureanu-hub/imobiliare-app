@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import Topbar from '../components/Topbar'
 import Badge from '../components/Badge'
-import { getFacturiFurnizori } from '../services/fgoApi'
+
 import { fmt } from '../utils'
 
 const DEMO = [
@@ -23,7 +23,8 @@ export default function FurnizoriFacturi() {
   const load = async () => {
     setLoading(true)
     try {
-      const data = await getFacturiFurnizori()
+      // date locale
+      const data = []
       setFacturi(Array.isArray(data) ? data : DEMO)
     } catch {
       setFacturi(DEMO)

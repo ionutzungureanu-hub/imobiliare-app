@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom'
 import Topbar from '../components/Topbar'
 import Badge from '../components/Badge'
 import { useToast } from '../components/Toast'
-import { getFacturiEmise } from '../services/fgoApi'
+
 import { fmt } from '../utils'
 
 const DEMO = [
@@ -30,7 +30,8 @@ export default function FacturiEmise() {
   const load = async () => {
     setLoading(true)
     try {
-      const data = await getFacturiEmise()
+      // date locale
+      const data = []
       setFacturi(Array.isArray(data) ? data : DEMO)
     } catch {
       setFacturi(DEMO)

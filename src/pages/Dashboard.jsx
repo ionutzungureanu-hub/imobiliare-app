@@ -2,122 +2,159 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Topbar from '../components/Topbar'
 import Badge from '../components/Badge'
-import { getClienti } from '../firebase/firestore'
-import { getFacturiEmise, getFacturiFurnizori } from '../services/fgoApi'
+import { useAuth } from '../context/AuthContext'
+import { useImobile } from '../hooks/useImobile'
+import { getClienti, getSpatii, getEmailuriClient } from '../firebase/firestore'
 import { fmt } from '../utils'
 
 export default function Dashboard() {
-  const navigate = useNavigate()
-  const [clienti,   setClienti]   = useState([])
-  const [emise,     setEmise]     = useState([])
-  const [furnizori, setFurnizori] = useState([])
-  const [loading,   setLoading]   = useState(true)
+  const navigate       = useNavigate()
+  const { profile, isAdmin } = useAuth()
+  const { imobile }    = useImobile()
+
+  const [clienti,  setClienti]  = useState([])
+  const [spatii,   setSpatii]   = useState([])
+  const [emailuri, setEmailuri] = useState([])
+  const [loading,  setLoading]  = useState(true)
 
   useEffect(() => {
-    Promise.all([
-      getClienti(),
-      getFacturiEmise().catch(() => DEMO_EMISE),
-      getFacturiFurnizori().catch(() => DEMO_FURNIZORI),
-    ]).then(([c, e, f]) => {
-      setClienti(c)
-      setEmise(Array.isArray(e) ? e : DEMO_EMISE)
-      setFurnizori(Array.isArray(f) ? f : DEMO_FURNIZORI)
-    }).finally(() => setLoading(false))
-  }, [])
+    const imobileIds = imobile.map(im => im.id)
+    Promise.all([getClienti(), getSpatii()]).then(async ([cl, sp]) => {
+      const spFiltrate = sp.filter(s => imobileIds.includes(s.imobilId))
+      setClienti(cl)
+      setSpatii(spFiltrate)
+      // Ultimele emailuri/facturi trimise
+      const toate = []
+      for (const c of cl.slice(0, 5)) {
+        const em = await getEmailuriClient(c.id)
+        toate.push(...em.map(e => ({ ...e, clientNume: c.nume })))
+      }
+      setEmailuri(toate.sort((a, b) => (b.trimisLa?.seconds || 0) - (a.trimisLa?.seconds || 0)).slice(0, 8))
+      setLoading(false)
+    })
+  }, [imobile])
 
-  const deIncasat   = emise.filter(f => f.status === 'In asteptare').reduce((s, f) => s + (f.suma || 0), 0)
-  const incasat     = emise.filter(f => f.status === 'Achitata').reduce((s, f) => s + (f.suma || 0), 0)
-  const furnNeplt   = furnizori.filter(f => f.status !== 'Achitata').reduce((s, f) => s + (f.suma || 0), 0)
+  const spatiiOcupate = spatii.filter(s => s.status === 'Ocupat').length
+  const spatiiLibere  = spatii.filter(s => s.status === 'Liber').length
 
-  if (loading) return <div className="content" style={{ paddingTop: 48, textAlign: 'center', color: 'var(--slate)' }}>Se încarcă…</div>
+  if (loading) return (
+    <div className="content" style={{ paddingTop: 48, textAlign: 'center', color: 'var(--slate)' }}>
+      Se încarcă…
+    </div>
+  )
 
   return (
     <>
-      <Topbar title="Dashboard" subtitle="Situație generală">
-        <button className="btn btn-primary btn-sm" onClick={() => navigate('/emite')}>
-          <i className="ti ti-plus" aria-hidden="true" /> Factură nouă
+      <Topbar title="Dashboard" subtitle={`Bun venit, ${profile?.nume || 'Utilizator'}!`}>
+        <button className="btn btn-primary btn-sm" onClick={() => navigate('/nota-calcul')}>
+          <i className="ti ti-calculator" /> Notă de calcul
+        </button>
+        <button className="btn btn-ghost btn-sm" onClick={() => navigate('/emite')}>
+          <i className="ti ti-file-plus" /> Factură nouă
         </button>
       </Topbar>
 
       <div className="content">
-        <div className="stat-grid">
+        {/* Stat cards */}
+        <div className="stat-grid" style={{ marginBottom: 24 }}>
           <div className="stat-card">
-            <div className="stat-label">De încasat</div>
-            <div className="stat-value">{fmt(deIncasat)} <span>RON</span></div>
+            <div className="stat-label">Imobile accesibile</div>
+            <div className="stat-value">{imobile.length} <span>imobile</span></div>
             <div className="stat-meta">
-              <span className="badge badge-amber">
-                <i className="ti ti-clock" style={{ fontSize: 11 }} />
-                {emise.filter(f => f.status === 'In asteptare').length} facturi în așteptare
-              </span>
+              <span className="badge badge-blue">{isAdmin ? 'Acces total' : 'Acces parțial'}</span>
             </div>
           </div>
           <div className="stat-card">
-            <div className="stat-label">Încasat (luna curentă)</div>
-            <div className="stat-value">{fmt(incasat)} <span>RON</span></div>
+            <div className="stat-label">Spații ocupate</div>
+            <div className="stat-value" style={{ color: 'var(--green)' }}>
+              {spatiiOcupate} <span style={{ fontSize: 14 }}>/ {spatii.length}</span>
+            </div>
+            <div className="stat-meta">
+              <span className="badge badge-amber">{spatiiLibere} libere</span>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-label">Clienți activi</div>
+            <div className="stat-value">{clienti.length} <span>clienți</span></div>
             <div className="stat-meta">
               <span className="badge badge-green">
-                <i className="ti ti-check" style={{ fontSize: 11 }} />
-                {emise.filter(f => f.status === 'Achitata').length} achitate
-              </span>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-label">Furnizori neachitați</div>
-            <div className="stat-value">{fmt(furnNeplt)} <span>RON</span></div>
-            <div className="stat-meta">
-              <span className="badge badge-red">
-                <i className="ti ti-alert-triangle" style={{ fontSize: 11 }} />
-                {furnizori.filter(f => f.status === 'Scadenta').length} scadente
+                <i className="ti ti-users" style={{ fontSize: 11 }} /> în baza de date
               </span>
             </div>
           </div>
         </div>
 
         <div className="two-col">
+          {/* Spații */}
           <div className="card">
             <div className="card-header">
               <div>
-                <div className="card-title">Facturi emise recente</div>
-                <div className="card-subtitle">Ultimele 5</div>
+                <div className="card-title">Spații</div>
+                <div className="card-subtitle">Status per imobil</div>
               </div>
-              <button className="btn btn-ghost btn-sm" onClick={() => navigate('/emise')}>Vezi toate</button>
+              <button className="btn btn-ghost btn-sm" onClick={() => navigate('/spatii')}>
+                Vezi toate
+              </button>
             </div>
             <table>
-              <thead><tr><th>Client</th><th>Sumă</th><th>Status</th></tr></thead>
+              <thead><tr><th>Spațiu</th><th>Imobil</th><th>Client</th><th>Status</th></tr></thead>
               <tbody>
-                {emise.slice(0, 5).map((f, i) => (
-                  <tr key={i}>
-                    <td>
-                      <div style={{ fontWeight: 500 }}>{f.client}</div>
-                      <div style={{ fontSize: 11, color: 'var(--slate)' }}>{f.nr}</div>
-                    </td>
-                    <td className="amount">{fmt(f.suma)} RON</td>
-                    <td><Badge value={f.status} /></td>
-                  </tr>
-                ))}
+                {spatii.length === 0 ? (
+                  <tr><td colSpan={4}>
+                    <div className="empty"><i className="ti ti-building" /><p>Niciun spațiu adăugat.</p></div>
+                  </td></tr>
+                ) : spatii.slice(0, 6).map(sp => {
+                  const im = imobile.find(i => i.id === sp.imobilId)
+                  const cl = clienti.find(c => c.id === sp.clientId)
+                  return (
+                    <tr key={sp.id}>
+                      <td style={{ fontWeight: 500 }}>{sp.denumire}</td>
+                      <td style={{ fontSize: 12, color: 'var(--slate)' }}>{im?.nume || '—'}</td>
+                      <td style={{ fontSize: 12 }}>{cl?.nume || <span style={{ color: 'var(--slate)' }}>—</span>}</td>
+                      <td>
+                        <span className={`badge ${sp.status === 'Ocupat' ? 'badge-green' : sp.status === 'Rezervat' ? 'badge-amber' : 'badge-gray'}`}>
+                          {sp.status || 'Liber'}
+                        </span>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
 
+          {/* Activitate recentă */}
           <div className="card">
             <div className="card-header">
               <div>
-                <div className="card-title">Furnizori — scadente</div>
-                <div className="card-subtitle">De plătit curând</div>
+                <div className="card-title">Activitate recentă</div>
+                <div className="card-subtitle">Ultimele documente trimise</div>
               </div>
-              <button className="btn btn-ghost btn-sm" onClick={() => navigate('/furnizori')}>Vezi toate</button>
             </div>
             <table>
-              <thead><tr><th>Furnizor</th><th>Sumă</th><th>Scadență</th></tr></thead>
+              <thead><tr><th>Client</th><th>Tip</th><th>Subiect</th></tr></thead>
               <tbody>
-                {furnizori.filter(f => f.status !== 'Achitata').slice(0, 5).map((f, i) => (
+                {emailuri.length === 0 ? (
+                  <tr><td colSpan={3}>
+                    <div className="empty"><i className="ti ti-mail" /><p>Nicio activitate recentă.</p></div>
+                  </td></tr>
+                ) : emailuri.map((em, i) => (
                   <tr key={i}>
+                    <td style={{ fontWeight: 500, fontSize: 12 }}>{em.clientNume}</td>
                     <td>
-                      <div style={{ fontWeight: 500 }}>{f.furnizor}</div>
-                      <div style={{ fontSize: 11, color: 'var(--slate)' }}>{f.tip}</div>
+                      <span className={`badge ${
+                        em.tip === 'factura' ? 'badge-blue' :
+                        em.tip === 'nota_calcul' ? 'badge-green' :
+                        'badge-gray'
+                      }`} style={{ fontSize: 10 }}>
+                        {em.tip === 'factura' ? 'Factură' :
+                         em.tip === 'nota_calcul' ? 'Notă calcul' :
+                         em.tip === 'factura_utilitati' ? 'Utilități' : 'Email'}
+                      </span>
                     </td>
-                    <td className="amount">{fmt(f.suma)} RON</td>
-                    <td style={{ color: f.status === 'Scadenta' ? 'var(--red)' : 'var(--slate)', fontSize: 12 }}>{f.scadenta}</td>
+                    <td style={{ fontSize: 11, color: 'var(--slate)', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {em.subiect}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -125,24 +162,29 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* Clienți rapizi */}
         <div className="card" style={{ marginTop: 16 }}>
           <div className="card-header">
-            <div className="card-title">Clienți activi</div>
+            <div className="card-title">Clienți</div>
+            <button className="btn btn-ghost btn-sm" onClick={() => navigate('/clienti')}>
+              Vezi toți
+            </button>
           </div>
           <table>
-            <thead><tr><th>Client</th><th>Spațiu</th><th>Email</th><th>Telefon</th><th></th></tr></thead>
+            <thead><tr><th>Denumire</th><th>Email</th><th>Telefon</th><th></th></tr></thead>
             <tbody>
               {clienti.length === 0 ? (
-                <tr><td colSpan={5}><div className="empty"><i className="ti ti-users" /><p>Niciun client adăugat încă.</p></div></td></tr>
-              ) : clienti.map(c => (
+                <tr><td colSpan={4}>
+                  <div className="empty"><i className="ti ti-users" /><p>Niciun client adăugat.</p></div>
+                </td></tr>
+              ) : clienti.slice(0, 5).map(c => (
                 <tr key={c.id}>
                   <td style={{ fontWeight: 500 }}>{c.nume}</td>
-                  <td style={{ color: 'var(--slate)' }}>{c.spatiu}</td>
-                  <td style={{ color: 'var(--slate)' }}>{c.email}</td>
-                  <td style={{ color: 'var(--slate)' }}>{c.telefon}</td>
+                  <td style={{ color: 'var(--slate)', fontSize: 12 }}>{c.email}</td>
+                  <td style={{ color: 'var(--slate)', fontSize: 12 }}>{c.telefon}</td>
                   <td>
                     <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/clienti/${c.id}`)}>
-                      <i className="ti ti-chevron-right" aria-hidden="true" />
+                      <i className="ti ti-message-circle" />
                     </button>
                   </td>
                 </tr>
@@ -154,17 +196,3 @@ export default function Dashboard() {
     </>
   )
 }
-
-// Demo data when FGO not configured
-const DEMO_EMISE = [
-  { nr: 'FC-2025-0042', client: 'SC Beta Trading SRL', suma: 5800, status: 'Achitata' },
-  { nr: 'FC-2025-0045', client: 'Delta Impex SRL',     suma: 4500, status: 'In asteptare' },
-  { nr: 'FC-2025-0046', client: 'Alpha Tech SRL',      suma: 7200, status: 'In asteptare' },
-  { nr: 'FC-2025-0048', client: 'Delta Impex SRL',     suma: 650,  status: 'In asteptare' },
-  { nr: 'FC-2025-0039', client: 'Sigma Partners SRL',  suma: 6100, status: 'Restanta' },
-]
-const DEMO_FURNIZORI = [
-  { furnizor: 'E.ON Energie România',  tip: 'Energie electrică', suma: 3200, scadenta: '2025-07-10', status: 'Neachitata' },
-  { furnizor: 'Apa Nova București',    tip: 'Apă și canalizare', suma: 890,  scadenta: '2025-07-08', status: 'Scadenta' },
-  { furnizor: 'Distrigaz Sud Rețele',  tip: 'Gaz natural',       suma: 2150, scadenta: '2025-07-05', status: 'Scadenta' },
-]
