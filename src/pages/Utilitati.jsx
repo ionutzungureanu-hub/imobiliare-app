@@ -152,13 +152,18 @@ export default function Utilitati() {
               style={{ minWidth: 260 }}
             >
               <option value="">— Alege spațiu —</option>
-              {imobile.map(im => (
-                <optgroup key={im.id} label={im.nume}>
-                  {spatii.filter(s => s.imobilId === im.id).map(s => (
-                    <option key={s.id} value={s.id}>{s.denumire} {s.suprafata ? `(${s.suprafata} mp)` : ''}</option>
-                  ))}
-                </optgroup>
-              ))}
+              {imobile.length > 0
+                ? imobile.map(im => (
+                    <optgroup key={im.id} label={im.nume}>
+                      {spatii.filter(s => s.imobilId === im.id).map(s => (
+                        <option key={s.id} value={s.id}>{s.denumire}{s.suprafata ? ` (${s.suprafata} mp)` : ''}</option>
+                      ))}
+                    </optgroup>
+                  ))
+                : spatii.map(s => (
+                    <option key={s.id} value={s.id}>{s.denumire}{s.suprafata ? ` (${s.suprafata} mp)` : ''}</option>
+                  ))
+              }
             </select>
             {spatiu && <span className={`badge ${spatiu.status === 'Ocupat' ? 'badge-green' : 'badge-amber'}`}>{spatiu.status}</span>}
             {spatiuId && (
