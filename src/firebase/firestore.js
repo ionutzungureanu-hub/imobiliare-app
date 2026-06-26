@@ -82,3 +82,67 @@ export const saveConfig = async (data) => {
     await setDoc(doc(db, 'config', 'fgo'), data)
   })
 }
+
+// ── IMOBILE ────────────────────────────────────────────────────
+export const getImobile = async () => {
+  const snap = await getDocs(collection(db, 'imobile'))
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+}
+export const addImobil = async (data) =>
+  addDoc(collection(db, 'imobile'), { ...data, creatLa: serverTimestamp() })
+export const updateImobil = async (id, data) =>
+  updateDoc(doc(db, 'imobile', id), data)
+export const deleteImobil = async (id) =>
+  deleteDoc(doc(db, 'imobile', id))
+
+// ── SPAȚII ─────────────────────────────────────────────────────
+export const getSpatii = async (imobilId = null) => {
+  const q = imobilId
+    ? query(collection(db, 'spatii'), where('imobilId', '==', imobilId))
+    : collection(db, 'spatii')
+  const snap = await getDocs(q)
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+}
+export const addSpatiu = async (data) =>
+  addDoc(collection(db, 'spatii'), { ...data, creatLa: serverTimestamp() })
+export const updateSpatiu = async (id, data) =>
+  updateDoc(doc(db, 'spatii', id), data)
+export const deleteSpatiu = async (id) =>
+  deleteDoc(doc(db, 'spatii', id))
+
+// ── CONTOARE ───────────────────────────────────────────────────
+export const getContoare = async (spatiuId) => {
+  const q = query(collection(db, 'contoare'), where('spatiuId', '==', spatiuId))
+  const snap = await getDocs(q)
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+}
+export const addContor = async (data) =>
+  addDoc(collection(db, 'contoare'), { ...data, creatLa: serverTimestamp() })
+export const updateContor = async (id, data) =>
+  updateDoc(doc(db, 'contoare', id), data)
+export const deleteContor = async (id) =>
+  deleteDoc(doc(db, 'contoare', id))
+
+// ── CITIRI ─────────────────────────────────────────────────────
+export const getCitiri = async (contorId) => {
+  const q = query(
+    collection(db, 'citiri'),
+    where('contorId', '==', contorId),
+    orderBy('data', 'desc')
+  )
+  const snap = await getDocs(q)
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+}
+export const getCitiriSpatiu = async (spatiuId) => {
+  const q = query(
+    collection(db, 'citiri'),
+    where('spatiuId', '==', spatiuId),
+    orderBy('data', 'desc')
+  )
+  const snap = await getDocs(q)
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+}
+export const addCitire = async (data) =>
+  addDoc(collection(db, 'citiri'), { ...data, creatLa: serverTimestamp() })
+export const deleteCitire = async (id) =>
+  deleteDoc(doc(db, 'citiri', id))

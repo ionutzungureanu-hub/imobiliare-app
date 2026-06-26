@@ -5,7 +5,10 @@ import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Clienti from './pages/Clienti'
 import ClientDetail from './pages/ClientDetail'
+import Spatii from './pages/Spatii'
+import Utilitati from './pages/Utilitati'
 import EmiteFactura from './pages/EmiteFactura'
+import EmiteFacturaUtilitati from './pages/EmiteFacturaUtilitati'
 import FacturiEmise from './pages/FacturiEmise'
 import FurnizoriFacturi from './pages/FurnizoriFacturi'
 import Config from './pages/Config'
@@ -23,13 +26,16 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
             <Route index element={<Navigate to="/dashboard" replace />} />
-            <Route path="dashboard"  element={<Dashboard />} />
-            <Route path="clienti"    element={<Clienti />} />
-            <Route path="clienti/:id" element={<ClientDetail />} />
-            <Route path="emite"      element={<EmiteFactura />} />
-            <Route path="emise"      element={<FacturiEmise />} />
-            <Route path="furnizori"  element={<FurnizoriFacturi />} />
-            <Route path="config"     element={<Config />} />
+            <Route path="dashboard"        element={<Dashboard />} />
+            <Route path="clienti"          element={<Clienti />} />
+            <Route path="clienti/:id"      element={<ClientDetail />} />
+            <Route path="spatii"           element={<Spatii />} />
+            <Route path="utilitati"        element={<Utilitati />} />
+            <Route path="emite"            element={<EmiteFactura />} />
+            <Route path="emite-utilitati"  element={<EmiteFacturaUtilitati />} />
+            <Route path="emise"            element={<FacturiEmise />} />
+            <Route path="furnizori"        element={<FurnizoriFacturi />} />
+            <Route path="config"           element={<Config />} />
           </Route>
         </Routes>
       </BrowserRouter>
