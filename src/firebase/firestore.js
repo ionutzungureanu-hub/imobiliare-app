@@ -146,3 +146,27 @@ export const addCitire = async (data) =>
   addDoc(collection(db, 'citiri'), { ...data, creatLa: serverTimestamp() })
 export const deleteCitire = async (id) =>
   deleteDoc(doc(db, 'citiri', id))
+
+// ── USER PROFILES ──────────────────────────────────────────────
+export const getUserProfile = async (uid) => {
+  const snap = await getDoc(doc(db, 'users', uid))
+  return snap.exists() ? { id: snap.id, ...snap.data() } : null
+}
+
+export const getUsers = async () => {
+  const snap = await getDocs(collection(db, 'users'))
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+}
+
+export const saveUserProfile = async (uid, data) => {
+  const { setDoc } = await import('firebase/firestore')
+  await setDoc(doc(db, 'users', uid), data, { merge: true })
+}
+
+export const updateUserProfile = async (uid, data) => {
+  await updateDoc(doc(db, 'users', uid), data)
+}
+
+export const deleteUserProfile = async (uid) => {
+  await deleteDoc(doc(db, 'users', uid))
+}
