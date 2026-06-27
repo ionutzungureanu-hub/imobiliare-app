@@ -1,21 +1,36 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { getImobile } from '../firebase/firestore'
+import { getImobile, getSpatii } from '../firebase/firestore'
 
+// Returnează imobilele și spațiile la care userul are acces
 export function useImobile() {
-  const { isAdmin, accessIds } = useAuth()
-  const [imobile, setImobile] = useState([])
-  const [loading, setLoading] = useState(true)
+  const { isAdmin, user } = useAuth()
+  const [imobile,  setImobile]  = useState([])
+  const [spatii,   setSpatii]   = useState([])
+  const [loading,  setLoading]  = useState(true)
 
-  const load = () => {
-    getImobile().then(all => {
-      if (isAdmin) { setImobile(all) }
-      else if (!accessIds || accessIds.length === 0) { setImobile([]) }
-      else { setImobile(all.filter(im => accessIds.includes(im.id))) }
-      setLoading(false)
-    })
+  const load = async () => {
+    setLoading(true)
+    const [allImobile, allSpatii] = await Promise.all([getImobile(), getSpatii()])
+
+    if (isAdmin) {
+      setImobile(allImobile)
+      setSpatii(allSpatii)
+    } else {
+      // Manager vede imobilele unde e manager + spațiile unde e manager
+      const myImobile = allImobile.filter(im => im.managerId === user?.uid)
+      const mySpatii  = allSpatii.filter(s => s.managerId === user?.uid)
+      // Include și imobilele spațiilor (pentru context)
+      const imobileIds = new Set([
+        ...myImobile.map(im => im.id),
+        ...mySpatii.map(s => s.imobilId),
+      ])
+      setImobile(allImobile.filter(im => imobileIds.has(im.id)))
+      setSpatii(mySpatii)
+    }
+    setLoading(false)
   }
 
-  useEffect(() => { load() }, [isAdmin, JSON.stringify(accessIds)])
-  return { imobile, loading, reload: load }
+  useEffect(() => { if (user) load() }, [isAdmin, user?.uid])
+  return { imobile, spatii, loading, reload: load }
 }
