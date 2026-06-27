@@ -379,8 +379,13 @@ export default function Biblioteca() {
                   <label>Tip document</label>
                   <select value={formDoc.tip} onChange={e => setFormDoc(f => ({ ...f, tip: e.target.value }))}>
                     <option value="">— Alege tip —</option>
-                    {(TIPURI[modal.tip_client === 'PF' ? 'client_PF' : modal.tip_client === 'imobil' ? 'imobil' : modal.tip_client === 'manager' ? 'manager' : 'client_PJ'] || TIPURI.client_PJ)
-                      .map(t => <option key={t} value={t}>{t}</option>)}
+                    {(() => {
+                      const key = modal.tip_client === 'PF' ? 'client_PF'
+                        : modal.tip_client === 'imobil' ? 'imobil'
+                        : modal.tip_client === 'manager' ? 'manager'
+                        : 'client_PJ'
+                      return (TIPURI[key] || TIPURI.client_PJ).map(t => <option key={t} value={t}>{t}</option>)
+                    })()}
                   </select>
                 </div>
 

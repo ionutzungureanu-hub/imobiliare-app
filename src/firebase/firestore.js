@@ -178,16 +178,18 @@ export const getDocumente = async (entityType = null, entityId = null) => {
     q = query(
       collection(db, 'documente'),
       where('entityType', '==', entityType),
-      where('entityId',   '==', entityId),
-      orderBy('uploadatLa', 'desc')
+      where('entityId',   '==', entityId)
     )
   } else if (entityType) {
-    q = query(collection(db, 'documente'), where('entityType', '==', entityType), orderBy('uploadatLa', 'desc'))
+    q = query(collection(db, 'documente'), where('entityType', '==', entityType))
   } else {
-    q = query(collection(db, 'documente'), orderBy('uploadatLa', 'desc'))
+    q = collection(db, 'documente')
   }
   const snap = await getDocs(q)
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  // Sort client-side to avoid Firestore compound index requirement
+  return snap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => (b.uploadatLa?.seconds || 0) - (a.uploadatLa?.seconds || 0))
 }
 
 export const addDocument = async (data) =>

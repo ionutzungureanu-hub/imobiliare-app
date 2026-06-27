@@ -4,7 +4,6 @@ import Topbar from '../components/Topbar'
 import { getClienti, addClient, updateClient, deleteClient } from '../firebase/firestore'
 import { useToast } from '../components/Toast'
 import { whatsappLink } from '../utils'
-import DocumentUpload from '../components/DocumentUpload'
 
 // ── Structură client goală ─────────────────────────────────────
 const emptyContact = () => ({ nume: '', functie: '', telefon: '', whatsapp: '', trimiteMesaj: false })
@@ -141,7 +140,7 @@ export default function Clienti() {
           <table>
             <thead>
               <tr>
-                <th>Denumire</th><th>CUI</th><th>TVA</th><th>Contract</th>
+                <th>Denumire</th><th>CUI</th><th>TVA</th>
                 <th>Contacte</th><th>Emailuri</th><th>Contact rapid</th><th></th>
               </tr>
             </thead>
@@ -165,16 +164,7 @@ export default function Clienti() {
                         : <span className="badge badge-gray" style={{fontSize:10}}>—</span>
                     }
                   </td>
-                  <td style={{ textAlign: 'center' }}>
-                    {c.contractUrl
-                      ? <a href={c.contractUrl} target="_blank" rel="noreferrer"
-                          className="btn btn-ghost btn-sm" title="Deschide contract"
-                          style={{ color: 'var(--green)' }}>
-                          <i className="ti ti-file-text" style={{ color: 'var(--green)', fontSize: 18 }} />
-                        </a>
-                      : <span style={{ color: 'var(--slate)', fontSize: 11 }}>—</span>
-                    }
-                  </td>
+
 
                   {/* Contacte */}
                   <td>
@@ -313,15 +303,7 @@ export default function Clienti() {
                     <label>IBAN</label>
                     <input value={form.iban || ''} onChange={e => setField('iban', e.target.value)} placeholder="RO49AAAA1B31007593840000" />
                   </div>
-                  <div className="form-group full">
-                    <label>Contract închiriere</label>
-                    <DocumentUpload
-                      value={form.contractUrl || ''}
-                      onChange={(url) => setField('contractUrl', url)}
-                      folder="adminchirie/contracte"
-                      label="Contract închiriere"
-                    />
-                  </div>
+
                 </div>
               </div>
 
