@@ -60,7 +60,12 @@ export default function Biblioteca() {
   const mySpatiuIds  = mySpatii?.map(s => s.id) || []
   const myClientiIds = clienti.filter(c => mySpatiuIds.includes(c.spatiuId) || isAdmin).map(c => c.id)
 
-  const clientiVizibili = isAdmin ? clienti : clienti.filter(c => myClientiIds.includes(c.id))
+  const clientiAll = isAdmin ? clienti : clienti.filter(c => myClientiIds.includes(c.id))
+  // Activi first, then inactivi
+  const clientiVizibili = [
+    ...clientiAll.filter(c => c.activ !== false),
+    ...clientiAll.filter(c => c.activ === false),
+  ]
   const imobileVizibile  = imobile
   const usersVizibili    = isAdmin ? users : users.filter(u => u.id === user?.uid)
 
@@ -198,7 +203,7 @@ export default function Biblioteca() {
   }
 
   // ── Render entitate cu documente ─────────────────────────────
-  const EntityCard = ({ entityType, entityId, entityNume, tip_client, subtitle }) => {
+  const EntityCard = ({ entityType, entityId, entityNume, tip_client, subtitle, inactiv }) => {
     const docs      = docsFor(entityType, entityId)
     const byYear    = groupByYear(docs)
     const isOpen    = expanded[entityId]
@@ -219,12 +224,15 @@ export default function Biblioteca() {
           <span className="badge badge-gray" style={{ fontSize: 10 }}>
             {docs.length} {docs.length === 1 ? 'document' : 'documente'}
           </span>
-          <button
-            className="btn btn-primary btn-sm"
-            onClick={e => { e.stopPropagation(); openModal(entityType, entityId, entityNume, tip_client) }}
-          >
-            <i className="ti ti-plus" /> Adaugă
-          </button>
+          {inactiv && <span className="badge badge-amber" style={{ fontSize: 10 }}>📦 Arhivă</span>}
+          {!inactiv && (
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={e => { e.stopPropagation(); openModal(entityType, entityId, entityNume, tip_client) }}
+            >
+              <i className="ti ti-plus" /> Adaugă
+            </button>
+          )}
         </div>
 
         {/* Documente pe ani */}

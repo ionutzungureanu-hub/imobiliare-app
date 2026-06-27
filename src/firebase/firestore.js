@@ -200,3 +200,15 @@ export const updateDocument = async (id, data) =>
 
 export const deleteDocument = async (id) =>
   deleteDoc(doc(db, 'documente', id))
+
+// ── ACTIVARE / DEZACTIVARE CLIENT ─────────────────────────────
+export const toggleClientActiv = async (clientId, activ, spatiuId = null) => {
+  await updateDoc(doc(db, 'clienti', clientId), { activ })
+  // Dacă dezactivat și are spațiu asociat → eliberează spațiul
+  if (!activ && spatiuId) {
+    await updateDoc(doc(db, 'spatii', spatiuId), {
+      clientId: '',
+      status: 'Liber'
+    })
+  }
+}
