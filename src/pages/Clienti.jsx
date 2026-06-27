@@ -9,7 +9,7 @@ import { whatsappLink } from '../utils'
 const emptyContact = () => ({ nume: '', functie: '', telefon: '', whatsapp: '', trimiteMesaj: false })
 const emptyEmail   = () => ({ adresa: '', trimiteMail: false })
 const emptyForm    = () => ({
-  nume: '', cui: '', regCom: '', adresa: '', tip: 'PJ', platitorTVA: null, banca: '', iban: '',
+  nume: '', cui: '', regCom: '', adresa: '', tip: 'PJ', platitorTVA: null, banca: '', iban: '', contractUrl: '',
   spatiu: '',
   contacte: [emptyContact()],
   emailuri: [emptyEmail()],
@@ -67,6 +67,7 @@ export default function Clienti() {
       platitorTVA: c.platitorTVA ?? null,
       banca:    c.banca    || '',
       iban:     c.iban     || '',
+      contractUrl: c.contractUrl || '',
       spatiu:   c.spatiu   || '',
       contacte: c.contacte?.length ? c.contacte : [emptyContact()],
       emailuri: c.emailuri?.length ? c.emailuri : [emptyEmail()],
@@ -212,6 +213,12 @@ export default function Clienti() {
                       {c.telefon && (
                         <a href={`tel:${c.telefon}`} className="btn btn-ghost btn-sm" title="Sună">
                           <i className="ti ti-phone" />
+                        </a>
+                      )}
+                      {c.contractUrl && (
+                        <a href={c.contractUrl} target="_blank" rel="noreferrer"
+                          className="btn btn-ghost btn-sm" title="Contract închiriere">
+                          <i className="ti ti-file-text" style={{ color: 'var(--green)' }} />
                         </a>
                       )}
                     </div>
