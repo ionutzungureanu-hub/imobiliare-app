@@ -212,3 +212,42 @@ export const toggleClientActiv = async (clientId, activ, spatiuId = null) => {
     })
   }
 }
+
+// ── CLIENȚI PER SPAȚIU ────────────────────────────────────────
+// spatiuClienti: [{ clientId, rol, activ }]
+export const addClientToSpatiu = async (spatiuId, clientId, rol = 'Chiriaș principal') => {
+  const snap = await getDoc(doc(db, 'spatii', spatiuId))
+  if (!snap.exists()) return
+  const data = snap.data()
+  const clienti = data.clienti || (data.clientId ? [{ clientId: data.clientId, rol: 'Chiriaș principal', activ: true }] : [])
+  // Avoid duplicates
+  if (clienti.find(c => c.clientId === clientId)) return
+  clienti.push({ clientId, rol, activ: true })
+  await updateDoc(doc(db, 'spatii', spatiuId), {
+    clienti,
+    clientId: clienti.find(c => c.rol === 'Chiriaș principal')?.clientId || clienti[0]?.clientId || '',
+    status: 'Ocupat'
+  })
+}
+
+export const removeClientFromSpatiu = async (spatiuId, clientId) => {
+  const snap = await getDoc(doc(db, 'spatii', spatiuId))
+  if (!snap.exists()) return
+  const data = snap.data()
+  const clienti = (data.clienti || []).filter(c => c.clientId !== clientId)
+  const principal = clienti.find(c => c.rol === 'Chiriaș principal')?.clientId || clienti[0]?.clientId || ''
+  await updateDoc(doc(db, 'spatii', spatiuId), {
+    clienti,
+    clientId: principal,
+    status: clienti.length > 0 ? 'Ocupat' : 'Liber'
+  })
+}
+
+export const updateClientRolInSpatiu = async (spatiuId, clientId, rol) => {
+  const snap = await getDoc(doc(db, 'spatii', spatiuId))
+  if (!snap.exists()) return
+  const data = snap.data()
+  const clienti = (data.clienti || []).map(c => c.clientId === clientId ? { ...c, rol } : c)
+  const principal = clienti.find(c => c.rol === 'Chiriaș principal')?.clientId || clienti[0]?.clientId || ''
+  await updateDoc(doc(db, 'spatii', spatiuId), { clienti, clientId: principal })
+}
