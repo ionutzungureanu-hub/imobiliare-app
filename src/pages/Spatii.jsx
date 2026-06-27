@@ -211,6 +211,15 @@ export default function Spatii() {
                       )}
                     </div>
                   </div>
+                  {/* Act proprietate link */}
+                  {im.actUrl && (
+                    <a href={im.actUrl} target="_blank" rel="noreferrer"
+                      className="btn btn-ghost btn-sm"
+                      style={{ color: 'var(--green)', fontSize: 12, marginTop: 4 }}
+                      title="Deschide act proprietate">
+                      <i className="ti ti-file-text" style={{ color: 'var(--green)' }} /> Act proprietate
+                    </a>
+                  )}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   {/* Manager imobil */}

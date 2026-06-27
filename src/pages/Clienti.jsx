@@ -141,7 +141,7 @@ export default function Clienti() {
           <table>
             <thead>
               <tr>
-                <th>Denumire</th><th>CUI</th><th>TVA</th><th>Spațiu</th>
+                <th>Denumire</th><th>CUI</th><th>TVA</th><th>Contract</th>
                 <th>Contacte</th><th>Emailuri</th><th>Contact rapid</th><th></th>
               </tr>
             </thead>
@@ -165,7 +165,16 @@ export default function Clienti() {
                         : <span className="badge badge-gray" style={{fontSize:10}}>—</span>
                     }
                   </td>
-                  <td style={{ color: 'var(--slate)', fontSize: 12 }}>{c.spatiu}</td>
+                  <td style={{ textAlign: 'center' }}>
+                    {c.contractUrl
+                      ? <a href={c.contractUrl} target="_blank" rel="noreferrer"
+                          className="btn btn-ghost btn-sm" title="Deschide contract"
+                          style={{ color: 'var(--green)' }}>
+                          <i className="ti ti-file-text" style={{ color: 'var(--green)', fontSize: 18 }} />
+                        </a>
+                      : <span style={{ color: 'var(--slate)', fontSize: 11 }}>—</span>
+                    }
+                  </td>
 
                   {/* Contacte */}
                   <td>
@@ -216,12 +225,7 @@ export default function Clienti() {
                           <i className="ti ti-phone" />
                         </a>
                       )}
-                      {c.contractUrl && (
-                        <a href={c.contractUrl} target="_blank" rel="noreferrer"
-                          className="btn btn-ghost btn-sm" title="Contract închiriere">
-                          <i className="ti ti-file-text" style={{ color: 'var(--green)' }} />
-                        </a>
-                      )}
+
                     </div>
                   </td>
 
