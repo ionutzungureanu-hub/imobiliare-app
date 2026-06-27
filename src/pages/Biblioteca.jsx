@@ -287,20 +287,37 @@ export default function Biblioteca() {
         ) : (
           <>
             {/* Tab Clienți */}
-            {tab === 'clienti' && (
-              clientiVizibili.length === 0
-                ? <div className="empty"><i className="ti ti-users" /><p>Niciun client găsit.</p></div>
-                : clientiVizibili.map(c => (
-                    <EntityCard
-                      key={c.id}
-                      entityType="client"
-                      entityId={c.id}
-                      entityNume={c.nume}
-                      tip_client={c.tip || 'PJ'}
-                      subtitle={`${c.tip === 'PF' ? 'Persoană fizică' : 'Persoană juridică'}${c.cui ? ' · CUI: ' + c.cui : ''}`}
-                    />
-                  ))
-            )}
+            {tab === 'clienti' && (() => {
+              if (clientiVizibili.length === 0) return <div className="empty"><i className="ti ti-users" /><p>Niciun client găsit.</p></div>
+              const activiPJ   = clientiVizibili.filter(c => c.activ !== false && (c.tip || 'PJ') === 'PJ')
+              const activiPF   = clientiVizibili.filter(c => c.activ !== false && c.tip === 'PF')
+              const inactiviPJ = clientiVizibili.filter(c => c.activ === false && (c.tip || 'PJ') === 'PJ')
+              const inactiviPF = clientiVizibili.filter(c => c.activ === false && c.tip === 'PF')
+              const CardList = ({ items, inactiv }) => items.map(c => (
+                <EntityCard key={c.id} entityType="client" entityId={c.id}
+                  entityNume={c.nume} tip_client={c.tip || 'PJ'} inactiv={inactiv}
+                  subtitle={`${c.tip === 'PF' ? 'Persoană fizică' : 'Persoană juridică'}${c.cui ? ' · CUI: ' + c.cui : c.cnp ? ' · CNP: ' + c.cnp : ''}`}
+                />
+              ))
+              const Separator = ({ label, icon }) => (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 0 6px', fontSize: 11, fontWeight: 600, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '.5px' }}>
+                  <i className={`ti ${icon}`} style={{ fontSize: 13 }} /> {label}
+                </div>
+              )
+              return (
+                <>
+                  {activiPJ.length > 0 && <><Separator label={`Persoane Juridice — Active (${activiPJ.length})`} icon="ti-building-store" /><CardList items={activiPJ} inactiv={false} /></>}
+                  {activiPF.length > 0 && <><Separator label={`Persoane Fizice — Active (${activiPF.length})`} icon="ti-user" /><CardList items={activiPF} inactiv={false} /></>}
+                  {(inactiviPJ.length > 0 || inactiviPF.length > 0) && (
+                    <div style={{ marginTop: 12, paddingTop: 8, borderTop: '2px solid var(--border)' }}>
+                      <Separator label="Arhivă — Inactivi" icon="ti-archive" />
+                      {inactiviPJ.length > 0 && <CardList items={inactiviPJ} inactiv={true} />}
+                      {inactiviPF.length > 0 && <CardList items={inactiviPF} inactiv={true} />}
+                    </div>
+                  )}
+                </>
+              )
+            })()}
 
             {/* Tab Imobile */}
             {tab === 'imobile' && (

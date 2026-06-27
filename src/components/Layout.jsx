@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { ToastProvider } from './Toast'
@@ -13,10 +13,10 @@ const NAV_ALL = [
   { to: '/emite',           icon: 'ti-file-plus',        label: 'Factură chirie',   section: 'Documente',  adminOnly: false },
   { to: '/emite-utilitati', icon: 'ti-receipt',          label: 'F. utilități',     section: 'Documente',  adminOnly: false },
   { to: '/emise',           icon: 'ti-files',            label: 'Facturi emise',    section: 'Documente',  adminOnly: false },
-  { to: '/furnizori',       icon: 'ti-file-import',      label: 'Furnizori',        section: 'Documente',  adminOnly: true  },
+  { to: '/furnizori',       icon: 'ti-file-import',      label: 'Furnizori',        section: 'Documente',  adminOnly: true,  desktopOnly: true },
   { to: '/biblioteca',      icon: 'ti-books',            label: 'Bibliotecă',       section: 'Bibliotecă',  adminOnly: false },
-  { to: '/utilizatori',     icon: 'ti-user-cog',         label: 'Utilizatori',      section: 'Setări',     adminOnly: true  },
-  { to: '/config',          icon: 'ti-settings',         label: 'Configurare',      section: 'Setări',     adminOnly: true  },
+  { to: '/utilizatori',     icon: 'ti-user-cog',         label: 'Utilizatori',      section: 'Setări',     adminOnly: true,  desktopOnly: true },
+  { to: '/config',          icon: 'ti-settings',         label: 'Configurare',      section: 'Setări',     adminOnly: true,  desktopOnly: true },
 ]
 
 const MOBILE_NAV = [
@@ -46,7 +46,16 @@ export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const handleLogout = async () => { await logout(); navigate('/login') }
-  const nav = NAV_ALL.filter(item => !item.adminOnly || isAdmin)
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768)
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth <= 768)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
+  const nav = NAV_ALL.filter(item =>
+    (!item.adminOnly || isAdmin) &&
+    (!item.desktopOnly || !isMobile)
+  )
   let lastSection = ''
 
   return (
