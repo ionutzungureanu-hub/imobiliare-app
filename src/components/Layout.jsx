@@ -13,6 +13,7 @@ const NAV_ALL = [
   { to: '/emite-utilitati', icon: 'ti-receipt',          label: 'F. utilități',     section: 'Documente',  adminOnly: false },
   { to: '/emise',           icon: 'ti-files',            label: 'Facturi emise',    section: 'Documente',  adminOnly: false },
   { to: '/furnizori',       icon: 'ti-file-import',      label: 'Furnizori',        section: 'Documente',  adminOnly: true  },
+  { to: '/biblioteca',      icon: 'ti-books',            label: 'Bibliotecă',       section: 'Bibliotecă',  adminOnly: false },
   { to: '/utilizatori',     icon: 'ti-user-cog',         label: 'Utilizatori',      section: 'Setări',     adminOnly: true  },
   { to: '/config',          icon: 'ti-settings',         label: 'Configurare',      section: 'Setări',     adminOnly: true  },
 ]

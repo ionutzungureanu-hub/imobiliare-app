@@ -170,3 +170,31 @@ export const updateUserProfile = async (uid, data) => {
 export const deleteUserProfile = async (uid) => {
   await deleteDoc(doc(db, 'users', uid))
 }
+
+// ── DOCUMENTE BIBLIOTECĂ ───────────────────────────────────────
+export const getDocumente = async (entityType = null, entityId = null) => {
+  let q
+  if (entityType && entityId) {
+    q = query(
+      collection(db, 'documente'),
+      where('entityType', '==', entityType),
+      where('entityId',   '==', entityId),
+      orderBy('uploadatLa', 'desc')
+    )
+  } else if (entityType) {
+    q = query(collection(db, 'documente'), where('entityType', '==', entityType), orderBy('uploadatLa', 'desc'))
+  } else {
+    q = query(collection(db, 'documente'), orderBy('uploadatLa', 'desc'))
+  }
+  const snap = await getDocs(q)
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+}
+
+export const addDocument = async (data) =>
+  addDoc(collection(db, 'documente'), { ...data, uploadatLa: serverTimestamp() })
+
+export const updateDocument = async (id, data) =>
+  updateDoc(doc(db, 'documente', id), data)
+
+export const deleteDocument = async (id) =>
+  deleteDoc(doc(db, 'documente', id))

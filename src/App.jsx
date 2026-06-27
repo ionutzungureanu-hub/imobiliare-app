@@ -15,6 +15,7 @@ import FurnizoriFacturi from './pages/FurnizoriFacturi'
 import Utilizatori from './pages/Utilizatori'
 import Config from './pages/Config'
 import ImportClienti from './pages/ImportClienti'
+import Biblioteca from './pages/Biblioteca'
 
 function PrivateRoute({ children }) {
   const { user } = useAuth()
@@ -42,6 +43,7 @@ export default function App() {
             <Route path="utilizatori"      element={<Utilizatori />} />
             <Route path="config"           element={<Config />} />
             <Route path="import-clienti"   element={<ImportClienti />} />
+            <Route path="biblioteca"         element={<Biblioteca />} />
           </Route>
         </Routes>
       </BrowserRouter>
