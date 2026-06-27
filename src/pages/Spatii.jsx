@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Topbar from '../components/Topbar'
 import { useToast } from '../components/Toast'
 import { useAuth } from '../context/AuthContext'
@@ -24,6 +25,7 @@ const emptySpatiu = (imobilId = '', managerId = '') => ({
 })
 
 export default function Spatii() {
+  const navigate = useNavigate()
   const toast = useToast()
   const { isAdmin, user } = useAuth()
 
@@ -353,6 +355,9 @@ export default function Spatii() {
                               <div style={{ display: 'flex', gap: 4 }}>
                                 <button className="btn btn-ghost btn-sm" onClick={() => openModalClienti(sp)} title="Gestionează clienți">
                                   <i className="ti ti-users" />
+                                </button>
+                                <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/spatii/${sp.id}/istoric`)} title="Istoric spațiu">
+                                  <i className="ti ti-history" />
                                 </button>
                                 <button className="btn btn-ghost btn-sm" onClick={() => openEditSpatiu(sp)}>
                                   <i className="ti ti-pencil" />

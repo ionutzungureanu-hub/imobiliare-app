@@ -251,3 +251,50 @@ export const updateClientRolInSpatiu = async (spatiuId, clientId, rol) => {
   const principal = clienti.find(c => c.rol === 'Chiriaș principal')?.clientId || clienti[0]?.clientId || ''
   await updateDoc(doc(db, 'spatii', spatiuId), { clienti, clientId: principal })
 }
+
+// ── TEMPLATE NOTE DE CALCUL ────────────────────────────────────
+export const getTemplate = async (spatiuId) => {
+  const q = query(collection(db, 'templates_nota'), where('spatiuId', '==', spatiuId))
+  const snap = await getDocs(q)
+  return snap.empty ? null : { id: snap.docs[0].id, ...snap.docs[0].data() }
+}
+
+export const saveTemplate = async (spatiuId, data) => {
+  const existing = await getTemplate(spatiuId)
+  if (existing) {
+    await updateDoc(doc(db, 'templates_nota', existing.id), { ...data, updatedAt: serverTimestamp() })
+    return existing.id
+  } else {
+    const ref = await addDoc(collection(db, 'templates_nota'), { ...data, spatiuId, createdAt: serverTimestamp() })
+    return ref.id
+  }
+}
+
+// ── NOTA DE CALCUL EMISE ───────────────────────────────────────
+export const getNoteCalcul = async (spatiuId = null) => {
+  const q = spatiuId
+    ? query(collection(db, 'note_calcul'), where('spatiuId', '==', spatiuId))
+    : collection(db, 'note_calcul')
+  const snap = await getDocs(q)
+  return snap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0))
+}
+
+export const saveNotaCalcul = async (data) =>
+  addDoc(collection(db, 'note_calcul'), { ...data, createdAt: serverTimestamp() })
+
+// ── ISTORIC SPATIU ─────────────────────────────────────────────
+export const getIstoricSpatiu = async (spatiuId) => {
+  const q = query(collection(db, 'istoric_spatiu'), where('spatiuId', '==', spatiuId))
+  const snap = await getDocs(q)
+  return snap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => (b.dataStart?.seconds || 0) - (a.dataStart?.seconds || 0))
+}
+
+export const addIstoricEntry = async (data) =>
+  addDoc(collection(db, 'istoric_spatiu'), { ...data, createdAt: serverTimestamp() })
+
+export const updateIstoricEntry = async (id, data) =>
+  updateDoc(doc(db, 'istoric_spatiu', id), data)

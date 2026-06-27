@@ -4,7 +4,7 @@ import Topbar from '../components/Topbar'
 import { useToast } from '../components/Toast'
 import { useAuth } from '../context/AuthContext'
 import { useImobile } from '../hooks/useImobile'
-import { getSpatii, getContoare, getCitiri, getClienti, saveEmail } from '../firebase/firestore'
+import { getSpatii, getContoare, getCitiri, getClienti, saveEmail, getTemplate, saveTemplate, getNoteCalcul, saveNotaCalcul } from '../firebase/firestore'
 import { trimiteMesaj } from '../services/emailService'
 import { descarcaNotaCalcul, genereazaNotaCalcul } from '../services/pdfService'
 import { fmt, defaultScadenta } from '../utils'
@@ -26,6 +26,9 @@ export default function NotaCalcul() {
   const [sending,   setSending]   = useState(false)
   const [preview,   setPreview]   = useState(false)
   const [modalEmail,setModalEmail]= useState(false)
+  const [template,   setTemplate]   = useState(null)
+  const [ultimaNota, setUltimaNota] = useState(null)
+  const [savingTpl,  setSavingTpl]  = useState(false)
   const [emailDest, setEmailDest] = useState('')
 
   useEffect(() => {
@@ -36,6 +39,16 @@ export default function NotaCalcul() {
       setClienti(cl)
     })
   }, [imobile])
+
+  // Load template when spatiu changes
+  useEffect(() => {
+    if (!spatiuId) {
+      setTemplate(null); setUltimaNota(null)
+      return
+    }
+    getTemplate(spatiuId).then(setTemplate)
+    getNoteCalcul(spatiuId).then(notes => setUltimaNota(notes[0] || null))
+  }, [spatiuId])
 
   useEffect(() => {
     if (!spatiuId) { setLinii([]); return }

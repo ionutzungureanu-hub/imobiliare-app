@@ -8,6 +8,7 @@ const NAV_ALL = [
   { to: '/clienti',         icon: 'ti-users',            label: 'Clienți',          section: 'Clienți',    adminOnly: false },
   { to: '/spatii',          icon: 'ti-building',         label: 'Spații & Imobile', section: 'Imobile',    adminOnly: false },
   { to: '/utilitati',       icon: 'ti-plug',             label: 'Utilități',        section: 'Imobile',    adminOnly: false },
+  { to: '/utilitati-mobile',icon: 'ti-bolt',            label: 'Citire rapidă',    section: 'Imobile',    adminOnly: false },
   { to: '/nota-calcul',     icon: 'ti-calculator',       label: 'Notă calcul',      section: 'Documente',  adminOnly: false },
   { to: '/emite',           icon: 'ti-file-plus',        label: 'Factură chirie',   section: 'Documente',  adminOnly: false },
   { to: '/emite-utilitati', icon: 'ti-receipt',          label: 'F. utilități',     section: 'Documente',  adminOnly: false },
@@ -23,7 +24,7 @@ const MOBILE_NAV = [
   { to: '/clienti',     icon: 'ti-users',            label: 'Clienți' },
   { to: '/nota-calcul', icon: 'ti-calculator',       label: 'Notă'    },
   { to: '/spatii',      icon: 'ti-building',         label: 'Spații'  },
-  { to: '/emite',       icon: 'ti-file-plus',        label: 'Factură' },
+  { to: '/emite',           icon: 'ti-file-plus',        label: 'Factură' },
 ]
 
 function AdminChirieLogo({ size = 32 }) {
