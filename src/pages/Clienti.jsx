@@ -178,8 +178,8 @@ export default function Clienti() {
                               <i className="ti ti-phone" style={{ fontSize: 12 }} />
                             </a>
                           )}
-                          {ct.trimiteMesaj && ct.whatsapp && (
-                            <a href={whatsappLink(ct.whatsapp, `Bună ziua, ${ct.nume}!`)}
+                          {ct.trimiteMesaj && (ct.whatsapp || ct.telefon) && (
+                            <a href={whatsappLink(ct.whatsapp || ct.telefon, `Bună ziua${ct.nume ? ', ' + ct.nume : ''}!`)}
                               target="_blank" rel="noreferrer"
                               className="btn btn-success btn-sm" style={{ padding: '2px 6px' }} title="WhatsApp">
                               <i className="ti ti-brand-whatsapp" style={{ fontSize: 12 }} />
@@ -284,6 +284,49 @@ export default function Clienti() {
                   <div className="form-group full">
                     <label>Adresă sediu</label>
                     <input value={form.adresa} onChange={e => setField('adresa', e.target.value)} placeholder="Str. Exemplu, Nr. 1, București" />
+                  </div>
+                  <div className="form-group">
+                    <label>Tip client</label>
+                    <select value={form.tip || 'PJ'} onChange={e => setField('tip', e.target.value)}>
+                      <option value="PJ">Persoană Juridică (firmă)</option>
+                      <option value="PF">Persoană Fizică</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Platitor TVA</label>
+                    <select value={String(form.platitorTVA)} onChange={e => setField('platitorTVA', e.target.value === 'true' ? true : e.target.value === 'false' ? false : null)}>
+                      <option value="null">Necunoscut / Neaplicabil</option>
+                      <option value="true">Da — Platitor TVA</option>
+                      <option value="false">Nu — Neplatitor TVA</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Bancă</label>
+                    <input value={form.banca || ''} onChange={e => setField('banca', e.target.value)} placeholder="ex. Banca Transilvania" />
+                  </div>
+                  <div className="form-group">
+                    <label>IBAN</label>
+                    <input value={form.iban || ''} onChange={e => setField('iban', e.target.value)} placeholder="RO49AAAA1B31007593840000" />
+                  </div>
+                  <div className="form-group full">
+                    <label>Link Google Drive — Contract închiriere</label>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <input
+                        value={form.contractUrl || ''}
+                        onChange={e => setField('contractUrl', e.target.value)}
+                        placeholder="https://drive.google.com/file/d/..."
+                        style={{ flex: 1 }}
+                      />
+                      {form.contractUrl && (
+                        <a href={form.contractUrl} target="_blank" rel="noreferrer"
+                          className="btn btn-ghost btn-sm" style={{ flexShrink: 0 }}>
+                          <i className="ti ti-external-link" style={{ color: 'var(--blue)' }} /> Vezi
+                        </a>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--slate)', marginTop: 4 }}>
+                      Google Drive → click dreapta → Share → Copy link → paste aici
+                    </div>
                   </div>
                 </div>
               </div>

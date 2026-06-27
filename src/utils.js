@@ -14,7 +14,13 @@ export const defaultScadenta = (days = 30) => {
 }
 
 export const whatsappLink = (phone, msg = '') => {
+  if (!phone) return '#'
   const clean = phone.replace(/\D/g, '')
-  const num = clean.startsWith('0') ? '4' + clean : clean
-  return `https://wa.me/${num}?text=${encodeURIComponent(msg)}`
+  // Romanian numbers: 07xx -> 407xx, already has 40 -> keep, has + -> strip
+  let num = clean
+  if (num.startsWith('00')) num = num.slice(2)
+  if (num.startsWith('0'))  num = '40' + num.slice(1)
+  if (!num.startsWith('40') && num.length === 9) num = '40' + num
+  const text = msg ? `?text=${encodeURIComponent(msg)}` : ''
+  return `https://wa.me/${num}${text}`
 }
