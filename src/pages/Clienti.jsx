@@ -4,6 +4,7 @@ import Topbar from '../components/Topbar'
 import { getClienti, addClient, updateClient, deleteClient } from '../firebase/firestore'
 import { useToast } from '../components/Toast'
 import { whatsappLink } from '../utils'
+import DocumentUpload from '../components/DocumentUpload'
 
 // ── Structură client goală ─────────────────────────────────────
 const emptyContact = () => ({ nume: '', functie: '', telefon: '', whatsapp: '', trimiteMesaj: false })
@@ -309,24 +310,13 @@ export default function Clienti() {
                     <input value={form.iban || ''} onChange={e => setField('iban', e.target.value)} placeholder="RO49AAAA1B31007593840000" />
                   </div>
                   <div className="form-group full">
-                    <label>Link Google Drive — Contract închiriere</label>
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      <input
-                        value={form.contractUrl || ''}
-                        onChange={e => setField('contractUrl', e.target.value)}
-                        placeholder="https://drive.google.com/file/d/..."
-                        style={{ flex: 1 }}
-                      />
-                      {form.contractUrl && (
-                        <a href={form.contractUrl} target="_blank" rel="noreferrer"
-                          className="btn btn-ghost btn-sm" style={{ flexShrink: 0 }}>
-                          <i className="ti ti-external-link" style={{ color: 'var(--blue)' }} /> Vezi
-                        </a>
-                      )}
-                    </div>
-                    <div style={{ fontSize: 11, color: 'var(--slate)', marginTop: 4 }}>
-                      Google Drive → click dreapta → Share → Copy link → paste aici
-                    </div>
+                    <label>Contract închiriere</label>
+                    <DocumentUpload
+                      value={form.contractUrl || ''}
+                      onChange={(url) => setField('contractUrl', url)}
+                      folder="adminchirie/contracte"
+                      label="Contract închiriere"
+                    />
                   </div>
                 </div>
               </div>

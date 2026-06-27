@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import Topbar from '../components/Topbar'
+import DocumentUpload from '../components/DocumentUpload'
 import { useToast } from '../components/Toast'
 import { useAuth } from '../context/AuthContext'
 import { useImobile } from '../hooks/useImobile'
@@ -364,8 +365,12 @@ export default function Spatii() {
                   <input value={formI.subAntetNota} onChange={e => setFormI(f => ({ ...f, subAntetNota: e.target.value }))} placeholder="ex. Str. Florilor 12, Ploiești" />
                 </div>
                 <div className="form-group full">
-                  <label>Link Google Drive — Act proprietate</label>
-                  <input value={formI.actUrl} onChange={e => setFormI(f => ({ ...f, actUrl: e.target.value }))} placeholder="https://drive.google.com/file/d/..." />
+                  <label>Act proprietate (PDF)</label>
+                  <DocumentUpload
+                    value={formI.actUrl}
+                    onChange={(url) => setFormI(f => ({ ...f, actUrl: url }))}
+                    folder="adminchirie/acte"
+                  />
                 </div>
                 <div className="form-group full">
                   <label>Număr/referință document</label>

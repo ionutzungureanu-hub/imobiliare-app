@@ -352,3 +352,9 @@ textarea        { resize: vertical; min-height: 72px; }
   .sidebar-close-btn { display: flex !important; }
   .sidebar { box-shadow: 4px 0 20px rgba(0,0,0,.15); }
 }
+
+/* Spin animation for upload loader */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
