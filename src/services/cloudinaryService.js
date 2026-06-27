@@ -13,8 +13,12 @@ export async function uploadDocument(file, folder = 'adminchirie') {
   formData.append('folder', folder)
   formData.append('resource_type', 'auto') // suportă PDF + imagini
 
+  // Use 'raw' for PDFs to ensure correct delivery URL
+  const isPDF = file.type === 'application/pdf' || file.name.endsWith('.pdf')
+  const resourceType = isPDF ? 'raw' : 'image'
+
   const res = await fetch(
-    `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`,
+    `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`,
     { method: 'POST', body: formData }
   )
 
