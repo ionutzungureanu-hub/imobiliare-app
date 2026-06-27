@@ -9,7 +9,7 @@ import { whatsappLink } from '../utils'
 const emptyContact = () => ({ nume: '', functie: '', telefon: '', whatsapp: '', trimiteMesaj: false })
 const emptyEmail   = () => ({ adresa: '', trimiteMail: false })
 const emptyForm    = () => ({
-  nume: '', cui: '', regCom: '', adresa: '',
+  nume: '', cui: '', regCom: '', adresa: '', tip: 'PJ', platitorTVA: null, banca: '', iban: '',
   spatiu: '',
   contacte: [emptyContact()],
   emailuri: [emptyEmail()],
@@ -63,6 +63,10 @@ export default function Clienti() {
       cui:      c.cui      || '',
       regCom:   c.regCom   || '',
       adresa:   c.adresa   || '',
+      tip:      c.tip      || 'PJ',
+      platitorTVA: c.platitorTVA ?? null,
+      banca:    c.banca    || '',
+      iban:     c.iban     || '',
       spatiu:   c.spatiu   || '',
       contacte: c.contacte?.length ? c.contacte : [emptyContact()],
       emailuri: c.emailuri?.length ? c.emailuri : [emptyEmail()],
@@ -135,7 +139,7 @@ export default function Clienti() {
           <table>
             <thead>
               <tr>
-                <th>Denumire</th><th>CUI</th><th>Spațiu</th>
+                <th>Denumire</th><th>CUI</th><th>TVA</th><th>Spațiu</th>
                 <th>Contacte</th><th>Emailuri</th><th>Contact rapid</th><th></th>
               </tr>
             </thead>
@@ -151,6 +155,14 @@ export default function Clienti() {
                 <tr key={c.id}>
                   <td style={{ fontWeight: 500 }}>{c.nume}</td>
                   <td style={{ color: 'var(--slate)', fontSize: 12 }}>{c.cui}</td>
+                  <td>
+                    {c.platitorTVA === true
+                      ? <span className="badge badge-green" style={{fontSize:10}}>TVA</span>
+                      : c.platitorTVA === false
+                        ? <span className="badge badge-amber" style={{fontSize:10}}>Fără TVA</span>
+                        : <span className="badge badge-gray" style={{fontSize:10}}>—</span>
+                    }
+                  </td>
                   <td style={{ color: 'var(--slate)', fontSize: 12 }}>{c.spatiu}</td>
 
                   {/* Contacte */}
