@@ -4,7 +4,7 @@ import { useToast } from '../components/Toast'
 import { useAuth } from '../context/AuthContext'
 import { useImobile } from '../hooks/useImobile'
 import { getDocumente, addDocument, updateDocument, deleteDocument, getClienti, getUsers, getSpatii } from '../firebase/firestore'
-import { uploadDocument, formatBytes } from '../services/cloudinaryService'
+import { uploadDocumentFirebase, formatBytes } from '../services/storageService'
 
 // Tipuri predefinite per categorie
 const TIPURI = {
@@ -89,7 +89,7 @@ export default function Biblioteca() {
     if (!file) return
     setUploading(true)
     try {
-      const result = await uploadDocument(file, `adminchirie/biblioteca/${modal.entityType}`)
+      const result = await uploadDocumentFirebase(file, `documente/biblioteca/${modal.entityType}`)
       setUploadedUrl(result.url)
       setUploadedMeta(result)
       if (!formDoc.nume) setFormDoc(f => ({ ...f, nume: file.name.replace(/\.[^.]+$/, '') }))
