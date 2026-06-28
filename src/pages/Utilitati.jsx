@@ -403,14 +403,15 @@ export default function Utilitati() {
   }
 
   // Grupare contoare pe destinație
+  // Backward compat: contoarele fără destinatie → tratate ca 'chirias'
   const ctAdministratie = contoare.filter(c => c.destinatie === 'administratie')
   const ctBloc          = contoare.filter(c => c.mod === 'bloc')
-  const ctChirias       = contoare.filter(c => c.destinatie === 'chirias' && c.mod !== 'bloc')
+  const ctChirias       = contoare.filter(c => c.mod !== 'bloc' && (c.destinatie === 'chirias' || !c.destinatie))
   const ctIntern        = contoare.filter(c => c.destinatie === 'intern')
 
   // Total chiriaș
   const totalChirias = contoare
-    .filter(c => c.destinatie === 'chirias' || c.mod === 'bloc')
+    .filter(c => c.mod === 'bloc' || c.destinatie === 'chirias' || (!c.destinatie && c.mod !== 'administratie'))
     .reduce((sum, c) => {
       const cits = citiriMap[c.id] || []
       const ultima = cits[0]
