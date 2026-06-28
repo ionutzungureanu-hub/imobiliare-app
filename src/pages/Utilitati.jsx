@@ -430,13 +430,16 @@ export default function Utilitati() {
                 </button>
                 {isPF ? (
                   <button className="btn btn-primary" onClick={() => navigate(`/nota-calcul?spatiuId=${spatiuId}`)}>
-                    <i className="ti ti-calculator" /> Generează notă utilități
+                    <i className="ti ti-calculator" /> Notă utilități PF
                   </button>
                 ) : (
                   <button className="btn btn-primary" onClick={() => navigate(`/emite-utilitati?spatiuId=${spatiuId}`)}>
-                    <i className="ti ti-receipt" /> Generează factură utilități
+                    <i className="ti ti-receipt" /> Factură utilități PJ
                   </button>
                 )}
+                <button className="btn btn-ghost" onClick={() => navigate(`/nota-administratie?imobilId=${imobilId}&spatiuId=${spatiuId}`)}>
+                  <i className="ti ti-droplet" /> Notă apă bloc
+                </button>
               </div>
             )}
           </>

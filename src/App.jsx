@@ -18,6 +18,7 @@ import ImportClienti from './pages/ImportClienti'
 import Biblioteca from './pages/Biblioteca'
 import UtilitatiMobile from './pages/UtilitatiMobile'
 import IstoricSpatiu from './pages/IstoricSpatiu'
+import NotaAdministratie from './pages/NotaAdministratie'
 
 function PrivateRoute({ children }) {
   const { user } = useAuth()
@@ -48,6 +49,7 @@ export default function App() {
             <Route path="biblioteca"         element={<Biblioteca />} />
             <Route path="utilitati-mobile"    element={<UtilitatiMobile />} />
             <Route path="spatii/:spatiuId/istoric" element={<IstoricSpatiu />} />
+            <Route path="nota-administratie"   element={<NotaAdministratie />} />
           </Route>
         </Routes>
       </BrowserRouter>
