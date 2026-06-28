@@ -38,12 +38,7 @@ export default function Config() {
     getPreturiImobil(selImobil).then(p => setPreturi(p || {}))
   }, [selImobil])
 
-  if (!isAdmin) return (
-    <div className="content" style={{ paddingTop: 60, textAlign: 'center', color: 'var(--slate)' }}>
-      <i className="ti ti-lock" style={{ fontSize: 40, display: 'block', marginBottom: 12 }} />
-      <p>Acces restricționat. Doar administratorii pot accesa Configurarea.</p>
-    </div>
-  )
+  // Config e restricționat prin desktopOnly în nav — accesibil de pe desktop
 
   const set = k => e => setCfg(c => ({ ...c, [k]: e.target.value }))
 

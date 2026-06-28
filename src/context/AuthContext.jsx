@@ -16,10 +16,13 @@ export function AuthProvider({ children }) {
       if (u) {
         try {
           const prof = await getUserProfile(u.uid)
-          setProfile(prof)
+          if (prof) {
+            setProfile(prof)
+          } else {
+            // Profilul nu există cu UID — default admin
+            setProfile({ rol: 'admin', imobileAccess: [], nume: u.email })
+          }
         } catch {
-          // Dacă profilul nu există în Firestore → tratăm ca admin
-          // (situație la setup inițial sau utilizator nou)
           setProfile({ rol: 'admin', imobileAccess: [], nume: u.email })
         }
       } else {
@@ -33,7 +36,7 @@ export function AuthProvider({ children }) {
   const login  = (email, password) => signInWithEmailAndPassword(auth, email, password)
   const logout = () => signOut(auth)
 
-  const isAdmin   = profile?.rol === 'admin' || profile?.rol === undefined
+  const isAdmin   = !profile || profile.rol === 'admin' || profile.rol === undefined || profile.rol === null
   const accessIds = profile?.imobileAccess || []
 
   return (
