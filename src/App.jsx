@@ -19,6 +19,9 @@ import Biblioteca from './pages/Biblioteca'
 import UtilitatiMobile from './pages/UtilitatiMobile'
 import IstoricSpatiu from './pages/IstoricSpatiu'
 import NotaAdministratie from './pages/NotaAdministratie'
+import Portal from './pages/Portal'
+import PortalSetari from './pages/PortalSetari'
+import ValidareIndexuri from './pages/ValidareIndexuri'
 
 function PrivateRoute({ children }) {
   const { user } = useAuth()
@@ -31,6 +34,7 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/portal/:token" element={<Portal />} />
           <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard"        element={<Dashboard />} />
@@ -50,6 +54,8 @@ export default function App() {
             <Route path="utilitati-mobile"    element={<UtilitatiMobile />} />
             <Route path="spatii/:spatiuId/istoric" element={<IstoricSpatiu />} />
             <Route path="nota-administratie"   element={<NotaAdministratie />} />
+            <Route path="spatii/:spatiuId/portal" element={<PortalSetari />} />
+            <Route path="validare-indexuri"        element={<ValidareIndexuri />} />
           </Route>
         </Routes>
       </BrowserRouter>

@@ -359,6 +359,9 @@ export default function Spatii() {
                                 <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/spatii/${sp.id}/istoric`)} title="Istoric spațiu">
                                   <i className="ti ti-history" />
                                 </button>
+                                <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/spatii/${sp.id}/portal`)} title="Portal chiriaș">
+                                  <i className="ti ti-link" />
+                                </button>
                                 <button className="btn btn-ghost btn-sm" onClick={() => openEditSpatiu(sp)}>
                                   <i className="ti ti-pencil" />
                                 </button>

@@ -350,3 +350,52 @@ export const saveCitire = async (data) =>
 
 export const deleteCitire2 = async (id) =>
   deleteDoc(doc(db, 'citiri', id))
+
+// ── PORTALE CHIRIAȘI ───────────────────────────────────────────
+export const getPortal = async (token) => {
+  const q = query(collection(db, 'portale'), where('token', '==', token))
+  const snap = await getDocs(q)
+  return snap.empty ? null : { id: snap.docs[0].id, ...snap.docs[0].data() }
+}
+
+export const getPortalBySpatiu = async (spatiuId) => {
+  const q = query(collection(db, 'portale'), where('spatiuId', '==', spatiuId))
+  const snap = await getDocs(q)
+  return snap.empty ? null : { id: snap.docs[0].id, ...snap.docs[0].data() }
+}
+
+export const savePortal = async (data) => {
+  const existing = await getPortalBySpatiu(data.spatiuId)
+  if (existing) {
+    await updateDoc(doc(db, 'portale', existing.id), data)
+    return existing.id
+  }
+  const ref = await addDoc(collection(db, 'portale'), { ...data, createdAt: serverTimestamp() })
+  return ref.id
+}
+
+// ── INDEXURI PRIMITE ───────────────────────────────────────────
+export const getIndexuriPrimite = async (status = null) => {
+  const q = status
+    ? query(collection(db, 'indexuri_primite'), where('status', '==', status))
+    : collection(db, 'indexuri_primite')
+  const snap = await getDocs(q)
+  return snap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => (b.dataTrimis?.seconds || 0) - (a.dataTrimis?.seconds || 0))
+}
+
+export const getIndexuriPentruSpatiu = async (spatiuId) => {
+  const q = query(collection(db, 'indexuri_primite'), where('spatiuId', '==', spatiuId))
+  const snap = await getDocs(q)
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+}
+
+export const saveIndexPrimit = async (data) =>
+  addDoc(collection(db, 'indexuri_primite'), { ...data, dataTrimis: serverTimestamp() })
+
+export const updateIndexPrimit = async (id, data) =>
+  updateDoc(doc(db, 'indexuri_primite', id), data)
+
+export const deleteIndexPrimit = async (id) =>
+  deleteDoc(doc(db, 'indexuri_primite', id))

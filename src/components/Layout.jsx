@@ -11,6 +11,7 @@ const NAV_ALL = [
   { to: '/utilitati-mobile',icon: 'ti-bolt',            label: 'Citire rapidă',    section: 'Imobile',    adminOnly: false },
   { to: '/nota-calcul',       icon: 'ti-calculator',     label: 'Notă calcul',      section: 'Documente',  adminOnly: false },
   { to: '/nota-administratie', icon: 'ti-droplet',       label: 'Notă apă bloc',    section: 'Documente',  adminOnly: false },
+  { to: '/validare-indexuri',  icon: 'ti-checks',        label: 'Validare indexuri', section: 'Documente',  adminOnly: false },
   { to: '/emite',           icon: 'ti-file-plus',        label: 'Factură chirie',   section: 'Documente',  adminOnly: false },
   { to: '/emite-utilitati', icon: 'ti-receipt',          label: 'F. utilități',     section: 'Documente',  adminOnly: false },
   { to: '/emise',           icon: 'ti-files',            label: 'Facturi emise',    section: 'Documente',  adminOnly: false },
