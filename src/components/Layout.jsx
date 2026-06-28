@@ -6,27 +6,27 @@ import { ToastProvider } from './Toast'
 const NAV_ALL = [
   { to: '/dashboard',       icon: 'ti-layout-dashboard', label: 'Dashboard',        section: 'General',    adminOnly: false },
   { to: '/clienti',         icon: 'ti-users',            label: 'Clienți',          section: 'Clienți',    adminOnly: false },
-  { to: '/spatii',          icon: 'ti-building',         label: 'Spații & Imobile', section: 'Imobile',    adminOnly: false },
-  { to: '/utilitati',       icon: 'ti-plug',             label: 'Utilități',        section: 'Imobile',    adminOnly: false },
+  { to: '/spatii',          icon: 'ti-building',         label: 'Spații & Imobile', section: 'Imobile',    adminOnly: false, desktopOnly: true },
+  { to: '/utilitati',       icon: 'ti-plug',             label: 'Utilități',        section: 'Imobile',    adminOnly: false, desktopOnly: true },
   { to: '/utilitati-mobile',icon: 'ti-bolt',            label: 'Citire rapidă',    section: 'Imobile',    adminOnly: false },
   { to: '/nota-calcul',       icon: 'ti-calculator',     label: 'Notă calcul',      section: 'Documente',  adminOnly: false },
   { to: '/nota-administratie', icon: 'ti-droplet',       label: 'Notă apă bloc',    section: 'Documente',  adminOnly: false },
   { to: '/validare-indexuri',  icon: 'ti-checks',        label: 'Validare indexuri', section: 'Documente',  adminOnly: false },
-  { to: '/emite',           icon: 'ti-file-plus',        label: 'Factură chirie',   section: 'Documente',  adminOnly: false },
-  { to: '/emite-utilitati', icon: 'ti-receipt',          label: 'F. utilități',     section: 'Documente',  adminOnly: false },
-  { to: '/emise',           icon: 'ti-files',            label: 'Facturi emise',    section: 'Documente',  adminOnly: false },
+  { to: '/emite',           icon: 'ti-file-plus',        label: 'Factură chirie',   section: 'Documente',  adminOnly: false, desktopOnly: true },
+  { to: '/emite-utilitati', icon: 'ti-receipt',          label: 'F. utilități',     section: 'Documente',  adminOnly: false, desktopOnly: true },
+  { to: '/emise',           icon: 'ti-files',            label: 'Facturi emise',    section: 'Documente',  adminOnly: false, desktopOnly: true },
   { to: '/furnizori',       icon: 'ti-file-import',      label: 'Furnizori',        section: 'Documente',  adminOnly: true,  desktopOnly: true },
-  { to: '/biblioteca',      icon: 'ti-books',            label: 'Bibliotecă',       section: 'Bibliotecă',  adminOnly: false },
+  { to: '/biblioteca',      icon: 'ti-books',            label: 'Bibliotecă',       section: 'Bibliotecă', adminOnly: false, desktopOnly: true },
   { to: '/utilizatori',     icon: 'ti-user-cog',         label: 'Utilizatori',      section: 'Setări',     adminOnly: true,  desktopOnly: true },
   { to: '/config',          icon: 'ti-settings',         label: 'Configurare',      section: 'Setări',     adminOnly: true,  desktopOnly: true },
 ]
 
 const MOBILE_NAV = [
-  { to: '/dashboard',   icon: 'ti-layout-dashboard', label: 'Acasă'   },
-  { to: '/clienti',     icon: 'ti-users',            label: 'Clienți' },
-  { to: '/nota-calcul', icon: 'ti-calculator',       label: 'Notă'    },
-  { to: '/spatii',      icon: 'ti-building',         label: 'Spații'  },
-  { to: '/emite',           icon: 'ti-file-plus',        label: 'Factură' },
+  { to: '/dashboard',         icon: 'ti-layout-dashboard', label: 'Acasă'    },
+  { to: '/clienti',           icon: 'ti-users',            label: 'Clienți'  },
+  { to: '/nota-calcul',       icon: 'ti-calculator',       label: 'Notă'     },
+  { to: '/utilitati-mobile',  icon: 'ti-bolt',             label: 'Index'    },
+  { to: '/validare-indexuri', icon: 'ti-checks',           label: 'Validare' },
 ]
 
 function AdminChirieLogo({ size = 32 }) {
