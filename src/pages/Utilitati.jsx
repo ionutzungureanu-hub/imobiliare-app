@@ -1,199 +1,435 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Topbar from '../components/Topbar'
 import { useToast } from '../components/Toast'
 import { useAuth } from '../context/AuthContext'
 import { useImobile } from '../hooks/useImobile'
 import {
-  getSpatii, getClienti,
+  getSpatii, getClienti, getImobile,
   getContoareSpatiu, saveContor, deleteContor,
   getCitiriContor, saveCitire, deleteCitire2,
-  getPreturiImobil
+  getPreturiImobil, updateSpatiuMod,
+  getAllContoareCuCitiri
 } from '../firebase/firestore'
+import { extractIndexFromImage, fileToBase64 } from '../services/ocrService'
+import { exportDateContoare, exportIstoricContor } from '../services/exportContoare'
 import { fmt } from '../utils'
-
-// ── Tipuri de contoare disponibile ─────────────────────────────
-const TIPURI_CONTOR = [
-  { tip: 'Energie electrică', um: 'kWh', mod: 'index', icon: 'ti-bolt',     color: '#f59e0b' },
-  { tip: 'Gaze',              um: 'mc',  mod: 'index', icon: 'ti-flame',     color: '#ef4444' },
-  { tip: 'Apă rece',         um: 'mc',  mod: 'index', icon: 'ti-droplet',   color: '#3b82f6' },
-  { tip: 'Apă caldă',        um: 'mc',  mod: 'index', icon: 'ti-droplet',   color: '#f97316' },
-  { tip: 'Apă bloc',         um: 'RON', mod: 'bloc',  icon: 'ti-building',  color: '#8b5cf6' },
-  { tip: 'Internet',         um: 'RON', mod: 'fix',   icon: 'ti-wifi',      color: '#10b981' },
-  { tip: 'Altul',            um: '',    mod: 'index', icon: 'ti-plug',      color: '#6b7280' },
-]
 
 const TODAY = new Date().toISOString().split('T')[0]
 
+// ── Contor card component ─────────────────────────────────────
+function ContorCard({ contor, citiri, preturi, onSave, onDelete, onExportIstoric }) {
+  const [index,    setIndex]    = useState('')
+  const [valoare,  setValoare]  = useState('')
+  const [data,     setData]     = useState(TODAY)
+  const [nota,     setNota]     = useState('')
+  const [saving,   setSaving]   = useState(false)
+  const [istoricOpen, setIstoricOpen] = useState(false)
+  const [ocrStatus, setOcrStatus] = useState('') // 'processing' | 'ok' | 'fail'
+  const fileRef = useRef()
+
+  const ultima  = citiri[0]
+  const consum  = contor.mod === 'index' && index && ultima?.index != null
+    ? Math.max(0, Number(index) - Number(ultima.index)) : null
+  const pret    = preturi[contor.denumire] || preturi[contor.um] || 0
+  const valCalc = consum !== null ? consum * pret : null
+
+  const handleOCR = async (file) => {
+    if (!file) return
+    setOcrStatus('processing')
+    try {
+      const base64 = await fileToBase64(file)
+      const result = await extractIndexFromImage(base64, file.type || 'image/jpeg')
+      if (result.success && result.value != null) {
+        setIndex(String(result.value))
+        setOcrStatus('ok:' + result.value)
+      } else {
+        setOcrStatus('fail')
+      }
+    } catch { setOcrStatus('fail') }
+  }
+
+  const handleSave = async () => {
+    if (contor.mod === 'index' && !index) return
+    if ((contor.mod === 'fix' || contor.mod === 'bloc') && !valoare) return
+    setSaving(true)
+    try {
+      await saveCitire({
+        contorId: contor.id, spatiuId: contor.spatiuId, imobilId: contor.imobilId,
+        tip: contor.denumire, um: contor.um, mod: contor.mod,
+        destinatie: contor.destinatie,
+        index:  contor.mod === 'index' ? Number(index) : null,
+        indexPrecedent: ultima?.index ?? null,
+        consum, pret,
+        valoare: contor.mod === 'index' ? valCalc : Number(valoare),
+        data, nota,
+      })
+      setIndex(''); setValoare(''); setNota('')
+      setOcrStatus('')
+      onSave()
+    } catch { }
+    finally { setSaving(false) }
+  }
+
+  const istoRender = istoricOpen ? citiri : citiri.slice(0, 3)
+
+  return (
+    <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 10, marginBottom: 10, overflow: 'hidden' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderBottom: '1px solid var(--border)', background: 'var(--slate-light)' }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 600, fontSize: 14 }}>{contor.denumire}</div>
+          <div style={{ fontSize: 11, color: 'var(--slate)' }}>
+            {contor.mod === 'index' ? `Index · ${contor.um}` : contor.mod === 'fix' ? 'Sumă fixă' : 'Sumă bloc'}
+            {pret > 0 && contor.mod === 'index' && ` · ${pret} RON/${contor.um}`}
+          </div>
+        </div>
+        <button className="remove-btn" onClick={() => onDelete(contor)} title="Șterge contor"><i className="ti ti-x" style={{ fontSize: 13 }} /></button>
+      </div>
+
+      {/* Ultima citire */}
+      {ultima && (
+        <div style={{ padding: '6px 14px', background: 'var(--blue-light)', fontSize: 12, color: 'var(--blue)' }}>
+          Ultima: {ultima.data} → {contor.mod === 'index' ? `${ultima.index} ${contor.um}` : `${fmt(ultima.valoare)} RON`}
+        </div>
+      )}
+
+      {/* Input */}
+      <div style={{ padding: '12px 14px', display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+        {contor.mod === 'index' ? (
+          <div style={{ flex: 1, minWidth: 100 }}>
+            <div style={{ fontSize: 11, color: 'var(--slate)', marginBottom: 4 }}>Index nou ({contor.um})</div>
+            <input type="number" value={index} onChange={e => setIndex(e.target.value)}
+              placeholder={ultima ? `> ${ultima.index}` : 'Index inițial'}
+              style={{ width: '100%', padding: '8px 10px', fontSize: 18, fontWeight: 700, textAlign: 'center', border: '2px solid var(--blue)', borderRadius: 8, color: 'var(--blue)', boxSizing: 'border-box' }} />
+            {consum !== null && (
+              <div style={{ fontSize: 11, marginTop: 4, color: 'var(--green)', textAlign: 'center' }}>
+                Consum: <strong>{consum} {contor.um}</strong>
+                {pret > 0 && <> → <strong>{fmt(valCalc)} RON</strong></>}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div style={{ flex: 1, minWidth: 100 }}>
+            <div style={{ fontSize: 11, color: 'var(--slate)', marginBottom: 4 }}>Sumă (RON)</div>
+            <input type="number" value={valoare} onChange={e => setValoare(e.target.value)}
+              placeholder="0.00" step="0.01"
+              style={{ width: '100%', padding: '8px 10px', fontSize: 18, fontWeight: 700, textAlign: 'center', border: '2px solid var(--green)', borderRadius: 8, color: 'var(--green)', boxSizing: 'border-box' }} />
+          </div>
+        )}
+
+        <div>
+          <div style={{ fontSize: 11, color: 'var(--slate)', marginBottom: 4 }}>Data</div>
+          <input type="date" value={data} onChange={e => setData(e.target.value)} style={{ padding: '8px', borderRadius: 8, border: '1px solid var(--border)' }} />
+        </div>
+
+        {/* OCR button for index mode */}
+        {contor.mod === 'index' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <div style={{ fontSize: 11, color: 'var(--slate)', marginBottom: 4 }}>OCR</div>
+            <button className="btn btn-ghost btn-sm" onClick={() => fileRef.current?.click()}
+              title="Fotografiază contorul — OCR automat" disabled={ocrStatus === 'processing'}>
+              <i className={`ti ${ocrStatus === 'processing' ? 'ti-refresh' : 'ti-camera'}`} />
+            </button>
+            <input ref={fileRef} type="file" accept="image/*" capture="environment"
+              onChange={e => handleOCR(e.target.files[0])} style={{ display: 'none' }} />
+            {ocrStatus && (
+              <div style={{ fontSize: 10, color: ocrStatus.startsWith('ok') ? 'var(--green)' : ocrStatus === 'fail' ? 'var(--red)' : 'var(--blue)', whiteSpace: 'nowrap' }}>
+                {ocrStatus === 'processing' ? '🔍 Analizez...' : ocrStatus.startsWith('ok') ? `✅ ${ocrStatus.split(':')[1]}` : '⚠️ Manual'}
+              </div>
+            )}
+          </div>
+        )}
+
+        <button className="btn btn-primary btn-sm" onClick={handleSave} disabled={saving}
+          style={{ padding: '8px 14px', height: 38 }}>
+          {saving ? <i className="ti ti-refresh" /> : <i className="ti ti-device-floppy" />}
+        </button>
+      </div>
+
+      {/* Notă */}
+      <div style={{ padding: '0 14px 10px' }}>
+        <input value={nota} onChange={e => setNota(e.target.value)} placeholder="Notă (opțional)"
+          style={{ width: '100%', padding: '4px 8px', fontSize: 12, border: '1px solid var(--border)', borderRadius: 6, boxSizing: 'border-box' }} />
+      </div>
+
+      {/* Istoric cascade */}
+      {citiri.length > 0 && (
+        <div style={{ borderTop: '1px solid var(--border)' }}>
+          <button onClick={() => setIstoricOpen(o => !o)}
+            style={{ width: '100%', padding: '6px 14px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, color: 'var(--slate)', fontFamily: 'inherit' }}>
+            <span><i className="ti ti-history" style={{ fontSize: 12 }} /> Istoric ({citiri.length} citiri)</span>
+            <i className={`ti ${istoricOpen ? 'ti-chevron-up' : 'ti-chevron-down'}`} style={{ fontSize: 12 }} />
+          </button>
+          {(istoricOpen || citiri.length <= 3) && (
+            <div>
+              <table style={{ fontSize: 11, width: '100%', borderCollapse: 'collapse' }}>
+                <thead style={{ background: 'var(--slate-light)' }}>
+                  <tr>
+                    <th style={{ padding: '4px 14px', textAlign: 'left' }}>Data</th>
+                    {contor.mod === 'index' && <><th style={{ padding: '4px 8px' }}>Index</th><th style={{ padding: '4px 8px' }}>Consum</th></>}
+                    <th style={{ padding: '4px 14px', textAlign: 'right' }}>Valoare</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {istoRender.map((cit, i) => (
+                    <tr key={cit.id} style={{ background: i === 0 ? 'var(--blue-light)' : i % 2 === 0 ? 'white' : 'var(--slate-light)' }}>
+                      <td style={{ padding: '4px 14px', fontWeight: i === 0 ? 600 : 400 }}>{cit.data}</td>
+                      {contor.mod === 'index' && (
+                        <>
+                          <td style={{ padding: '4px 8px', textAlign: 'center' }}>{cit.index} {contor.um}</td>
+                          <td style={{ padding: '4px 8px', textAlign: 'center', color: 'var(--green)', fontWeight: 600 }}>{cit.consum ?? '—'}</td>
+                        </>
+                      )}
+                      <td style={{ padding: '4px 14px', textAlign: 'right', fontWeight: 500 }}>
+                        {cit.valoare != null ? fmt(cit.valoare) + ' RON' : '—'}
+                      </td>
+                      <td style={{ padding: '4px 8px' }}>
+                        <button className="remove-btn" onClick={() => deleteCitire2(cit.id).then(onSave)}>
+                          <i className="ti ti-x" style={{ fontSize: 11 }} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {!istoricOpen && citiri.length > 3 && (
+                <div style={{ padding: '4px 14px', fontSize: 11, color: 'var(--slate)' }}>
+                  + {citiri.length - 3} citiri mai vechi...
+                </div>
+              )}
+              <div style={{ padding: '6px 14px', borderTop: '1px solid var(--border)' }}>
+                <button className="btn btn-ghost btn-sm" style={{ fontSize: 11 }}
+                  onClick={() => exportIstoricContor(contor, citiri)}>
+                  <i className="ti ti-download" /> Export PDF istoric complet
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Modal contor nou ──────────────────────────────────────────
+function ModalContorNou({ spatiu, imobil, contoareExistente, allSpatiiImobil, onSave, onClose }) {
+  const [denumire, setDenumire] = useState('')
+  const [um,       setUm]       = useState('')
+  const [mod,      setMod]      = useState('index')
+  const [dest,     setDest]     = useState('chirias')
+  const [copyFrom, setCopyFrom] = useState('')
+  const [saving,   setSaving]   = useState(false)
+  const toast = useToast()
+
+  const handleCopy = (spatiuId) => {
+    setCopyFrom(spatiuId)
+    // Just set the spatiuId — user will choose which contor to copy
+  }
+
+  const handleSave = async () => {
+    if (!denumire.trim()) { toast('Completează denumirea.', 'error'); return }
+    if (!um.trim()) { toast('Completează unitatea de măsură.', 'error'); return }
+    setSaving(true)
+    try {
+      await saveContor({
+        spatiuId: spatiu.id,
+        imobilId: imobil?.id || spatiu.imobilId,
+        denumire: denumire.trim(),
+        um: um.trim(),
+        mod,
+        destinatie: dest,
+        ordine: contoareExistente.length,
+      })
+      toast('Contor adăugat!')
+      onSave()
+      onClose()
+    } catch { toast('Eroare.', 'error') }
+    finally { setSaving(false) }
+  }
+
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal-box" style={{ width: 520 }}>
+        <div className="modal-head">
+          <h3>Contor nou — {spatiu?.denumire}</h3>
+          <button className="modal-close" onClick={onClose}><i className="ti ti-x" /></button>
+        </div>
+        <div className="modal-body">
+
+          {/* Copiere de la alt spațiu */}
+          {allSpatiiImobil?.length > 0 && (
+            <div style={{ marginBottom: 16, padding: 12, background: 'var(--blue-light)', borderRadius: 8, fontSize: 13 }}>
+              <div style={{ fontWeight: 600, marginBottom: 8, color: 'var(--blue)' }}>
+                <i className="ti ti-copy" /> Copiază configurație de la alt spațiu
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {allSpatiiImobil.filter(s => s.id !== spatiu.id).map(s => (
+                  <button key={s.id} className="btn btn-ghost btn-sm" onClick={async () => {
+                    const ct = await import('../firebase/firestore').then(m => m.getContoareSpatiu(s.id))
+                    if (ct.length === 0) { toast('Niciun contor pe spațiul ales.', 'error'); return }
+                    // Use first contor as template
+                    const tpl = ct[0]
+                    setDenumire(tpl.denumire); setUm(tpl.um); setMod(tpl.mod); setDest(tpl.destinatie || 'chirias')
+                    toast(`Template copiat de la ${s.denumire}`)
+                  }}>
+                    {s.denumire}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="form-grid">
+            <div className="form-group full">
+              <label>Denumire contor *</label>
+              <input value={denumire} onChange={e => setDenumire(e.target.value)}
+                placeholder="ex. Apometru rece bucătărie, Energie electrică, Internet" autoFocus />
+            </div>
+            <div className="form-group">
+              <label>Unitate de măsură *</label>
+              <input value={um} onChange={e => setUm(e.target.value)}
+                placeholder="mc / kWh / RON" />
+            </div>
+            <div className="form-group">
+              <label>Mod calcul</label>
+              <select value={mod} onChange={e => setMod(e.target.value)}>
+                <option value="index">Index — consum automat (contor fizic)</option>
+                <option value="fix">Sumă fixă — introduci suma direct</option>
+                <option value="bloc">Sumă bloc — suma de la administrație</option>
+              </select>
+            </div>
+            <div className="form-group full">
+              <label>Destinație</label>
+              <select value={dest} onChange={e => setDest(e.target.value)}>
+                <option value="administratie">Administrație bloc — indexul merge la bloc</option>
+                <option value="chirias">Chiriaș — apare pe nota/factura chiriașului</option>
+                <option value="intern">Intern — doar pentru evidență</option>
+              </select>
+              <div style={{ fontSize: 11, color: 'var(--slate)', marginTop: 4 }}>
+                {dest === 'administratie' && '📊 Indexul se trimite administrației. Suma primită de la bloc se introduce separat ca contor "bloc".'}
+                {dest === 'chirias' && '👤 Apare pe nota de calcul sau factura chiriașului.'}
+                {dest === 'intern' && '🔒 Doar pentru evidență internă — nu apare pe nicio notă.'}
+              </div>
+            </div>
+          </div>
+
+          {/* Info mod */}
+          <div style={{ marginTop: 8, padding: 10, background: 'var(--slate-light)', borderRadius: 8, fontSize: 12, color: 'var(--slate)' }}>
+            {mod === 'index' && '📊 Introduci indexul la fiecare citire. Consumul se calculează automat. OCR disponibil.'}
+            {mod === 'fix' && '💶 Introduci suma RON direct (ex. abonament internet 50 RON/lună).'}
+            {mod === 'bloc' && '🏢 Suma comunicată de administrația blocului (apă, întreținere).'}
+          </div>
+        </div>
+        <div className="modal-footer">
+          <button className="btn btn-ghost" onClick={onClose}>Anulează</button>
+          <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
+            <i className="ti ti-plus" /> {saving ? 'Se salvează...' : 'Adaugă contor'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Pagina principală ─────────────────────────────────────────
 export default function Utilitati() {
   const navigate  = useNavigate()
   const toast     = useToast()
-  const { isAdmin } = useAuth()
   const { imobile } = useImobile()
 
-  const [spatii,     setSpatii]     = useState([])
+  const [allSpatii,  setAllSpatii]  = useState([])
   const [clienti,    setClienti]    = useState([])
+  const [allImobile, setAllImobile] = useState([])
   const [imobilId,   setImobilId]   = useState('')
   const [spatiuId,   setSpatiuId]   = useState('')
   const [contoare,   setContoare]   = useState([])
-  const [citiriMap,  setCitiriMap]  = useState({}) // contorId → [citiri]
+  const [citiriMap,  setCitiriMap]  = useState({})
   const [preturi,    setPreturi]    = useState({})
+  const [spatiu,     setSpatiu]     = useState(null)
   const [loading,    setLoading]    = useState(false)
-
-  // State pentru citiri noi (toate deodată)
-  const [noileCitiri, setNoileCitiri] = useState({}) // contorId → { index, valoare, data, nota }
-  const [saving,     setSaving]     = useState(false)
-
-  // Modal contor nou
-  const [modalContor, setModalContor] = useState(false)
-  const [formContor,  setFormContor]  = useState({ tip: 'Energie electrică', um: 'kWh', mod: 'index', denumireCustom: '' })
+  const [modalContor,setModalContor]= useState(false)
+  const [exporting,  setExporting]  = useState(false)
 
   useEffect(() => {
-    Promise.all([getSpatii(), getClienti()]).then(([sp, cl]) => {
-      setSpatii(sp); setClienti(cl)
+    Promise.all([getSpatii(), getClienti(), getImobile()]).then(([sp, cl, im]) => {
+      setAllSpatii(sp); setClienti(cl); setAllImobile(im)
     })
   }, [imobile])
 
-  const spatiiImobil = spatii.filter(s => s.imobilId === imobilId)
-  const spatiu       = spatii.find(s => s.id === spatiuId)
-  const client       = clienti.find(c => spatiu?.clienti?.find(sc => sc.clientId === c.id && sc.rol === 'Chiriaș principal') || c.id === spatiu?.clientId)
-  const isPF         = client?.tip === 'PF'
+  const spatiiImobil = allSpatii.filter(s => s.imobilId === imobilId)
+  const imobilCurent = allImobile.find(im => im.id === imobilId)
 
   const loadContoare = useCallback(async () => {
-    if (!spatiuId) { setContoare([]); setCitiriMap({}); return }
+    if (!spatiuId) return
     setLoading(true)
+    const sp = allSpatii.find(s => s.id === spatiuId)
+    setSpatiu(sp)
     const [ct, pr] = await Promise.all([
       getContoareSpatiu(spatiuId),
       imobilId ? getPreturiImobil(imobilId) : Promise.resolve({})
     ])
     setContoare(ct)
     setPreturi(pr)
-    // Load citiri per contor
     const map = {}
     await Promise.all(ct.map(async c => { map[c.id] = await getCitiriContor(c.id) }))
     setCitiriMap(map)
-    // Init noileCitiri
-    const init = {}
-    ct.forEach(c => { init[c.id] = { index: '', valoare: '', data: TODAY, nota: '' } })
-    setNoileCitiri(init)
     setLoading(false)
-  }, [spatiuId, imobilId])
+  }, [spatiuId, imobilId, allSpatii])
 
   useEffect(() => { loadContoare() }, [loadContoare])
 
-  // ── Helpers ───────────────────────────────────────────────────
-  const getPret = (contor) => preturi[contor.tip] || preturi[contor.um] || 0
+  const client = clienti.find(c =>
+    spatiu?.clienti?.find(sc => sc.clientId === c.id && sc.rol === 'Chiriaș principal') ||
+    c.id === spatiu?.clientId
+  )
 
-  const calcConsum = (contor) => {
-    const citiri = citiriMap[contor.id] || []
-    const ultima = citiri[0]
-    const nou    = noileCitiri[contor.id]
-    if (contor.mod !== 'index' || !nou?.index || !ultima?.index) return null
-    return Math.max(0, Number(nou.index) - Number(ultima.index))
-  }
-
-  const calcValoare = (contor) => {
-    const nou = noileCitiri[contor.id]
-    if (contor.mod === 'index') {
-      const consum = calcConsum(contor)
-      if (consum === null) return null
-      return consum * getPret(contor)
-    }
-    return Number(nou?.valoare) || null
-  }
-
-  const updateCitire = (contorId, field, value) =>
-    setNoileCitiri(prev => ({ ...prev, [contorId]: { ...prev[contorId], [field]: value } }))
-
-  // ── Salvare toate citirile ────────────────────────────────────
-  const handleSaveAll = async () => {
-    const contoareCuDate = contoare.filter(c => {
-      const nou = noileCitiri[c.id]
-      return c.mod === 'index' ? !!nou?.index : !!nou?.valoare
-    })
-    if (contoareCuDate.length === 0) { toast('Nu ai introdus nicio citire.', 'error'); return }
-    setSaving(true)
-    try {
-      await Promise.all(contoareCuDate.map(async c => {
-        const nou    = noileCitiri[c.id]
-        const citiri = citiriMap[c.id] || []
-        const ultima = citiri[0]
-        const consum = c.mod === 'index' && ultima?.index !== undefined
-          ? Math.max(0, Number(nou.index) - Number(ultima.index))
-          : null
-        const pret    = getPret(c)
-        const valoare = c.mod === 'index'
-          ? (consum !== null ? consum * pret : null)
-          : Number(nou.valoare)
-        await saveCitire({
-          contorId:  c.id,
-          spatiuId,
-          imobilId,
-          tip:       c.tip,
-          um:        c.um,
-          mod:       c.mod,
-          index:     c.mod === 'index' ? Number(nou.index) : null,
-          indexPrecedent: ultima?.index ?? null,
-          consum,
-          pret,
-          valoare,
-          data:      nou.data || TODAY,
-          nota:      nou.nota || '',
-        })
-      }))
-      toast(`${contoareCuDate.length} citiri salvate!`)
-      await loadContoare()
-    } catch (err) { toast('Eroare: ' + err.message, 'error') }
-    finally { setSaving(false) }
-  }
-
-  // ── Adaugă contor ─────────────────────────────────────────────
-  const handleAddContor = async () => {
-    const tipDef = TIPURI_CONTOR.find(t => t.tip === formContor.tip)
-    const data = {
-      spatiuId,
-      imobilId,
-      tip:      formContor.tip === 'Altul' ? formContor.denumireCustom : formContor.tip,
-      um:       formContor.um || tipDef?.um || '',
-      mod:      formContor.mod || tipDef?.mod || 'index',
-      ordine:   contoare.length,
-    }
-    if (!data.tip) { toast('Completează tipul contorului.', 'error'); return }
-    setSaving(true)
-    try {
-      await saveContor(data)
-      toast('Contor adăugat!')
-      setModalContor(false)
-      await loadContoare()
-    } catch { toast('Eroare.', 'error') }
-    finally { setSaving(false) }
-  }
+  const modUtilitati = spatiu?.modUtilitati || (client?.tip === 'PJ' ? 'factura' : 'nota')
 
   const handleDeleteContor = async (c) => {
-    if (!confirm(`Ștergi contorul "${c.tip}" și toate citirile?`)) return
-    await deleteContor(c.id)
-    toast('Contor șters.')
-    await loadContoare()
+    if (!confirm(`Ștergi contorul "${c.denumire}" și toate citirile?`)) return
+    await deleteContor(c.id); toast('Contor șters.'); loadContoare()
   }
 
-  const handleDeleteCitire = async (citireId) => {
-    if (!confirm('Ștergi această citire?')) return
-    await deleteCitire2(citireId)
-    toast('Citire ștearsă.')
-    await loadContoare()
+  const handleExportAll = async () => {
+    setExporting(true)
+    try {
+      const all = await getAllContoareCuCitiri()
+      await exportDateContoare(all, allSpatii, allImobile)
+      toast('Export generat!')
+    } catch { toast('Eroare la export.', 'error') }
+    finally { setExporting(false) }
   }
 
-  const tipInfo = (tip) => TIPURI_CONTOR.find(t => t.tip === tip) || TIPURI_CONTOR[6]
+  // Grupare contoare pe destinație
+  const ctAdministratie = contoare.filter(c => c.destinatie === 'administratie')
+  const ctBloc          = contoare.filter(c => c.mod === 'bloc')
+  const ctChirias       = contoare.filter(c => c.destinatie === 'chirias' && c.mod !== 'bloc')
+  const ctIntern        = contoare.filter(c => c.destinatie === 'intern')
+
+  // Total chiriaș
+  const totalChirias = contoare
+    .filter(c => c.destinatie === 'chirias' || c.mod === 'bloc')
+    .reduce((sum, c) => {
+      const cits = citiriMap[c.id] || []
+      const ultima = cits[0]
+      return sum + (ultima?.valoare || 0)
+    }, 0)
 
   return (
     <>
-      <Topbar title="Utilități" subtitle="Citiri contoare și consum per spațiu" />
+      <Topbar title="Utilități" subtitle="Contoare personalizate per spațiu">
+        <button className="btn btn-ghost btn-sm" onClick={handleExportAll} disabled={exporting}>
+          <i className={`ti ${exporting ? 'ti-refresh' : 'ti-download'}`} /> Export toate datele
+        </button>
+      </Topbar>
 
       <div className="content">
-        {/* Selector imobil → spațiu */}
-        <div className="card" style={{ marginBottom: 20, padding: 16 }}>
+        {/* Selector */}
+        <div className="card" style={{ marginBottom: 16, padding: 16 }}>
           <div style={{ display: 'flex', gap: 16, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-            <div className="form-group" style={{ flex: 1, minWidth: 200, marginBottom: 0 }}>
+            <div className="form-group" style={{ flex: 1, minWidth: 180, marginBottom: 0 }}>
               <label>Imobil</label>
               <select value={imobilId} onChange={e => { setImobilId(e.target.value); setSpatiuId('') }}>
                 <option value="">— Alege imobil —</option>
@@ -201,318 +437,166 @@ export default function Utilitati() {
               </select>
             </div>
             {imobilId && (
-              <div className="form-group" style={{ flex: 1, minWidth: 200, marginBottom: 0 }}>
+              <div className="form-group" style={{ flex: 1, minWidth: 180, marginBottom: 0 }}>
                 <label>Spațiu</label>
                 <select value={spatiuId} onChange={e => setSpatiuId(e.target.value)}>
                   <option value="">— Alege spațiu —</option>
-                  {spatiiImobil.map(s => (
-                    <option key={s.id} value={s.id}>
-                      {s.denumire}{s.suprafata ? ` (${s.suprafata} mp)` : ''}
-                    </option>
-                  ))}
+                  {spatiiImobil.map(s => <option key={s.id} value={s.id}>{s.denumire}</option>)}
                 </select>
               </div>
             )}
-            {spatiuId && client && (
-              <div style={{ fontSize: 13, color: 'var(--slate)', paddingBottom: 6 }}>
-                <span style={{ fontWeight: 500 }}>{client.nume}</span>
-                <span className={`badge ${isPF ? 'badge-green' : 'badge-blue'}`} style={{ marginLeft: 8, fontSize: 10 }}>
-                  {isPF ? 'PF' : 'PJ'}
-                </span>
+            {spatiu && (
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center', paddingBottom: 4 }}>
+                <span style={{ fontSize: 12, color: 'var(--slate)' }}>Mod:</span>
+                {['nota', 'factura'].map(m => (
+                  <button key={m} onClick={() => updateSpatiuMod(spatiuId, m).then(loadContoare)}
+                    className={`btn btn-sm ${modUtilitati === m ? 'btn-primary' : 'btn-ghost'}`}>
+                    {m === 'nota' ? '🧮 Notă calcul' : '🧾 Facturare'}
+                  </button>
+                ))}
               </div>
             )}
           </div>
         </div>
 
-        {/* Prețuri imobil — link rapid */}
-        {imobilId && (
-          <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--slate)' }}>
-            <i className="ti ti-info-circle" />
-            Prețuri per unitate pentru acest imobil:
-            {Object.keys(preturi).length === 0
-              ? <span style={{ color: 'var(--amber)' }}>Nesetate — </span>
-              : Object.entries(preturi).filter(([k]) => k !== 'updatedAt').map(([k, v]) => (
-                  <span key={k} style={{ background: 'var(--slate-light)', borderRadius: 4, padding: '2px 8px' }}>
-                    {k}: <strong>{v} RON/{k === 'Internet' ? 'lună' : k === 'Energie electrică' ? 'kWh' : 'mc'}</strong>
-                  </span>
-                ))
-            }
-            <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/config?tab=preturi&imobilId=${imobilId}`)}>
-              <i className="ti ti-settings" /> Setează prețuri
-            </button>
-          </div>
-        )}
-
-        {/* Loading */}
         {loading && <div className="empty"><i className="ti ti-refresh" /><p>Se încarcă...</p></div>}
 
-        {/* Contoare + citiri noi */}
         {!loading && spatiuId && (
           <>
-            {/* Header acțiuni */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <div style={{ fontSize: 14, fontWeight: 600 }}>
-                Contoare — {spatiu?.denumire}
-                <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--slate)', marginLeft: 8 }}>
-                  {contoare.length} contoare configurate
-                </span>
-              </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button className="btn btn-ghost btn-sm" onClick={() => {
-                  setFormContor({ tip: 'Energie electrică', um: 'kWh', mod: 'index', denumireCustom: '' })
-                  setModalContor(true)
-                }}>
-                  <i className="ti ti-plus" /> Contor nou
-                </button>
-                {contoare.length > 0 && (
-                  <button className="btn btn-primary btn-sm" onClick={handleSaveAll} disabled={saving}>
-                    <i className={`ti ${saving ? 'ti-refresh' : 'ti-device-floppy'}`} />
-                    {saving ? 'Se salvează…' : 'Salvează toate citirile'}
-                  </button>
-                )}
-              </div>
+            {/* Buton adaugă contor */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+              <button className="btn btn-primary btn-sm" onClick={() => setModalContor(true)}>
+                <i className="ti ti-plus" /> Contor nou
+              </button>
             </div>
 
-            {contoare.length === 0 ? (
+            {contoare.length === 0 && (
               <div className="card">
                 <div className="empty">
                   <i className="ti ti-plug" />
-                  <p>Niciun contor configurat. Adaugă primul contor pentru acest spațiu.</p>
+                  <p>Niciun contor. Adaugă primul contor pentru <strong>{spatiu?.denumire}</strong>.</p>
                 </div>
               </div>
-            ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 16 }}>
-                {contoare.map(c => {
-                  const info    = tipInfo(c.tip)
-                  const citiri  = citiriMap[c.id] || []
-                  const ultima  = citiri[0]
-                  const nou     = noileCitiri[c.id] || {}
-                  const consum  = calcConsum(c)
-                  const valoare = calcValoare(c)
-                  const pret    = getPret(c)
+            )}
 
-                  return (
-                    <div key={c.id} className="card">
-                      {/* Header contor */}
-                      <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid var(--border)' }}>
-                        <div style={{ width: 36, height: 36, borderRadius: 8, background: info.color + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          <i className={`ti ${info.icon}`} style={{ color: info.color, fontSize: 18 }} />
-                        </div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontWeight: 600, fontSize: 14 }}>{c.tip}</div>
-                          <div style={{ fontSize: 11, color: 'var(--slate)' }}>
-                            {c.mod === 'index' ? `Index · ${c.um}` : c.mod === 'fix' ? 'Sumă fixă lunară' : 'Sumă bloc'}
-                            {pret > 0 && c.mod === 'index' && ` · ${pret} RON/${c.um}`}
-                          </div>
-                        </div>
-                        <button className="remove-btn" onClick={() => handleDeleteContor(c)} title="Șterge contor">
-                          <i className="ti ti-x" style={{ fontSize: 14 }} />
-                        </button>
-                      </div>
+            {/* ── SECȚIUNEA ADMINISTRAȚIE BLOC ──────────────── */}
+            {ctAdministratie.length > 0 && (
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, padding: '6px 12px', background: '#7c3aed20', borderRadius: 8, border: '1px solid #7c3aed40' }}>
+                  <i className="ti ti-building" style={{ color: '#7c3aed' }} />
+                  <span style={{ fontWeight: 700, fontSize: 13, color: '#7c3aed', textTransform: 'uppercase', letterSpacing: '.5px' }}>
+                    Administrație bloc
+                  </span>
+                  <span style={{ fontSize: 11, color: '#7c3aed80' }}>— indexuri transmise la bloc</span>
+                </div>
+                {ctAdministratie.map(c => (
+                  <ContorCard key={c.id} contor={c} citiri={citiriMap[c.id] || []}
+                    preturi={preturi} onSave={loadContoare} onDelete={handleDeleteContor}
+                    onExportIstoric={exportIstoricContor} />
+                ))}
+                <button className="btn btn-ghost btn-sm" style={{ width: '100%', marginBottom: 8 }}
+                  onClick={() => navigate(`/nota-administratie?imobilId=${imobilId}&spatiuId=${spatiuId}`)}>
+                  <i className="ti ti-file-text" /> Generează notă administrație
+                </button>
+              </div>
+            )}
 
-                      <div style={{ padding: 14 }}>
-                        {/* Ultima citire */}
-                        {ultima ? (
-                          <div style={{ background: 'var(--blue-light)', borderRadius: 8, padding: '8px 12px', marginBottom: 14, fontSize: 12 }}>
-                            <span style={{ color: 'var(--slate)' }}>Ultima citire ({ultima.data}): </span>
-                            {c.mod === 'index'
-                              ? <strong>{ultima.index} {c.um}</strong>
-                              : <strong>{fmt(ultima.valoare)} RON</strong>
-                            }
-                          </div>
-                        ) : (
-                          <div style={{ background: 'var(--amber-light)', borderRadius: 8, padding: '8px 12px', marginBottom: 14, fontSize: 12, color: 'var(--amber)' }}>
-                            <i className="ti ti-alert-triangle" style={{ fontSize: 12 }} /> Prima citire — introdu indexul inițial
-                          </div>
-                        )}
+            {/* ── SECȚIUNEA SUMĂ BLOC ───────────────────────── */}
+            {ctBloc.length > 0 && (
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, padding: '6px 12px', background: '#0284c720', borderRadius: 8, border: '1px solid #0284c740' }}>
+                  <i className="ti ti-currency-leu" style={{ color: '#0284c7' }} />
+                  <span style={{ fontWeight: 700, fontSize: 13, color: '#0284c7', textTransform: 'uppercase', letterSpacing: '.5px' }}>
+                    Sumă comunicată de bloc
+                  </span>
+                  <span style={{ fontSize: 11, color: '#0284c780' }}>— introdusă după primirea chitanței</span>
+                </div>
+                {ctBloc.map(c => (
+                  <ContorCard key={c.id} contor={c} citiri={citiriMap[c.id] || []}
+                    preturi={preturi} onSave={loadContoare} onDelete={handleDeleteContor}
+                    onExportIstoric={exportIstoricContor} />
+                ))}
+              </div>
+            )}
 
-                        {/* Input citire nouă */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
-                          {c.mod === 'index' ? (
-                            <div className="form-group" style={{ marginBottom: 0 }}>
-                              <label>Index nou ({c.um})</label>
-                              <input
-                                type="number"
-                                value={nou.index || ''}
-                                onChange={e => updateCitire(c.id, 'index', e.target.value)}
-                                placeholder={ultima ? `> ${ultima.index}` : 'Index inițial'}
-                                style={{ textAlign: 'center', fontWeight: 700, fontSize: 16 }}
-                              />
-                            </div>
-                          ) : (
-                            <div className="form-group" style={{ marginBottom: 0 }}>
-                              <label>Sumă (RON)</label>
-                              <input
-                                type="number"
-                                value={nou.valoare || ''}
-                                onChange={e => updateCitire(c.id, 'valoare', e.target.value)}
-                                placeholder="0.00"
-                                step="0.01"
-                                style={{ textAlign: 'center', fontWeight: 700, fontSize: 16 }}
-                              />
-                            </div>
-                          )}
-                          <div className="form-group" style={{ marginBottom: 0 }}>
-                            <label>Data citirii</label>
-                            <input type="date" value={nou.data || TODAY} onChange={e => updateCitire(c.id, 'data', e.target.value)} />
-                          </div>
-                        </div>
+            {/* ── ALTE UTILITĂȚI (chiriaș) ──────────────────── */}
+            {ctChirias.length > 0 && (
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, padding: '6px 12px', background: '#16a34a20', borderRadius: 8, border: '1px solid #16a34a40' }}>
+                  <i className="ti ti-plug" style={{ color: '#16a34a' }} />
+                  <span style={{ fontWeight: 700, fontSize: 13, color: '#16a34a', textTransform: 'uppercase', letterSpacing: '.5px' }}>
+                    Utilități chiriaș
+                  </span>
+                </div>
+                {ctChirias.map(c => (
+                  <ContorCard key={c.id} contor={c} citiri={citiriMap[c.id] || []}
+                    preturi={preturi} onSave={loadContoare} onDelete={handleDeleteContor}
+                    onExportIstoric={exportIstoricContor} />
+                ))}
+              </div>
+            )}
 
-                        {/* Preview calcul */}
-                        {c.mod === 'index' && nou.index && ultima && (
-                          <div style={{ background: consum >= 0 ? '#f0fdf4' : '#fef2f2', border: `1px solid ${consum >= 0 ? '#86efac' : '#fca5a5'}`, borderRadius: 8, padding: '8px 12px', marginBottom: 10, fontSize: 12 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                              <span>Consum: <strong>{consum} {c.um}</strong></span>
-                              {pret > 0 && <span>Valoare: <strong style={{ color: 'var(--green)' }}>{fmt(valoare)} RON</strong></span>}
-                            </div>
-                          </div>
-                        )}
+            {/* ── INTERN ───────────────────────────────────── */}
+            {ctIntern.length > 0 && (
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, padding: '6px 12px', background: 'var(--slate-light)', borderRadius: 8 }}>
+                  <i className="ti ti-lock" style={{ color: 'var(--slate)' }} />
+                  <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '.5px' }}>Intern</span>
+                </div>
+                {ctIntern.map(c => (
+                  <ContorCard key={c.id} contor={c} citiri={citiriMap[c.id] || []}
+                    preturi={preturi} onSave={loadContoare} onDelete={handleDeleteContor}
+                    onExportIstoric={exportIstoricContor} />
+                ))}
+              </div>
+            )}
 
-                        <div className="form-group" style={{ marginBottom: 0 }}>
-                          <label>Notă (opțional)</label>
-                          <input value={nou.nota || ''} onChange={e => updateCitire(c.id, 'nota', e.target.value)} placeholder="ex. Citire estimată" />
-                        </div>
-                      </div>
-
-                      {/* Istoric citiri */}
-                      {citiri.length > 0 && (
-                        <div style={{ borderTop: '1px solid var(--border)' }}>
-                          <div style={{ padding: '8px 16px', fontSize: 11, fontWeight: 600, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '.5px', background: 'var(--slate-light)' }}>
-                            Istoric
-                          </div>
-                          <table style={{ fontSize: 12 }}>
-                            <thead>
-                              <tr>
-                                <th>Data</th>
-                                {c.mod === 'index' && <><th>Index</th><th>Consum</th></>}
-                                <th>Valoare</th>
-                                <th></th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {citiri.slice(0, 6).map((cit, i) => (
-                                <tr key={cit.id} style={{ background: i === 0 ? 'var(--blue-light)' : 'transparent' }}>
-                                  <td style={{ fontWeight: i === 0 ? 600 : 400 }}>{cit.data}</td>
-                                  {c.mod === 'index' && (
-                                    <>
-                                      <td><strong>{cit.index} {c.um}</strong></td>
-                                      <td style={{ color: 'var(--green)', fontWeight: 600 }}>
-                                        {cit.consum != null ? `${cit.consum} ${c.um}` : '—'}
-                                      </td>
-                                    </>
-                                  )}
-                                  <td style={{ color: 'var(--green)', fontWeight: 500 }}>
-                                    {cit.valoare != null ? fmt(cit.valoare) + ' RON' : '—'}
-                                  </td>
-                                  <td>
-                                    <button className="remove-btn" onClick={() => handleDeleteCitire(cit.id)}>
-                                      <i className="ti ti-x" style={{ fontSize: 12 }} />
-                                    </button>
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
+            {/* ── TOTAL CHIRIAȘ ─────────────────────────────── */}
+            {(ctChirias.length > 0 || ctBloc.length > 0) && (
+              <div style={{ background: 'var(--blue)', borderRadius: 10, padding: '14px 20px', marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ color: 'white' }}>
+                  <div style={{ fontSize: 12, opacity: 0.8 }}>TOTAL DE COMUNICAT CHIRIAȘULUI</div>
+                  <div style={{ fontSize: 11, opacity: 0.6 }}>Din ultima citire per contor</div>
+                </div>
+                <div style={{ color: 'white', fontSize: 24, fontWeight: 700 }}>{fmt(totalChirias)} RON</div>
               </div>
             )}
 
             {/* Acțiuni finale */}
-            {contoare.length > 0 && spatiuId && (
-              <div style={{ marginTop: 20, display: 'flex', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-                <button className="btn btn-primary btn-sm" onClick={handleSaveAll} disabled={saving}>
-                  <i className={`ti ${saving ? 'ti-refresh' : 'ti-device-floppy'}`} />
-                  {saving ? 'Se salvează…' : 'Salvează toate citirile'}
-                </button>
-                {isPF ? (
+            {contoare.length > 0 && (
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                {modUtilitati === 'nota' ? (
                   <button className="btn btn-primary" onClick={() => navigate(`/nota-calcul?spatiuId=${spatiuId}`)}>
-                    <i className="ti ti-calculator" /> Notă utilități PF
+                    <i className="ti ti-calculator" /> Generează notă chiriaș
                   </button>
                 ) : (
                   <button className="btn btn-primary" onClick={() => navigate(`/emite-utilitati?spatiuId=${spatiuId}`)}>
-                    <i className="ti ti-receipt" /> Factură utilități PJ
+                    <i className="ti ti-receipt" /> Generează factură utilități
                   </button>
                 )}
-                <button className="btn btn-ghost" onClick={() => navigate(`/nota-administratie?imobilId=${imobilId}&spatiuId=${spatiuId}`)}>
-                  <i className="ti ti-droplet" /> Notă apă bloc
-                </button>
               </div>
             )}
           </>
         )}
 
-        {!spatiuId && !loading && imobilId && (
-          <div className="empty"><i className="ti ti-building" /><p>Selectează un spațiu pentru a vedea utilitățile.</p></div>
+        {!spatiuId && imobilId && !loading && (
+          <div className="empty"><i className="ti ti-building" /><p>Selectează un spațiu.</p></div>
         )}
         {!imobilId && !loading && (
           <div className="empty"><i className="ti ti-home" /><p>Selectează un imobil pentru a începe.</p></div>
         )}
       </div>
 
-      {/* ── Modal contor nou ──────────────────────────────────── */}
+      {/* Modal contor nou */}
       {modalContor && (
-        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setModalContor(false)}>
-          <div className="modal-box" style={{ width: 460 }}>
-            <div className="modal-head">
-              <h3>Adaugă contor — {spatiu?.denumire}</h3>
-              <button className="modal-close" onClick={() => setModalContor(false)}><i className="ti ti-x" /></button>
-            </div>
-            <div className="modal-body">
-              <div className="form-group" style={{ marginBottom: 14 }}>
-                <label>Tip utilitate</label>
-                <select value={formContor.tip} onChange={e => {
-                  const found = TIPURI_CONTOR.find(t => t.tip === e.target.value)
-                  setFormContor(f => ({ ...f, tip: e.target.value, um: found?.um || '', mod: found?.mod || 'index' }))
-                }}>
-                  {TIPURI_CONTOR.map(t => (
-                    <option key={t.tip} value={t.tip}>
-                      {t.tip} — {t.mod === 'index' ? 'cu index' : t.mod === 'fix' ? 'sumă fixă' : 'sumă bloc'}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {formContor.tip === 'Altul' && (
-                <div className="form-grid">
-                  <div className="form-group">
-                    <label>Denumire *</label>
-                    <input value={formContor.denumireCustom} onChange={e => setFormContor(f => ({ ...f, denumireCustom: e.target.value }))} placeholder="ex. Aer condiționat" />
-                  </div>
-                  <div className="form-group">
-                    <label>Unitate măsură</label>
-                    <input value={formContor.um} onChange={e => setFormContor(f => ({ ...f, um: e.target.value }))} placeholder="kWh / mc / RON" />
-                  </div>
-                </div>
-              )}
-
-              <div className="form-group">
-                <label>Mod calcul</label>
-                <select value={formContor.mod} onChange={e => setFormContor(f => ({ ...f, mod: e.target.value }))}>
-                  <option value="index">Index — calcul consum automat (contor propriu)</option>
-                  <option value="fix">Sumă fixă — introduci suma lunară direct</option>
-                  <option value="bloc">Sumă bloc — suma primită de la administrație</option>
-                </select>
-              </div>
-
-              {/* Info per mod */}
-              <div style={{ marginTop: 12, padding: 12, background: 'var(--blue-light)', borderRadius: 8, fontSize: 12, color: 'var(--slate)' }}>
-                {formContor.mod === 'index' && '📊 Introduci indexul la fiecare citire. Consumul se calculează automat față de citirea anterioară.'}
-                {formContor.mod === 'fix'   && '💶 Introduci suma fixă în RON la fiecare perioadă (ex. internet: 50 RON/lună).'}
-                {formContor.mod === 'bloc'  && '🏢 Introduci suma primită de la administrația blocului pentru apă/întreținere.'}
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button className="btn btn-ghost" onClick={() => setModalContor(false)}>Anulează</button>
-              <button className="btn btn-primary" onClick={handleAddContor} disabled={saving}>
-                <i className="ti ti-plus" /> Adaugă contor
-              </button>
-            </div>
-          </div>
-        </div>
+        <ModalContorNou
+          spatiu={spatiu}
+          imobil={imobilCurent}
+          contoareExistente={contoare}
+          allSpatiiImobil={spatiiImobil}
+          onSave={loadContoare}
+          onClose={() => setModalContor(false)}
+        />
       )}
     </>
   )

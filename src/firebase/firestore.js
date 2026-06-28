@@ -399,3 +399,23 @@ export const updateIndexPrimit = async (id, data) =>
 
 export const deleteIndexPrimit = async (id) =>
   deleteDoc(doc(db, 'indexuri_primite', id))
+
+// ── MOD SPAȚIU (nota / factura) ───────────────────────────────
+export const updateSpatiuMod = async (spatiuId, mod) =>
+  updateDoc(doc(db, 'spatii', spatiuId), { modUtilitati: mod })
+
+// ── EXPORT DATE CONTOARE ───────────────────────────────────────
+export const getAllContoareCuCitiri = async () => {
+  const [contoare, citiri] = await Promise.all([
+    getDocs(collection(db, 'contoare')),
+    getDocs(collection(db, 'citiri'))
+  ])
+  const ct = contoare.docs.map(d => ({ id: d.id, ...d.data() }))
+  const ci = citiri.docs.map(d => ({ id: d.id, ...d.data() }))
+  return ct.map(c => ({
+    ...c,
+    citiri: ci
+      .filter(x => x.contorId === c.id)
+      .sort((a, b) => b.data?.localeCompare?.(a.data) || 0)
+  }))
+}
