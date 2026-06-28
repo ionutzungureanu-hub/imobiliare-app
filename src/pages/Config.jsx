@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import Topbar from '../components/Topbar'
 import { useToast } from '../components/Toast'
 import { useAuth } from '../context/AuthContext'
-import { getConfig, saveConfig } from '../firebase/firestore'
+import { getConfig, saveConfig, getImobile, getPreturiImobil, savePreturiImobil } from '../firebase/firestore'
 import { FURNIZORI, testeazaConexiunea } from '../services/facturareApi'
 
 const emptyConfig = () => ({
@@ -21,11 +21,22 @@ export default function Config() {
   const [cfg,      setCfg]      = useState(emptyConfig())
   const [saving,   setSaving]   = useState(false)
   const [testing,  setTesting]  = useState(false)
+  const [allImobile, setAllImobile] = useState([])
+  const [selImobil,  setSelImobil]  = useState('')
+  const [preturi,    setPreturi]    = useState({})
+  const [savingPret, setSavingPret] = useState(false)
+  const [tabConfig,  setTabConfig]  = useState('facturare')
   const [testResult, setTestResult] = useState(null)
 
   useEffect(() => {
     getConfig().then(data => { if (data) setCfg(c => ({ ...emptyConfig(), ...data })) })
+    getImobile().then(setAllImobile)
   }, [])
+
+  useEffect(() => {
+    if (!selImobil) return
+    getPreturiImobil(selImobil).then(p => setPreturi(p || {}))
+  }, [selImobil])
 
   if (!isAdmin) return (
     <div className="content" style={{ paddingTop: 60, textAlign: 'center', color: 'var(--slate)' }}>
@@ -63,8 +74,93 @@ export default function Config() {
 
       <div className="content" style={{ maxWidth: 700 }}>
 
-        {/* ── Integrare facturare ─────────────────────────────── */}
-        <div className="card" style={{ marginBottom: 16 }}>
+        {/* ── Tab-uri Config ──────────────────────────────────── */}
+        <div style={{ display: 'flex', gap: 2, borderBottom: '1px solid var(--border)', marginBottom: 20 }}>
+          {[
+            { key: 'preturi',    label: 'Prețuri utilități', icon: 'ti-currency-leu' },
+            { key: 'facturare', label: 'Integrare facturare', icon: 'ti-plug' },
+            { key: 'emailjs',   label: 'EmailJS', icon: 'ti-mail' },
+            { key: 'firebase',  label: 'Firebase', icon: 'ti-database' },
+          ].map(t => (
+            <button key={t.key} onClick={() => setTabConfig(t.key)} style={{
+              padding: '9px 16px', fontSize: 13, fontWeight: 500, border: 'none', background: 'none',
+              cursor: 'pointer', borderBottom: `2px solid ${tabConfig === t.key ? 'var(--blue)' : 'transparent'}`,
+              color: tabConfig === t.key ? 'var(--blue)' : 'var(--slate)', marginBottom: -1,
+              display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'inherit'
+            }}>
+              <i className={`ti ${t.icon}`} /> {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* ── Prețuri utilități per imobil ─────────────────────── */}
+        {tabConfig === 'preturi' && (
+          <div className="card" style={{ marginBottom: 16 }}>
+            <div className="card-header">
+              <div>
+                <div className="card-title">Prețuri utilități per imobil</div>
+                <div className="card-subtitle">Prețul per unitate se aplică automat la calculul consumului</div>
+              </div>
+            </div>
+            <div className="card-body">
+              <div className="form-group" style={{ marginBottom: 20 }}>
+                <label>Selectează imobil</label>
+                <select value={selImobil} onChange={e => setSelImobil(e.target.value)}>
+                  <option value="">— Alege imobil —</option>
+                  {allImobile.map(im => <option key={im.id} value={im.id}>{im.nume}</option>)}
+                </select>
+              </div>
+
+              {selImobil && (
+                <>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+                    {[
+                      { key: 'Energie electrică', label: 'Energie electrică', um: 'kWh', icon: 'ti-bolt', color: '#f59e0b' },
+                      { key: 'Gaze',              label: 'Gaze',              um: 'mc',  icon: 'ti-flame', color: '#ef4444' },
+                      { key: 'Apă rece',         label: 'Apă rece',         um: 'mc',  icon: 'ti-droplet', color: '#3b82f6' },
+                      { key: 'Apă caldă',        label: 'Apă caldă',        um: 'mc',  icon: 'ti-droplet', color: '#f97316' },
+                      { key: 'Internet',         label: 'Internet',         um: 'lună',icon: 'ti-wifi',    color: '#10b981' },
+                    ].map(u => (
+                      <div key={u.key} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 12, background: 'var(--slate-light)', borderRadius: 8, border: '1px solid var(--border)' }}>
+                        <i className={`ti ${u.icon}`} style={{ color: u.color, fontSize: 20, flexShrink: 0 }} />
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 12, fontWeight: 500, marginBottom: 4 }}>{u.label}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <input
+                              type="number"
+                              value={preturi[u.key] || ''}
+                              onChange={e => setPreturi(p => ({ ...p, [u.key]: e.target.value }))}
+                              placeholder="0.00"
+                              step="0.01"
+                              style={{ width: 80, padding: '4px 8px', fontSize: 13, textAlign: 'right' }}
+                            />
+                            <span style={{ fontSize: 12, color: 'var(--slate)' }}>RON/{u.um}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <button className="btn btn-primary" disabled={savingPret} onClick={async () => {
+                      setSavingPret(true)
+                      try {
+                        await savePreturiImobil(selImobil, preturi)
+                        toast('Prețuri salvate!')
+                      } catch { toast('Eroare.', 'error') }
+                      finally { setSavingPret(false) }
+                    }}>
+                      <i className="ti ti-device-floppy" />
+                      {savingPret ? 'Se salvează…' : 'Salvează prețuri'}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {tabConfig === 'facturare' && <div className="card" style={{ marginBottom: 16 }}>
           <div className="card-header">
             <div>
               <div className="card-title">Integrare facturare</div>
@@ -205,8 +301,8 @@ export default function Config() {
           </div>
         </div>
 
-        {/* ── EmailJS ─────────────────────────────────────────── */}
-        <div className="card" style={{ marginBottom: 16 }}>
+}
+        {tabConfig === 'emailjs' && <div className="card" style={{ marginBottom: 16 }}>
           <div className="card-header">
             <div className="card-title">EmailJS — trimitere emailuri</div>
             <div className="card-subtitle">Configurat prin variabile de mediu Netlify</div>
@@ -230,8 +326,8 @@ export default function Config() {
           </div>
         </div>
 
-        {/* ── Firebase ────────────────────────────────────────── */}
-        <div className="card" style={{ marginBottom: 16 }}>
+}
+        {tabConfig === 'firebase' && <div className="card" style={{ marginBottom: 16 }}>
           <div className="card-header">
             <div className="card-title">Firebase — autentificare și date</div>
           </div>
@@ -257,8 +353,8 @@ service cloud.firestore {
           </div>
         </div>
 
-        {/* ── Netlify Deploy ──────────────────────────────────── */}
-        <div className="card">
+}
+        {tabConfig === 'firebase' && <div className="card">
           <div className="card-header">
             <div className="card-title">Deploy Netlify + GitHub</div>
           </div>
@@ -269,7 +365,7 @@ service cloud.firestore {
               <li>Build command: <code>npm run build</code> · Publish: <code>dist</code></li>
             </ol>
           </div>
-        </div>
+        </div>}
 
       </div>
     </>

@@ -298,3 +298,55 @@ export const addIstoricEntry = async (data) =>
 
 export const updateIstoricEntry = async (id, data) =>
   updateDoc(doc(db, 'istoric_spatiu', id), data)
+
+// ── PREȚURI PER IMOBIL ─────────────────────────────────────────
+export const getPreturiImobil = async (imobilId) => {
+  const snap = await getDoc(doc(db, 'preturi_imobil', imobilId))
+  return snap.exists() ? snap.data() : {}
+}
+
+export const savePreturiImobil = async (imobilId, preturi) => {
+  const { setDoc } = await import('firebase/firestore')
+  await setDoc(doc(db, 'preturi_imobil', imobilId), preturi, { merge: true })
+}
+
+// ── CONTOARE REPROIECTATE ─────────────────────────────────────
+// mod: 'index' | 'fix' | 'bloc'
+export const getContoareSpatiu = async (spatiuId) => {
+  const q = query(collection(db, 'contoare'), where('spatiuId', '==', spatiuId))
+  const snap = await getDocs(q)
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => (a.ordine || 0) - (b.ordine || 0))
+}
+
+export const saveContor = async (data) => {
+  if (data.id) {
+    await updateDoc(doc(db, 'contoare', data.id), data)
+    return data.id
+  }
+  const ref = await addDoc(collection(db, 'contoare'), { ...data, creatLa: serverTimestamp() })
+  return ref.id
+}
+
+// ── CITIRI REPROIECTATE ───────────────────────────────────────
+export const getCitiriContor = async (contorId) => {
+  const q = query(collection(db, 'citiri'), where('contorId', '==', contorId))
+  const snap = await getDocs(q)
+  return snap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => b.data?.localeCompare?.(a.data) || 0)
+}
+
+export const getCitiriSpatiu2 = async (spatiuId) => {
+  const q = query(collection(db, 'citiri'), where('spatiuId', '==', spatiuId))
+  const snap = await getDocs(q)
+  return snap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => b.data?.localeCompare?.(a.data) || 0)
+}
+
+export const saveCitire = async (data) =>
+  addDoc(collection(db, 'citiri'), { ...data, creatLa: serverTimestamp() })
+
+export const deleteCitire2 = async (id) =>
+  deleteDoc(doc(db, 'citiri', id))
