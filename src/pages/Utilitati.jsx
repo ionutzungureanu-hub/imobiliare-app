@@ -18,7 +18,7 @@ import { fmt } from '../utils'
 const TODAY = new Date().toISOString().split('T')[0]
 
 // ── Contor card component ─────────────────────────────────────
-function ContorCard({ contor, citiri, preturi, onSave, onDelete, onExportIstoric }) {
+function ContorCard({ contor, citiri, preturi, onSave, onDelete, onExportIstoric, onSuccess, onError }) {
   const [index,    setIndex]    = useState('')
   const [valoare,  setValoare]  = useState('')
   const [data,     setData]     = useState(TODAY)
@@ -50,25 +50,34 @@ function ContorCard({ contor, citiri, preturi, onSave, onDelete, onExportIstoric
   }
 
   const handleSave = async () => {
-    if (contor.mod === 'index' && !index) return
-    if ((contor.mod === 'fix' || contor.mod === 'bloc') && !valoare) return
+    if (contor.mod === 'index' && !index) { onError('Introdu indexul.'); return }
+    if ((contor.mod === 'fix' || contor.mod === 'bloc') && !valoare) { onError('Introdu suma.'); return }
     setSaving(true)
     try {
       await saveCitire({
-        contorId: contor.id, spatiuId: contor.spatiuId, imobilId: contor.imobilId,
-        tip: contor.denumire, um: contor.um, mod: contor.mod,
-        destinatie: contor.destinatie,
-        index:  contor.mod === 'index' ? Number(index) : null,
+        contorId:      contor.id,
+        spatiuId:      contor.spatiuId,
+        imobilId:      contor.imobilId,
+        tip:           contor.denumire,
+        um:            contor.um,
+        mod:           contor.mod,
+        destinatie:    contor.destinatie,
+        index:         contor.mod === 'index' ? Number(index) : null,
         indexPrecedent: ultima?.index ?? null,
-        consum, pret,
-        valoare: contor.mod === 'index' ? valCalc : Number(valoare),
-        data, nota,
+        consum,
+        pret,
+        valoare:       contor.mod === 'index' ? valCalc : Number(valoare),
+        data:          data || new Date().toISOString().split('T')[0],
+        nota:          nota || '',
       })
-      setIndex(''); setValoare(''); setNota('')
-      setOcrStatus('')
+      setIndex(''); setValoare(''); setNota(''); setOcrStatus('')
+      onSuccess(`Citire salvată — ${contor.denumire}`)
       onSave()
-    } catch { }
-    finally { setSaving(false) }
+    } catch (err) {
+      onError('Eroare la salvare: ' + (err.message || 'Verifică conexiunea și regulile Firestore.'))
+    } finally {
+      setSaving(false)
+    }
   }
 
   const istoRender = istoricOpen ? citiri : citiri.slice(0, 3)
@@ -493,7 +502,9 @@ export default function Utilitati() {
                 {ctAdministratie.map(c => (
                   <ContorCard key={c.id} contor={c} citiri={citiriMap[c.id] || []}
                     preturi={preturi} onSave={loadContoare} onDelete={handleDeleteContor}
-                    onExportIstoric={exportIstoricContor} />
+                    onExportIstoric={exportIstoricContor}
+                    onSuccess={(msg) => toast(msg)}
+                    onError={(msg) => toast(msg, 'error')} />
                 ))}
                 <button className="btn btn-ghost btn-sm" style={{ width: '100%', marginBottom: 8 }}
                   onClick={() => navigate(`/nota-administratie?imobilId=${imobilId}&spatiuId=${spatiuId}`)}>
@@ -515,7 +526,9 @@ export default function Utilitati() {
                 {ctBloc.map(c => (
                   <ContorCard key={c.id} contor={c} citiri={citiriMap[c.id] || []}
                     preturi={preturi} onSave={loadContoare} onDelete={handleDeleteContor}
-                    onExportIstoric={exportIstoricContor} />
+                    onExportIstoric={exportIstoricContor}
+                    onSuccess={(msg) => toast(msg)}
+                    onError={(msg) => toast(msg, 'error')} />
                 ))}
               </div>
             )}
@@ -532,7 +545,9 @@ export default function Utilitati() {
                 {ctChirias.map(c => (
                   <ContorCard key={c.id} contor={c} citiri={citiriMap[c.id] || []}
                     preturi={preturi} onSave={loadContoare} onDelete={handleDeleteContor}
-                    onExportIstoric={exportIstoricContor} />
+                    onExportIstoric={exportIstoricContor}
+                    onSuccess={(msg) => toast(msg)}
+                    onError={(msg) => toast(msg, 'error')} />
                 ))}
               </div>
             )}
@@ -547,7 +562,9 @@ export default function Utilitati() {
                 {ctIntern.map(c => (
                   <ContorCard key={c.id} contor={c} citiri={citiriMap[c.id] || []}
                     preturi={preturi} onSave={loadContoare} onDelete={handleDeleteContor}
-                    onExportIstoric={exportIstoricContor} />
+                    onExportIstoric={exportIstoricContor}
+                    onSuccess={(msg) => toast(msg)}
+                    onError={(msg) => toast(msg, 'error')} />
                 ))}
               </div>
             )}

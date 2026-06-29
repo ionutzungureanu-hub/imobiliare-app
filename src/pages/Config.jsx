@@ -331,7 +331,10 @@ export default function Config() {
                     toast('Contor adăugat!')
                     setModalContor(false)
                     loadContoare()
-                  } catch { toast('Eroare.', 'error') }
+                  } catch (err) {
+                    console.error('SaveContor error:', err)
+                    toast('Eroare: ' + (err.message || 'Verifică regulile Firestore'), 'error')
+                  }
                   finally { setSavingCt(false) }
                 }}>
                   <i className="ti ti-plus" /> {savingCt ? 'Se salvează...' : 'Adaugă contor'}
@@ -395,7 +398,10 @@ export default function Config() {
                       try {
                         await savePreturiImobil(selImobil, preturi)
                         toast('Prețuri salvate!')
-                      } catch { toast('Eroare.', 'error') }
+                      } catch (err) {
+                    console.error('SaveContor error:', err)
+                    toast('Eroare: ' + (err.message || 'Verifică regulile Firestore'), 'error')
+                  }
                       finally { setSavingPret(false) }
                     }}>
                       <i className="ti ti-device-floppy" />
