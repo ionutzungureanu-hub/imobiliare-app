@@ -19,20 +19,22 @@ const TODAY = new Date().toISOString().split('T')[0]
 
 // ── Contor card component ─────────────────────────────────────
 function ContorCard({ contor, citiri, preturi, onSave, onDelete, onExportIstoric, onSuccess, onError }) {
-  const [index,    setIndex]    = useState('')
-  const [valoare,  setValoare]  = useState('')
-  const [data,     setData]     = useState(TODAY)
-  const [nota,     setNota]     = useState('')
-  const [saving,   setSaving]   = useState(false)
+  const [index,       setIndex]       = useState('')
+  const [valoare,     setValoare]     = useState('')
+  const [data,        setData]        = useState(TODAY)
+  const [nota,        setNota]        = useState('')
+  const [saving,      setSaving]      = useState(false)
   const [istoricOpen, setIstoricOpen] = useState(false)
-  const [ocrStatus, setOcrStatus] = useState('') // 'processing' | 'ok' | 'fail'
+  const [ocrStatus,   setOcrStatus]   = useState('')
+  const [editCit,     setEditCit]     = useState(null) // { id, index, valoare, data, nota }
+  const [savingEdit,  setSavingEdit]  = useState(false)
   const fileRef = useRef()
 
   const ultima  = citiri[0]
+  const pret    = preturi[contor.denumire] || 0
   const consum  = contor.mod === 'index' && index && ultima?.index != null
     ? Math.max(0, Number(index) - Number(ultima.index)) : null
-  const pret    = preturi[contor.denumire] || preturi[contor.um] || 0
-  const valCalc = consum !== null ? consum * pret : null
+  const valCalc = consum !== null && pret > 0 ? consum * pret : null
 
   const handleOCR = async (file) => {
     if (!file) return
@@ -43,49 +45,75 @@ function ContorCard({ contor, citiri, preturi, onSave, onDelete, onExportIstoric
       if (result.success && result.value != null) {
         setIndex(String(result.value))
         setOcrStatus('ok:' + result.value)
-      } else {
-        setOcrStatus('fail')
-      }
+      } else setOcrStatus('fail')
     } catch { setOcrStatus('fail') }
   }
 
   const handleSave = async () => {
-    if (contor.mod === 'index' && !index) { onError('Introdu indexul.'); return }
-    if ((contor.mod === 'fix' || contor.mod === 'bloc') && !valoare) { onError('Introdu suma.'); return }
+    if (contor.mod === 'index' && !index) { onError && onError('Introdu indexul.'); return }
+    if (contor.mod !== 'index' && !valoare) { onError && onError('Introdu suma.'); return }
     setSaving(true)
     try {
       await saveCitire({
-        contorId:      contor.id,
-        spatiuId:      contor.spatiuId,
-        imobilId:      contor.imobilId,
-        tip:           contor.denumire,
-        um:            contor.um,
-        mod:           contor.mod,
-        destinatie:    contor.destinatie,
-        index:         contor.mod === 'index' ? Number(index) : null,
+        contorId:       contor.id,
+        spatiuId:       contor.spatiuId,
+        imobilId:       contor.imobilId,
+        tip:            contor.denumire,
+        um:             contor.um,
+        mod:            contor.mod,
+        destinatie:     contor.destinatie,
+        index:          contor.mod === 'index' ? Number(index) : null,
         indexPrecedent: ultima?.index ?? null,
         consum,
         pret,
-        valoare:       contor.mod === 'index' ? valCalc : Number(valoare),
-        data:          data || new Date().toISOString().split('T')[0],
-        nota:          nota || '',
+        valoare:        contor.mod === 'index' ? valCalc : Number(valoare),
+        data:           data || TODAY,
+        nota:           nota || '',
       })
       setIndex(''); setValoare(''); setNota(''); setOcrStatus('')
-      onSuccess(`Citire salvată — ${contor.denumire}`)
+      onSuccess && onSuccess(`Citire salvată — ${contor.denumire}`)
       onSave()
     } catch (err) {
-      onError('Eroare la salvare: ' + (err.message || 'Verifică conexiunea și regulile Firestore.'))
-    } finally {
-      setSaving(false)
-    }
+      onError && onError('Eroare: ' + (err?.message || 'Verifică regulile Firestore'))
+    } finally { setSaving(false) }
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editCit) return
+    setSavingEdit(true)
+    try {
+      const { updateDoc, doc } = await import('firebase/firestore')
+      const { db } = await import('../firebase/config')
+      const newIndex  = editCit.index != null ? Number(editCit.index) : null
+      // Recalculate consum
+      const prevCit = citiri[citiri.findIndex(c => c.id === editCit.id) + 1]
+      const newConsum = newIndex != null && prevCit?.index != null
+        ? Math.max(0, newIndex - Number(prevCit.index)) : editCit.consum
+      const newValoare = contor.mod === 'index' && newConsum != null && pret > 0
+        ? newConsum * pret
+        : editCit.valoare != null ? Number(editCit.valoare) : null
+      await updateDoc(doc(db, 'citiri', editCit.id), {
+        index:   newIndex,
+        valoare: newValoare,
+        consum:  newConsum,
+        data:    editCit.data,
+        nota:    editCit.nota || '',
+      })
+      onSuccess && onSuccess('Citire actualizată!')
+      setEditCit(null)
+      onSave()
+    } catch (err) {
+      onError && onError('Eroare editare: ' + err?.message)
+    } finally { setSavingEdit(false) }
   }
 
   const istoRender = istoricOpen ? citiri : citiri.slice(0, 3)
 
   return (
     <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 10, marginBottom: 10, overflow: 'hidden' }}>
+
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderBottom: '1px solid var(--border)', background: 'var(--slate-light)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'var(--slate-light)', borderBottom: '1px solid var(--border)' }}>
         <div style={{ flex: 1 }}>
           <div style={{ fontWeight: 600, fontSize: 14 }}>{contor.denumire}</div>
           <div style={{ fontSize: 11, color: 'var(--slate)' }}>
@@ -93,125 +121,193 @@ function ContorCard({ contor, citiri, preturi, onSave, onDelete, onExportIstoric
             {pret > 0 && contor.mod === 'index' && ` · ${pret} RON/${contor.um}`}
           </div>
         </div>
-        <button className="remove-btn" onClick={() => onDelete(contor)} title="Șterge contor"><i className="ti ti-x" style={{ fontSize: 13 }} /></button>
+        <button className="remove-btn" onClick={() => onDelete(contor)} title="Șterge contor">
+          <i className="ti ti-x" style={{ fontSize: 13 }} />
+        </button>
       </div>
 
       {/* Ultima citire */}
       {ultima && (
-        <div style={{ padding: '6px 14px', background: 'var(--blue-light)', fontSize: 12, color: 'var(--blue)' }}>
-          Ultima: {ultima.data} → {contor.mod === 'index' ? `${ultima.index} ${contor.um}` : `${fmt(ultima.valoare)} RON`}
+        <div style={{ padding: '5px 14px', background: 'var(--blue-light)', fontSize: 12, color: 'var(--blue)', display: 'flex', justifyContent: 'space-between' }}>
+          <span>Ultima: <strong>{ultima.data}</strong> → {contor.mod === 'index' ? `${ultima.index} ${contor.um}` : `${fmt(ultima.valoare)} RON`}</span>
+          {ultima.consum != null && <span style={{ color: 'var(--green)' }}>Consum: <strong>{ultima.consum} {contor.um}</strong></span>}
         </div>
       )}
 
-      {/* Input */}
-      <div style={{ padding: '12px 14px', display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-        {contor.mod === 'index' ? (
-          <div style={{ flex: 1, minWidth: 100 }}>
-            <div style={{ fontSize: 11, color: 'var(--slate)', marginBottom: 4 }}>Index nou ({contor.um})</div>
-            <input type="number" value={index} onChange={e => setIndex(e.target.value)}
-              placeholder={ultima ? `> ${ultima.index}` : 'Index inițial'}
-              style={{ width: '100%', padding: '8px 10px', fontSize: 18, fontWeight: 700, textAlign: 'center', border: '2px solid var(--blue)', borderRadius: 8, color: 'var(--blue)', boxSizing: 'border-box' }} />
-            {consum !== null && (
-              <div style={{ fontSize: 11, marginTop: 4, color: 'var(--green)', textAlign: 'center' }}>
+      {/* ── Formular citire nouă ── */}
+      <div style={{ padding: '14px', borderBottom: citiri.length > 0 ? '1px solid var(--border)' : 'none' }}>
+        <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--slate)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '.5px' }}>
+          Citire nouă
+        </div>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          {/* Index sau sumă */}
+          <div style={{ flex: 2, minWidth: 120 }}>
+            <div style={{ fontSize: 11, color: 'var(--slate)', marginBottom: 5 }}>
+              {contor.mod === 'index' ? `Index nou (${contor.um})` : 'Sumă (RON)'}
+            </div>
+            <input
+              type="number"
+              value={contor.mod === 'index' ? index : valoare}
+              onChange={e => contor.mod === 'index' ? setIndex(e.target.value) : setValoare(e.target.value)}
+              placeholder={contor.mod === 'index' ? (ultima ? `> ${ultima.index}` : 'Index inițial') : '0.00'}
+              step={contor.mod !== 'index' ? '0.01' : '1'}
+              style={{ width: '100%', padding: '10px 12px', fontSize: 20, fontWeight: 700, textAlign: 'center', border: `2px solid ${contor.mod === 'index' ? 'var(--blue)' : 'var(--green)'}`, borderRadius: 8, color: contor.mod === 'index' ? 'var(--blue)' : 'var(--green)', boxSizing: 'border-box' }}
+            />
+            {/* Preview consum */}
+            {contor.mod === 'index' && consum !== null && (
+              <div style={{ marginTop: 5, fontSize: 11, textAlign: 'center', color: 'var(--green)' }}>
                 Consum: <strong>{consum} {contor.um}</strong>
-                {pret > 0 && <> → <strong>{fmt(valCalc)} RON</strong></>}
+                {valCalc !== null && <> · <strong>{fmt(valCalc)} RON</strong></>}
               </div>
             )}
           </div>
-        ) : (
-          <div style={{ flex: 1, minWidth: 100 }}>
-            <div style={{ fontSize: 11, color: 'var(--slate)', marginBottom: 4 }}>Sumă (RON)</div>
-            <input type="number" value={valoare} onChange={e => setValoare(e.target.value)}
-              placeholder="0.00" step="0.01"
-              style={{ width: '100%', padding: '8px 10px', fontSize: 18, fontWeight: 700, textAlign: 'center', border: '2px solid var(--green)', borderRadius: 8, color: 'var(--green)', boxSizing: 'border-box' }} />
-          </div>
-        )}
 
-        <div>
-          <div style={{ fontSize: 11, color: 'var(--slate)', marginBottom: 4 }}>Data</div>
-          <input type="date" value={data} onChange={e => setData(e.target.value)} style={{ padding: '8px', borderRadius: 8, border: '1px solid var(--border)' }} />
+          {/* Data */}
+          <div style={{ flex: 1, minWidth: 120 }}>
+            <div style={{ fontSize: 11, color: 'var(--slate)', marginBottom: 5 }}>Data</div>
+            <input type="date" value={data} onChange={e => setData(e.target.value)}
+              style={{ width: '100%', padding: '10px 8px', border: '1px solid var(--border)', borderRadius: 8, boxSizing: 'border-box' }} />
+          </div>
+
+          {/* OCR */}
+          {contor.mod === 'index' && (
+            <div style={{ minWidth: 60 }}>
+              <div style={{ fontSize: 11, color: 'var(--slate)', marginBottom: 5 }}>Foto OCR</div>
+              <button className="btn btn-ghost btn-sm" style={{ width: '100%', padding: '10px 8px' }}
+                onClick={() => fileRef.current?.click()} disabled={ocrStatus === 'processing'}
+                title="Fotografiază contorul">
+                <i className={`ti ${ocrStatus === 'processing' ? 'ti-refresh' : 'ti-camera'}`} style={{ fontSize: 16 }} />
+              </button>
+              <input ref={fileRef} type="file" accept="image/*" capture="environment"
+                onChange={e => handleOCR(e.target.files[0])} style={{ display: 'none' }} />
+              {ocrStatus && (
+                <div style={{ fontSize: 10, marginTop: 3, textAlign: 'center', color: ocrStatus.startsWith('ok') ? 'var(--green)' : ocrStatus === 'fail' ? 'var(--red)' : 'var(--blue)' }}>
+                  {ocrStatus === 'processing' ? '🔍' : ocrStatus.startsWith('ok') ? '✅' : '⚠️'}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* OCR button for index mode */}
-        {contor.mod === 'index' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <div style={{ fontSize: 11, color: 'var(--slate)', marginBottom: 4 }}>OCR</div>
-            <button className="btn btn-ghost btn-sm" onClick={() => fileRef.current?.click()}
-              title="Fotografiază contorul — OCR automat" disabled={ocrStatus === 'processing'}>
-              <i className={`ti ${ocrStatus === 'processing' ? 'ti-refresh' : 'ti-camera'}`} />
-            </button>
-            <input ref={fileRef} type="file" accept="image/*" capture="environment"
-              onChange={e => handleOCR(e.target.files[0])} style={{ display: 'none' }} />
-            {ocrStatus && (
-              <div style={{ fontSize: 10, color: ocrStatus.startsWith('ok') ? 'var(--green)' : ocrStatus === 'fail' ? 'var(--red)' : 'var(--blue)', whiteSpace: 'nowrap' }}>
-                {ocrStatus === 'processing' ? '🔍 Analizez...' : ocrStatus.startsWith('ok') ? `✅ ${ocrStatus.split(':')[1]}` : '⚠️ Manual'}
-              </div>
-            )}
-          </div>
-        )}
+        {/* Notă */}
+        <div style={{ marginTop: 8 }}>
+          <input value={nota} onChange={e => setNota(e.target.value)} placeholder="Notă (opțional)"
+            style={{ width: '100%', padding: '6px 10px', fontSize: 12, border: '1px solid var(--border)', borderRadius: 6, boxSizing: 'border-box' }} />
+        </div>
 
-        <button className="btn btn-primary btn-sm" onClick={handleSave} disabled={saving}
-          style={{ padding: '8px 14px', height: 38 }}>
-          {saving ? <i className="ti ti-refresh" /> : <i className="ti ti-device-floppy" />}
+        {/* BUTON SAVE MARE */}
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          style={{
+            width: '100%', marginTop: 12, padding: '12px',
+            background: saving ? 'var(--slate)' : 'var(--blue)',
+            color: 'white', border: 'none', borderRadius: 8,
+            fontSize: 14, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            fontFamily: 'inherit'
+          }}
+        >
+          <i className={`ti ${saving ? 'ti-refresh' : 'ti-device-floppy'}`} style={{ fontSize: 16 }} />
+          {saving ? 'Se salvează...' : `Salvează citire — ${contor.denumire}`}
         </button>
       </div>
 
-      {/* Notă */}
-      <div style={{ padding: '0 14px 10px' }}>
-        <input value={nota} onChange={e => setNota(e.target.value)} placeholder="Notă (opțional)"
-          style={{ width: '100%', padding: '4px 8px', fontSize: 12, border: '1px solid var(--border)', borderRadius: 6, boxSizing: 'border-box' }} />
-      </div>
-
-      {/* Istoric cascade */}
+      {/* ── Istoric cascade ── */}
       {citiri.length > 0 && (
-        <div style={{ borderTop: '1px solid var(--border)' }}>
+        <div>
           <button onClick={() => setIstoricOpen(o => !o)}
-            style={{ width: '100%', padding: '6px 14px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, color: 'var(--slate)', fontFamily: 'inherit' }}>
-            <span><i className="ti ti-history" style={{ fontSize: 12 }} /> Istoric ({citiri.length} citiri)</span>
+            style={{ width: '100%', padding: '8px 14px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, color: 'var(--slate)', fontFamily: 'inherit', borderBottom: istoricOpen ? '1px solid var(--border)' : 'none' }}>
+            <span><i className="ti ti-history" style={{ fontSize: 12, marginRight: 5 }} />Istoric — {citiri.length} citiri înregistrate</span>
             <i className={`ti ${istoricOpen ? 'ti-chevron-up' : 'ti-chevron-down'}`} style={{ fontSize: 12 }} />
           </button>
-          {(istoricOpen || citiri.length <= 3) && (
+
+          {istoricOpen && (
             <div>
-              <table style={{ fontSize: 11, width: '100%', borderCollapse: 'collapse' }}>
-                <thead style={{ background: 'var(--slate-light)' }}>
-                  <tr>
-                    <th style={{ padding: '4px 14px', textAlign: 'left' }}>Data</th>
-                    {contor.mod === 'index' && <><th style={{ padding: '4px 8px' }}>Index</th><th style={{ padding: '4px 8px' }}>Consum</th></>}
-                    <th style={{ padding: '4px 14px', textAlign: 'right' }}>Valoare</th>
-                    <th></th>
+              <table style={{ fontSize: 12, width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ background: 'var(--slate-light)' }}>
+                    <th style={{ padding: '5px 10px', textAlign: 'left' }}>Data</th>
+                    {contor.mod === 'index' && (
+                      <><th style={{ padding: '5px 8px', textAlign: 'center' }}>Index</th>
+                      <th style={{ padding: '5px 8px', textAlign: 'center' }}>Consum</th></>
+                    )}
+                    <th style={{ padding: '5px 10px', textAlign: 'right' }}>Valoare</th>
+                    <th style={{ padding: '5px 8px', textAlign: 'center' }}>Acțiuni</th>
                   </tr>
                 </thead>
                 <tbody>
                   {istoRender.map((cit, i) => (
-                    <tr key={cit.id} style={{ background: i === 0 ? 'var(--blue-light)' : i % 2 === 0 ? 'white' : 'var(--slate-light)' }}>
-                      <td style={{ padding: '4px 14px', fontWeight: i === 0 ? 600 : 400 }}>{cit.data}</td>
-                      {contor.mod === 'index' && (
+                    <tr key={cit.id} style={{ background: i === 0 ? 'var(--blue-light)' : i % 2 === 0 ? 'white' : 'var(--slate-light)', borderBottom: '1px solid var(--border)' }}>
+                      {editCit?.id === cit.id ? (
+                        // ── MOD EDITARE ──
                         <>
-                          <td style={{ padding: '4px 8px', textAlign: 'center' }}>{cit.index} {contor.um}</td>
-                          <td style={{ padding: '4px 8px', textAlign: 'center', color: 'var(--green)', fontWeight: 600 }}>{cit.consum ?? '—'}</td>
+                          <td style={{ padding: '4px 6px' }}>
+                            <input type="date" value={editCit.data || ''} onChange={e => setEditCit(ec => ({ ...ec, data: e.target.value }))}
+                              style={{ padding: '3px 6px', border: '1px solid var(--blue)', borderRadius: 4, fontSize: 11 }} />
+                          </td>
+                          {contor.mod === 'index' && (
+                            <><td style={{ padding: '4px 6px' }}>
+                              <input type="number" value={editCit.index ?? ''} onChange={e => setEditCit(ec => ({ ...ec, index: e.target.value }))}
+                                style={{ width: 80, padding: '3px 6px', border: '1px solid var(--blue)', borderRadius: 4, fontSize: 12, textAlign: 'center', fontWeight: 700 }} />
+                            </td>
+                            <td style={{ padding: '4px 6px', textAlign: 'center', color: 'var(--slate)', fontSize: 11 }}>auto</td></>
+                          )}
+                          <td style={{ padding: '4px 6px' }}>
+                            {contor.mod !== 'index' && (
+                              <input type="number" value={editCit.valoare ?? ''} onChange={e => setEditCit(ec => ({ ...ec, valoare: e.target.value }))}
+                                style={{ width: 70, padding: '3px 6px', border: '1px solid var(--green)', borderRadius: 4, fontSize: 12, textAlign: 'right' }} />
+                            )}
+                          </td>
+                          <td style={{ padding: '4px 8px', textAlign: 'center' }}>
+                            <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
+                              <button className="btn btn-primary btn-sm" onClick={handleSaveEdit} disabled={savingEdit}
+                                style={{ padding: '3px 8px', fontSize: 11 }}>
+                                {savingEdit ? '...' : '✓'}
+                              </button>
+                              <button className="btn btn-ghost btn-sm" onClick={() => setEditCit(null)}
+                                style={{ padding: '3px 8px', fontSize: 11 }}>✕</button>
+                            </div>
+                          </td>
+                        </>
+                      ) : (
+                        // ── MOD VIZUALIZARE ──
+                        <>
+                          <td style={{ padding: '5px 10px', fontWeight: i === 0 ? 600 : 400 }}>{cit.data}</td>
+                          {contor.mod === 'index' && (
+                            <><td style={{ padding: '5px 8px', textAlign: 'center', fontWeight: 600 }}>{cit.index} {contor.um}</td>
+                            <td style={{ padding: '5px 8px', textAlign: 'center', color: 'var(--green)', fontWeight: 600 }}>{cit.consum ?? '—'}</td></>
+                          )}
+                          <td style={{ padding: '5px 10px', textAlign: 'right', fontWeight: 500 }}>
+                            {cit.valoare != null ? fmt(cit.valoare) + ' RON' : '—'}
+                          </td>
+                          <td style={{ padding: '5px 8px', textAlign: 'center' }}>
+                            <div style={{ display: 'flex', gap: 3, justifyContent: 'center' }}>
+                              <button className="btn btn-ghost btn-sm" title="Editează"
+                                onClick={() => setEditCit({ id: cit.id, index: cit.index, valoare: cit.valoare, data: cit.data, nota: cit.nota })}>
+                                <i className="ti ti-pencil" style={{ fontSize: 11 }} />
+                              </button>
+                              <button className="remove-btn" title="Șterge"
+                                onClick={() => { if(confirm('Ștergi această citire?')) deleteCitire2(cit.id).then(onSave) }}>
+                                <i className="ti ti-x" style={{ fontSize: 11 }} />
+                              </button>
+                            </div>
+                          </td>
                         </>
                       )}
-                      <td style={{ padding: '4px 14px', textAlign: 'right', fontWeight: 500 }}>
-                        {cit.valoare != null ? fmt(cit.valoare) + ' RON' : '—'}
-                      </td>
-                      <td style={{ padding: '4px 8px' }}>
-                        <button className="remove-btn" onClick={() => deleteCitire2(cit.id).then(onSave)}>
-                          <i className="ti ti-x" style={{ fontSize: 11 }} />
-                        </button>
-                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+
               {!istoricOpen && citiri.length > 3 && (
-                <div style={{ padding: '4px 14px', fontSize: 11, color: 'var(--slate)' }}>
-                  + {citiri.length - 3} citiri mai vechi...
-                </div>
+                <div style={{ padding: '4px 14px', fontSize: 11, color: 'var(--slate)' }}>+ {citiri.length - 3} citiri mai vechi...</div>
               )}
-              <div style={{ padding: '6px 14px', borderTop: '1px solid var(--border)' }}>
+
+              <div style={{ padding: '8px 14px', borderTop: '1px solid var(--border)' }}>
                 <button className="btn btn-ghost btn-sm" style={{ fontSize: 11 }}
                   onClick={() => exportIstoricContor(contor, citiri)}>
-                  <i className="ti ti-download" /> Export PDF istoric complet
+                  <i className="ti ti-download" style={{ fontSize: 12 }} /> Export PDF istoric complet
                 </button>
               </div>
             </div>
@@ -221,6 +317,7 @@ function ContorCard({ contor, citiri, preturi, onSave, onDelete, onExportIstoric
     </div>
   )
 }
+
 
 // ── Modal contor nou ──────────────────────────────────────────
 function ModalContorNou({ spatiu, imobil, contoareExistente, allSpatiiImobil, onSave, onClose }) {
