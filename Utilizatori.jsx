@@ -19,6 +19,7 @@ import Biblioteca from './pages/Biblioteca'
 import UtilitatiMobile from './pages/UtilitatiMobile'
 import IstoricSpatiu from './pages/IstoricSpatiu'
 import NotaAdministratie from './pages/NotaAdministratie'
+import Contracte from './pages/Contracte'
 import Portal from './pages/Portal'
 import PortalSetari from './pages/PortalSetari'
 import ValidareIndexuri from './pages/ValidareIndexuri'
@@ -54,6 +55,7 @@ export default function App() {
             <Route path="utilitati-mobile"    element={<UtilitatiMobile />} />
             <Route path="spatii/:spatiuId/istoric" element={<IstoricSpatiu />} />
             <Route path="nota-administratie"   element={<NotaAdministratie />} />
+            <Route path="contracte"             element={<Contracte />} />
             <Route path="spatii/:spatiuId/portal" element={<PortalSetari />} />
             <Route path="validare-indexuri"        element={<ValidareIndexuri />} />
           </Route>

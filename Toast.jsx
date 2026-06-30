@@ -419,3 +419,63 @@ export const getAllContoareCuCitiri = async () => {
       .sort((a, b) => b.data?.localeCompare?.(a.data) || 0)
   }))
 }
+
+// ── SERII CONTRACTE ────────────────────────────────────────────
+export const getSeriiContracte = async () => {
+  const snap = await getDocs(collection(db, 'serii_contracte'))
+  return snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => a.nume.localeCompare(b.nume))
+}
+
+export const addSerieContract = async (nume) =>
+  addDoc(collection(db, 'serii_contracte'), { nume, ultimulNumar: 0, createdAt: serverTimestamp() })
+
+export const deleteSerieContract = async (id) =>
+  deleteDoc(doc(db, 'serii_contracte', id))
+
+export const getNextNumarSerie = async (serieId) => {
+  const ref = doc(db, 'serii_contracte', serieId)
+  const snap = await getDoc(ref)
+  const current = snap.exists() ? (snap.data().ultimulNumar || 0) : 0
+  const next = current + 1
+  await updateDoc(ref, { ultimulNumar: next })
+  return next
+}
+
+export const updateNumarSerie = async (serieId, numar) =>
+  updateDoc(doc(db, 'serii_contracte', serieId), { ultimulNumar: numar })
+
+// ── TEMPLATE-URI CONTRACTE ─────────────────────────────────────
+export const getTemplateContracte = async () => {
+  const snap = await getDocs(collection(db, 'templates_contracte'))
+  return snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0))
+}
+
+export const addTemplateContract = async (data) =>
+  addDoc(collection(db, 'templates_contracte'), { ...data, createdAt: serverTimestamp() })
+
+export const deleteTemplateContract = async (id) =>
+  deleteDoc(doc(db, 'templates_contracte', id))
+
+// ── DRAFTURI CONTRACTE ─────────────────────────────────────────
+export const getDrafturiContracte = async () => {
+  const snap = await getDocs(collection(db, 'contracte_drafturi'))
+  return snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (b.updatedAt?.seconds || b.createdAt?.seconds || 0) - (a.updatedAt?.seconds || a.createdAt?.seconds || 0))
+}
+
+export const getDraftContract = async (id) => {
+  const snap = await getDoc(doc(db, 'contracte_drafturi', id))
+  return snap.exists() ? { id: snap.id, ...snap.data() } : null
+}
+
+export const saveDraftContract = async (data) => {
+  if (data.id) {
+    const { id, ...rest } = data
+    await updateDoc(doc(db, 'contracte_drafturi', id), { ...rest, updatedAt: serverTimestamp() })
+    return id
+  }
+  const ref = await addDoc(collection(db, 'contracte_drafturi'), { ...data, createdAt: serverTimestamp(), updatedAt: serverTimestamp() })
+  return ref.id
+}
+
+export const deleteDraftContract = async (id) =>
+  deleteDoc(doc(db, 'contracte_drafturi', id))
