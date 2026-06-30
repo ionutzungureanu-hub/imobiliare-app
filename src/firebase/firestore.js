@@ -6,6 +6,15 @@ import {
 import { db } from './config'
 
 // ── CLIENȚI ────────────────────────────────────────────────────
+// Elimină recursiv câmpurile undefined — Firestore refuză addDoc/updateDoc cu undefined
+const stripUndefined = (obj) => {
+  const clean = {}
+  Object.keys(obj).forEach(k => {
+    if (obj[k] !== undefined) clean[k] = obj[k]
+  })
+  return clean
+}
+
 export const getClienti = async () => {
   const snap = await getDocs(collection(db, 'clienti'))
   return snap.docs.map(d => ({ id: d.id, ...d.data() }))
@@ -24,7 +33,7 @@ export const addClient = async (data) => {
 }
 
 export const updateClient = async (id, data) => {
-  await updateDoc(doc(db, 'clienti', id), data)
+  await updateDoc(doc(db, 'clienti', id), stripUndefined(data))
 }
 
 export const deleteClient = async (id) => {
@@ -89,9 +98,9 @@ export const getImobile = async () => {
   return snap.docs.map(d => ({ id: d.id, ...d.data() }))
 }
 export const addImobil = async (data) =>
-  addDoc(collection(db, 'imobile'), { ...data, creatLa: serverTimestamp() })
+  addDoc(collection(db, 'imobile'), stripUndefined({ ...data, creatLa: serverTimestamp() }))
 export const updateImobil = async (id, data) =>
-  updateDoc(doc(db, 'imobile', id), data)
+  updateDoc(doc(db, 'imobile', id), stripUndefined(data))
 export const deleteImobil = async (id) =>
   deleteDoc(doc(db, 'imobile', id))
 
@@ -104,9 +113,9 @@ export const getSpatii = async (imobilId = null) => {
   return snap.docs.map(d => ({ id: d.id, ...d.data() }))
 }
 export const addSpatiu = async (data) =>
-  addDoc(collection(db, 'spatii'), { ...data, creatLa: serverTimestamp() })
+  addDoc(collection(db, 'spatii'), stripUndefined({ ...data, creatLa: serverTimestamp() }))
 export const updateSpatiu = async (id, data) =>
-  updateDoc(doc(db, 'spatii', id), data)
+  updateDoc(doc(db, 'spatii', id), stripUndefined(data))
 export const deleteSpatiu = async (id) =>
   deleteDoc(doc(db, 'spatii', id))
 
@@ -117,9 +126,9 @@ export const getContoare = async (spatiuId) => {
   return snap.docs.map(d => ({ id: d.id, ...d.data() }))
 }
 export const addContor = async (data) =>
-  addDoc(collection(db, 'contoare'), { ...data, creatLa: serverTimestamp() })
+  addDoc(collection(db, 'contoare'), stripUndefined({ ...data, creatLa: serverTimestamp() }))
 export const updateContor = async (id, data) =>
-  updateDoc(doc(db, 'contoare', id), data)
+  updateDoc(doc(db, 'contoare', id), stripUndefined(data))
 export const deleteContor = async (id) =>
   deleteDoc(doc(db, 'contoare', id))
 
@@ -143,7 +152,7 @@ export const getCitiriSpatiu = async (spatiuId) => {
   return snap.docs.map(d => ({ id: d.id, ...d.data() }))
 }
 export const addCitire = async (data) =>
-  addDoc(collection(db, 'citiri'), { ...data, creatLa: serverTimestamp() })
+  addDoc(collection(db, 'citiri'), stripUndefined({ ...data, creatLa: serverTimestamp() }))
 export const deleteCitire = async (id) =>
   deleteDoc(doc(db, 'citiri', id))
 
@@ -164,7 +173,7 @@ export const saveUserProfile = async (uid, data) => {
 }
 
 export const updateUserProfile = async (uid, data) => {
-  await updateDoc(doc(db, 'users', uid), data)
+  await updateDoc(doc(db, 'users', uid), stripUndefined(data))
 }
 
 export const deleteUserProfile = async (uid) => {
@@ -193,10 +202,10 @@ export const getDocumente = async (entityType = null, entityId = null) => {
 }
 
 export const addDocument = async (data) =>
-  addDoc(collection(db, 'documente'), { ...data, uploadatLa: serverTimestamp() })
+  addDoc(collection(db, 'documente'), stripUndefined({ ...data, uploadatLa: serverTimestamp() }))
 
 export const updateDocument = async (id, data) =>
-  updateDoc(doc(db, 'documente', id), data)
+  updateDoc(doc(db, 'documente', id), stripUndefined(data))
 
 export const deleteDocument = async (id) =>
   deleteDoc(doc(db, 'documente', id))
@@ -265,7 +274,7 @@ export const saveTemplate = async (spatiuId, data) => {
     await updateDoc(doc(db, 'templates_nota', existing.id), { ...data, updatedAt: serverTimestamp() })
     return existing.id
   } else {
-    const ref = await addDoc(collection(db, 'templates_nota'), { ...data, spatiuId, createdAt: serverTimestamp() })
+    const ref = await addDoc(collection(db, 'templates_nota'), stripUndefined({ ...data, spatiuId, createdAt: serverTimestamp() }))
     return ref.id
   }
 }
@@ -282,7 +291,7 @@ export const getNoteCalcul = async (spatiuId = null) => {
 }
 
 export const saveNotaCalcul = async (data) =>
-  addDoc(collection(db, 'note_calcul'), { ...data, createdAt: serverTimestamp() })
+  addDoc(collection(db, 'note_calcul'), stripUndefined({ ...data, createdAt: serverTimestamp() }))
 
 // ── ISTORIC SPATIU ─────────────────────────────────────────────
 export const getIstoricSpatiu = async (spatiuId) => {
@@ -294,10 +303,10 @@ export const getIstoricSpatiu = async (spatiuId) => {
 }
 
 export const addIstoricEntry = async (data) =>
-  addDoc(collection(db, 'istoric_spatiu'), { ...data, createdAt: serverTimestamp() })
+  addDoc(collection(db, 'istoric_spatiu'), stripUndefined({ ...data, createdAt: serverTimestamp() }))
 
 export const updateIstoricEntry = async (id, data) =>
-  updateDoc(doc(db, 'istoric_spatiu', id), data)
+  updateDoc(doc(db, 'istoric_spatiu', id), stripUndefined(data))
 
 // ── PREȚURI PER IMOBIL ─────────────────────────────────────────
 export const getPreturiImobil = async (imobilId) => {
@@ -321,10 +330,11 @@ export const getContoareSpatiu = async (spatiuId) => {
 
 export const saveContor = async (data) => {
   if (data.id) {
-    await updateDoc(doc(db, 'contoare', data.id), data)
-    return data.id
+    const { id, ...rest } = data
+    await updateDoc(doc(db, 'contoare', id), stripUndefined(rest))
+    return id
   }
-  const ref = await addDoc(collection(db, 'contoare'), { ...data, creatLa: serverTimestamp() })
+  const ref = await addDoc(collection(db, 'contoare'), stripUndefined({ ...data, creatLa: serverTimestamp() }))
   return ref.id
 }
 
@@ -346,7 +356,7 @@ export const getCitiriSpatiu2 = async (spatiuId) => {
 }
 
 export const saveCitire = async (data) =>
-  addDoc(collection(db, 'citiri'), { ...data, creatLa: serverTimestamp() })
+  addDoc(collection(db, 'citiri'), stripUndefined({ ...data, creatLa: serverTimestamp() }))
 
 export const deleteCitire2 = async (id) =>
   deleteDoc(doc(db, 'citiri', id))
@@ -370,7 +380,7 @@ export const savePortal = async (data) => {
     await updateDoc(doc(db, 'portale', existing.id), data)
     return existing.id
   }
-  const ref = await addDoc(collection(db, 'portale'), { ...data, createdAt: serverTimestamp() })
+  const ref = await addDoc(collection(db, 'portale'), stripUndefined({ ...data, createdAt: serverTimestamp() }))
   return ref.id
 }
 
@@ -392,10 +402,10 @@ export const getIndexuriPentruSpatiu = async (spatiuId) => {
 }
 
 export const saveIndexPrimit = async (data) =>
-  addDoc(collection(db, 'indexuri_primite'), { ...data, dataTrimis: serverTimestamp() })
+  addDoc(collection(db, 'indexuri_primite'), stripUndefined({ ...data, dataTrimis: serverTimestamp() }))
 
 export const updateIndexPrimit = async (id, data) =>
-  updateDoc(doc(db, 'indexuri_primite', id), data)
+  updateDoc(doc(db, 'indexuri_primite', id), stripUndefined(data))
 
 export const deleteIndexPrimit = async (id) =>
   deleteDoc(doc(db, 'indexuri_primite', id))
@@ -451,7 +461,7 @@ export const getTemplateContracte = async () => {
 }
 
 export const addTemplateContract = async (data) =>
-  addDoc(collection(db, 'templates_contracte'), { ...data, createdAt: serverTimestamp() })
+  addDoc(collection(db, 'templates_contracte'), stripUndefined({ ...data, createdAt: serverTimestamp() }))
 
 export const deleteTemplateContract = async (id) =>
   deleteDoc(doc(db, 'templates_contracte', id))
@@ -473,7 +483,7 @@ export const saveDraftContract = async (data) => {
     await updateDoc(doc(db, 'contracte_drafturi', id), { ...rest, updatedAt: serverTimestamp() })
     return id
   }
-  const ref = await addDoc(collection(db, 'contracte_drafturi'), { ...data, createdAt: serverTimestamp(), updatedAt: serverTimestamp() })
+  const ref = await addDoc(collection(db, 'contracte_drafturi'), stripUndefined({ ...data, createdAt: serverTimestamp(), updatedAt: serverTimestamp() }))
   return ref.id
 }
 

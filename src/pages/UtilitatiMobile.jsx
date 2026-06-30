@@ -95,7 +95,7 @@ export default function UtilitatiMobile() {
         data:           data || TODAY,
         nota:           nota || '',
       })
-      toast(`✓ Citire salvată — ${contor?.denumire}`)
+      toast(`✓ Citire salvată — ${contor?.denumire || contor?.tip}`)
       setIndex(''); setValoare(''); setNota(''); setOcrStatus('')
       getCitiriContor(contorId).then(setCitiri)
     } catch (err) {
@@ -144,7 +144,7 @@ export default function UtilitatiMobile() {
                   <select value={contorId} onChange={e => setContorId(e.target.value)}>
                     {contoare.map(c => (
                       <option key={c.id} value={c.id}>
-                        {c.denumire} ({c.um})
+                        {c.denumire || c.tip} ({c.um})
                       </option>
                     ))}
                   </select>
@@ -192,7 +192,7 @@ export default function UtilitatiMobile() {
             <div className="card" style={{ marginBottom: 16 }}>
               <div className="card-body">
                 <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 14, color: 'var(--blue)' }}>
-                  {contor.denumire} <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--slate)' }}>({contor.um})</span>
+                  {contor.denumire || contor.tip} <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--slate)' }}>({contor.um})</span>
                 </div>
 
                 <div className="form-group" style={{ marginBottom: 12 }}>
@@ -265,7 +265,7 @@ export default function UtilitatiMobile() {
                   }}
                 >
                   <i className={`ti ${saving ? 'ti-refresh' : 'ti-device-floppy'}`} style={{ fontSize: 20 }} />
-                  {saving ? 'Se salvează...' : `Salvează — ${contor.denumire}`}
+                  {saving ? 'Se salvează...' : `Salvează — ${contor.denumire || contor.tip}`}
                 </button>
               </div>
             </div>
@@ -274,7 +274,7 @@ export default function UtilitatiMobile() {
             {citiri.length > 0 && (
               <div className="card">
                 <div className="card-header">
-                  <div className="card-title" style={{ fontSize: 14 }}>Istoric — {contor.denumire}</div>
+                  <div className="card-title" style={{ fontSize: 14 }}>Istoric — {contor.denumire || contor.tip}</div>
                 </div>
                 <table style={{ fontSize: 13 }}>
                   <thead>

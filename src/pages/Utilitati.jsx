@@ -30,8 +30,11 @@ function ContorCard({ contor, citiri, preturi, onSave, onDelete, onExportIstoric
   const [savingEdit,  setSavingEdit]  = useState(false)
   const fileRef = useRef()
 
+  // Compatibilitate cu contoarele vechi (salvate cu "tip" în loc de "denumire")
+  const numeContor = contor.denumire || contor.tip || 'Contor fără nume'
+
   const ultima  = citiri[0]
-  const pret    = preturi[contor.denumire] || 0
+  const pret    = preturi[numeContor] || 0
   const consum  = contor.mod === 'index' && index && ultima?.index != null
     ? Math.max(0, Number(index) - Number(ultima.index)) : null
   const valCalc = consum !== null && pret > 0 ? consum * pret : null
@@ -58,7 +61,7 @@ function ContorCard({ contor, citiri, preturi, onSave, onDelete, onExportIstoric
         contorId:       contor.id,
         spatiuId:       contor.spatiuId,
         imobilId:       contor.imobilId,
-        tip:            contor.denumire,
+        tip:            numeContor,
         um:             contor.um,
         mod:            contor.mod,
         destinatie:     contor.destinatie,
@@ -71,7 +74,7 @@ function ContorCard({ contor, citiri, preturi, onSave, onDelete, onExportIstoric
         nota:           nota || '',
       })
       setIndex(''); setValoare(''); setNota(''); setOcrStatus('')
-      onSuccess && onSuccess(`Citire salvată — ${contor.denumire}`)
+      onSuccess && onSuccess(`Citire salvată — ${numeContor}`)
       onSave()
     } catch (err) {
       onError && onError('Eroare: ' + (err?.message || 'Verifică regulile Firestore'))
@@ -115,7 +118,7 @@ function ContorCard({ contor, citiri, preturi, onSave, onDelete, onExportIstoric
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'var(--slate-light)', borderBottom: '1px solid var(--border)' }}>
         <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 600, fontSize: 14 }}>{contor.denumire}</div>
+          <div style={{ fontWeight: 600, fontSize: 14 }}>{numeContor}</div>
           <div style={{ fontSize: 11, color: 'var(--slate)' }}>
             {contor.mod === 'index' ? `Index · ${contor.um}` : contor.mod === 'fix' ? 'Sumă fixă' : 'Sumă bloc'}
             {pret > 0 && contor.mod === 'index' && ` · ${pret} RON/${contor.um}`}
@@ -209,7 +212,7 @@ function ContorCard({ contor, citiri, preturi, onSave, onDelete, onExportIstoric
           }}
         >
           <i className={`ti ${saving ? 'ti-refresh' : 'ti-device-floppy'}`} style={{ fontSize: 16 }} />
-          {saving ? 'Se salvează...' : `Salvează citire — ${contor.denumire}`}
+          {saving ? 'Se salvează...' : `Salvează citire — ${numeContor}`}
         </button>
       </div>
 
@@ -494,7 +497,7 @@ export default function Utilitati() {
   const modUtilitati = spatiu?.modUtilitati || (client?.tip === 'PJ' ? 'factura' : 'nota')
 
   const handleDeleteContor = async (c) => {
-    if (!confirm(`Ștergi contorul "${c.denumire}" și toate citirile?`)) return
+    if (!confirm(`Ștergi contorul "${c.denumire || c.tip}" și toate citirile?`)) return
     await deleteContor(c.id); toast('Contor șters.'); loadContoare()
   }
 
