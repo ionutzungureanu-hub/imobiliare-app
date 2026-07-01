@@ -156,11 +156,18 @@ export default function Clienti() {
           <ToggleActiv client={c} onToggle={load} />
           <div>
             <div style={{ fontWeight: 500 }}>{c.nume}</div>
-            {c.email && (
-              <a href={`mailto:${c.email}`} style={{ fontSize: 11, color: 'var(--blue)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3, marginTop: 2 }}>
-                <i className="ti ti-mail" style={{ fontSize: 11 }} />{c.email}
-              </a>
-            )}
+            <div style={{ display: 'flex', gap: 8, marginTop: 3, flexWrap: 'wrap' }}>
+              {/* Email(uri) principale sub nume */}
+              {(c.emailuri?.length ? c.emailuri : c.email ? [{ adresa: c.email, trimiteMail: true }] : [])
+                .filter(e => e.adresa)
+                .map((em, i) => (
+                  <a key={i} href={`mailto:${em.adresa}`}
+                    style={{ fontSize: 11, color: 'var(--blue)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}>
+                    <i className="ti ti-mail" style={{ fontSize: 11 }} />{em.adresa}
+                  </a>
+                ))
+              }
+            </div>
           </div>
         </div>
       </td>
@@ -190,20 +197,7 @@ export default function Clienti() {
           </div>
         ))}
       </td>
-      <td>
-        {(c.emailuri || [{ adresa: c.email, trimiteMail: true }]).filter(e => e.adresa).map((em, i) => (
-          <div key={i} style={{ fontSize: 12, marginBottom: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
-            {em.trimiteMail && <span style={{ color: 'var(--green)', fontSize: 9 }}>●</span>}
-            <a href={`mailto:${em.adresa}`} style={{ color: 'var(--blue)', textDecoration: 'none', fontSize: 11 }}>{em.adresa}</a>
-          </div>
-        ))}
-      </td>
-      <td>
-        <div style={{ display: 'flex', gap: 4 }}>
-          {c.email && <a href={`mailto:${c.email}`} className="btn btn-ghost btn-sm"><i className="ti ti-mail" /></a>}
-          {c.telefon && <a href={`tel:${c.telefon}`} className="btn btn-ghost btn-sm"><i className="ti ti-phone" /></a>}
-        </div>
-      </td>
+
       <td>
         <div style={{ display: 'flex', gap: 4 }}>
           <button className="btn btn-ghost btn-sm" onClick={() => openEdit(c)}><i className="ti ti-pencil" /></button>
@@ -309,7 +303,7 @@ export default function Clienti() {
           <div className="card">
             <table>
               <thead>
-                <tr><th>Denumire</th><th>CUI</th><th>TVA</th><th>Contacte</th><th>Emailuri</th><th></th></tr>
+                <tr><th>Denumire</th><th>CUI</th><th>TVA</th><th>Contacte</th><th></th></tr>
               </thead>
               <tbody>
                 {activiPJ.length === 0 && inactiviPJ.length === 0 ? (
