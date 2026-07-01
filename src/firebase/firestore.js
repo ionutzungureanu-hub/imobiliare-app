@@ -489,3 +489,36 @@ export const saveDraftContract = async (data) => {
 
 export const deleteDraftContract = async (id) =>
   deleteDoc(doc(db, 'contracte_drafturi', id))
+
+// ── MIGRARE DATE VECHI ────────────────────────────────────────
+// Copiază câmpul 'tip' → 'denumire' pentru contoarele vechi
+// Rulează o singură dată, safe să fie repetat (idempotent)
+export const migreazaContoare = async (onProgress) => {
+  const snap = await getDocs(collection(db, 'contoare'))
+  const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  
+  const deUpdate = docs.filter(d => !d.denumire && d.tip)
+  const deja     = docs.filter(d => d.denumire)
+  const fara     = docs.filter(d => !d.denumire && !d.tip)
+
+  onProgress?.({ total: docs.length, deUpdate: deUpdate.length, deja: deja.length, fara: fara.length, pas: 'analiza' })
+
+  if (deUpdate.length === 0) {
+    onProgress?.({ pas: 'gata', migrat: 0, total: docs.length })
+    return { migrat: 0, total: docs.length, deja: deja.length }
+  }
+
+  let migrat = 0
+  for (const d of deUpdate) {
+    await updateDoc(doc(db, 'contoare', d.id), {
+      denumire:    d.tip,
+      destinatie:  d.destinatie || 'chirias',
+      mod:         d.mod || 'index',
+    })
+    migrat++
+    onProgress?.({ pas: 'migrat', migrat, total: deUpdate.length })
+  }
+
+  onProgress?.({ pas: 'gata', migrat, total: docs.length })
+  return { migrat, total: docs.length, deja: deja.length, fara: fara.length }
+}

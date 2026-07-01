@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import Topbar from '../components/Topbar'
 import { useToast } from '../components/Toast'
 import { useAuth } from '../context/AuthContext'
-import { getConfig, saveConfig, getImobile, getSpatii, getPreturiImobil, savePreturiImobil, getContoareSpatiu, saveContor, deleteContor, getCitiriContor } from '../firebase/firestore'
+import { getConfig, saveConfig, getImobile, getSpatii, getPreturiImobil, savePreturiImobil, getContoareSpatiu, saveContor, deleteContor, getCitiriContor, migreazaContoare } from '../firebase/firestore'
 import { FURNIZORI, testeazaConexiunea } from '../services/facturareApi'
 
 const emptyConfig = () => ({
@@ -26,6 +26,8 @@ export default function Config() {
   const [preturi,    setPreturi]    = useState({})
   const [savingPret, setSavingPret] = useState(false)
   const [tabConfig,  setTabConfig]  = useState('contoare')
+  const [migrStatus, setMigrStatus] = useState(null) // null | 'running' | 'done' | 'error'
+  const [migrLog,    setMigrLog]    = useState([])
   const [spatii,     setSpatii]     = useState([])
   const [selImobilC, setSelImobilC] = useState('')
   const [selSpatiuC, setSelSpatiuC] = useState('')
@@ -96,11 +98,12 @@ export default function Config() {
         {/* ── Tab-uri Config ──────────────────────────────────── */}
         <div style={{ display: 'flex', gap: 2, borderBottom: '1px solid var(--border)', marginBottom: 20 }}>
           {[
-            { key: 'contoare',  label: 'Contoare',           icon: 'ti-plug' },
-            { key: 'preturi',   label: 'Prețuri utilități',  icon: 'ti-currency-leu' },
-            { key: 'facturare', label: 'Integrare facturare',icon: 'ti-plug' },
-            { key: 'emailjs',   label: 'EmailJS',            icon: 'ti-mail' },
-            { key: 'firebase',  label: 'Firebase',           icon: 'ti-database' },
+            { key: 'contoare',    label: 'Contoare',            icon: 'ti-plug' },
+            { key: 'preturi',     label: 'Prețuri utilități',   icon: 'ti-currency-leu' },
+            { key: 'facturare',   label: 'Integrare facturare', icon: 'ti-plug' },
+            { key: 'emailjs',     label: 'EmailJS',             icon: 'ti-mail' },
+            { key: 'firebase',    label: 'Firebase',            icon: 'ti-database' },
+            { key: 'mentenanta',  label: 'Mentenanță',          icon: 'ti-tool' },
           ].map(t => (
             <button key={t.key} onClick={() => setTabConfig(t.key)} style={{
               padding: '9px 16px', fontSize: 13, fontWeight: 500, border: 'none', background: 'none',
@@ -608,6 +611,119 @@ service cloud.firestore {
         </div>
 
 }
+
+        {/* ── Mentenanță ────────────────────────────────────────── */}
+        {tabConfig === 'mentenanta' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+            {/* Migrare contoare */}
+            <div className="card">
+              <div className="card-header">
+                <div>
+                  <div className="card-title">Migrare contoare vechi</div>
+                  <div className="card-subtitle">
+                    Copiază câmpul <code>tip</code> → <code>denumire</code> pentru contoarele create înainte de actualizarea sistemului.
+                    Operațiunea este sigură și poate fi repetată fără efecte secundare.
+                  </div>
+                </div>
+              </div>
+              <div className="card-body">
+
+                {/* Info */}
+                <div style={{ padding: '12px 16px', background: 'var(--blue-light)', borderRadius: 8, fontSize: 13, marginBottom: 16, border: '1px solid var(--blue-mid)' }}>
+                  <div style={{ fontWeight: 600, marginBottom: 6, color: 'var(--blue)' }}>
+                    <i className="ti ti-info-circle" /> De ce e necesară această migrare?
+                  </div>
+                  <p style={{ margin: 0, color: 'var(--slate)', lineHeight: 1.6 }}>
+                    Contoarele create în versiunea veche a aplicației salvau numele în câmpul <code>tip</code>.
+                    Versiunea nouă folosește câmpul <code>denumire</code>. Fără migrare, contoarele vechi pot
+                    apărea fără nume sau pot cauza erori la salvarea citirilor.
+                  </p>
+                </div>
+
+                {/* Buton + log */}
+                <button
+                  className="btn btn-primary"
+                  disabled={migrStatus === 'running'}
+                  onClick={async () => {
+                    setMigrStatus('running')
+                    setMigrLog([{ timp: new Date().toLocaleTimeString('ro-RO'), msg: 'Se analizează colecția contoare...', tip: 'info' }])
+                    try {
+                      await migreazaContoare((prog) => {
+                        if (prog.pas === 'analiza') {
+                          setMigrLog(l => [...l, {
+                            timp: new Date().toLocaleTimeString('ro-RO'),
+                            msg: `Găsite ${prog.total} contoare total: ${prog.deUpdate} de migrat, ${prog.deja} deja migrate, ${prog.fara} fără nume.`,
+                            tip: 'info'
+                          }])
+                        } else if (prog.pas === 'migrat') {
+                          setMigrLog(l => [...l, {
+                            timp: new Date().toLocaleTimeString('ro-RO'),
+                            msg: `✓ Migrat ${prog.migrat}/${prog.total}`,
+                            tip: 'ok'
+                          }])
+                        } else if (prog.pas === 'gata') {
+                          setMigrLog(l => [...l, {
+                            timp: new Date().toLocaleTimeString('ro-RO'),
+                            msg: prog.migrat === 0
+                              ? `✅ Nimic de migrat — toate contoarele au deja câmpul denumire.`
+                              : `✅ Migrare completă! ${prog.migrat} contoare actualizate din ${prog.total}.`,
+                            tip: 'success'
+                          }])
+                          setMigrStatus('done')
+                        }
+                      })
+                    } catch (err) {
+                      setMigrLog(l => [...l, { timp: new Date().toLocaleTimeString('ro-RO'), msg: '❌ Eroare: ' + err.message, tip: 'error' }])
+                      setMigrStatus('error')
+                    }
+                  }}
+                >
+                  <i className={`ti ${migrStatus === 'running' ? 'ti-refresh' : 'ti-database-import'}`} />
+                  {migrStatus === 'running' ? 'Se migrează...' : 'Rulează migrare contoare'}
+                </button>
+
+                {/* Log output */}
+                {migrLog.length > 0 && (
+                  <div style={{ marginTop: 16, background: '#0f172a', borderRadius: 8, padding: 14, fontFamily: 'monospace', fontSize: 12 }}>
+                    {migrLog.map((entry, i) => (
+                      <div key={i} style={{
+                        marginBottom: 4,
+                        color: entry.tip === 'error' ? '#f87171' : entry.tip === 'success' ? '#4ade80' : entry.tip === 'ok' ? '#86efac' : '#94a3b8'
+                      }}>
+                        <span style={{ color: '#475569' }}>[{entry.timp}]</span> {entry.msg}
+                      </div>
+                    ))}
+                    {migrStatus === 'running' && (
+                      <div style={{ color: '#60a5fa', marginTop: 4 }}>
+                        <i className="ti ti-refresh" style={{ animation: 'spin 1s linear infinite' }} /> În curs...
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {migrStatus === 'done' && (
+                  <div style={{ marginTop: 12, padding: '10px 14px', background: '#f0fdf4', borderRadius: 8, border: '1px solid #86efac', fontSize: 13, color: '#166534' }}>
+                    <i className="ti ti-check-circle" /> Migrarea s-a finalizat. Contoarele vechi funcționează acum cu noul sistem. Poți rula din nou oricând — operațiunea e idempotentă.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Placeholder pentru viitoare operațiuni */}
+            <div className="card" style={{ opacity: 0.6 }}>
+              <div className="card-header">
+                <div>
+                  <div className="card-title" style={{ color: 'var(--slate)' }}>Verificare integritate date</div>
+                  <div className="card-subtitle">În dezvoltare — va verifica consistența între colecțiile Firestore.</div>
+                </div>
+                <span className="badge badge-gray">În curând</span>
+              </div>
+            </div>
+
+          </div>
+        )}
+
         {tabConfig === 'firebase' && <div className="card">
           <div className="card-header">
             <div className="card-title">Deploy Netlify + GitHub</div>
