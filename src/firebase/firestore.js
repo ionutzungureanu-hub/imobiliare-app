@@ -524,3 +524,14 @@ export const migreazaContoare = async (onProgress) => {
   onProgress?.({ pas: 'gata', migrat, total: docs.length })
   return { migrat, total: docs.length, deja: deja.length, fara: fara.length }
 }
+
+// ── RAPOARTE ───────────────────────────────────────────────────
+export const getCitiriPentruRaport = async (spatiuIds = [], dataStart = null, dataStop = null) => {
+  // Citiri pentru lista de spații, filtrate pe perioadă
+  const snap = await getDocs(collection(db, 'citiri'))
+  let citiri = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  if (spatiuIds.length > 0) citiri = citiri.filter(c => spatiuIds.includes(c.spatiuId))
+  if (dataStart) citiri = citiri.filter(c => c.data >= dataStart)
+  if (dataStop)  citiri = citiri.filter(c => c.data <= dataStop)
+  return citiri.sort((a, b) => b.data?.localeCompare?.(a.data) || 0)
+}

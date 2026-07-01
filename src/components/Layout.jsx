@@ -18,6 +18,7 @@ const NAV_ALL = [
   { to: '/furnizori',       icon: 'ti-file-import',      label: 'Furnizori',        section: 'Documente',  adminOnly: true,  desktopOnly: true },
   { to: '/biblioteca',      icon: 'ti-books',            label: 'Bibliotecă',       section: 'Bibliotecă', adminOnly: false, desktopOnly: true },
   { to: '/contracte',       icon: 'ti-file-text',        label: 'Contracte',        section: 'Bibliotecă', adminOnly: false, desktopOnly: true },
+  { to: '/rapoarte',        icon: 'ti-chart-bar',        label: 'Rapoarte',         section: 'Rapoarte',   adminOnly: false, desktopOnly: true },
   { to: '/utilizatori',     icon: 'ti-user-cog',         label: 'Utilizatori',      section: 'Setări',     adminOnly: true,  desktopOnly: true },
   { to: '/config',          icon: 'ti-settings',         label: 'Configurare',      section: 'Setări',     adminOnly: true,  desktopOnly: true },
 ]
