@@ -97,8 +97,10 @@ export const getImobile = async () => {
   const snap = await getDocs(collection(db, 'imobile'))
   return snap.docs.map(d => ({ id: d.id, ...d.data() }))
 }
-export const addImobil = async (data) =>
-  addDoc(collection(db, 'imobile'), stripUndefined({ ...data, creatLa: serverTimestamp() }))
+export const addImobil = async (data) => {
+  const ref = await addDoc(collection(db, 'imobile'), stripUndefined({ ...data, creatLa: serverTimestamp() }))
+  return ref.id
+}
 export const updateImobil = async (id, data) =>
   updateDoc(doc(db, 'imobile', id), stripUndefined(data))
 export const deleteImobil = async (id) =>

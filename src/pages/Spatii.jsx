@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { whatsappLink } from '../utils'
 import { useNavigate } from 'react-router-dom'
 import Topbar from '../components/Topbar'
 import { useToast } from '../components/Toast'
@@ -17,6 +18,7 @@ const ROLURI = ['Chiriaș principal', 'Co-chiriaș', 'Garant', 'Reprezentant', '
 const emptyImobil = () => ({
   nume: '', adresa: '', actUrl: '', actNota: '',
   tip: 'rezidential', antetNota: '', subAntetNota: '', managerId: '',
+  unitar: false, // toggle: imobilul este același cu spațiul (apartament/garsonieră)
 })
 const emptySpatiu = (imobilId = '', managerId = '') => ({
   denumire: '', suprafata: '', etaj: '', imobilId,
@@ -95,7 +97,8 @@ export default function Spatii() {
   const openEditImobil = (im) => {
     setFormI({ nume: im.nume || '', adresa: im.adresa || '', actUrl: im.actUrl || '',
       actNota: im.actNota || '', tip: im.tip || 'rezidential',
-      antetNota: im.antetNota || '', subAntetNota: im.subAntetNota || '', managerId: im.managerId || '' })
+      antetNota: im.antetNota || '', subAntetNota: im.subAntetNota || '', managerId: im.managerId || '',
+      unitar: im.unitar || false })
     setEditIId(im.id); setModalI('edit')
   }
 
@@ -111,7 +114,20 @@ export default function Spatii() {
           const sp = allSpatii.filter(s => s.imobilId === editIId && s.preiaMgrImobil)
           if (sp.length > 0) setModalPropagate({ imobilId: editIId, newManagerId: formI.managerId, count: sp.length })
         }
-      } else { await addImobil(formI); toast('Imobil adăugat!') }
+        // Dacă s-a activat unitar și nu există niciun spațiu → creează automat spațiu cu același nume
+        if (formI.unitar && !allSpatii.some(s => s.imobilId === editIId)) {
+          await addSpatiu({ denumire: formI.nume, imobilId: editIId, managerId: formI.managerId, status: 'Liber', preiaMgrImobil: true, clienti: [], clientId: '' })
+          toast('Spațiu creat automat cu același nume ca imobilul.')
+        }
+      } else {
+        const imId = await addImobil(formI)
+        toast('Imobil adăugat!')
+        // Dacă unitar → creează automat spațiu
+        if (formI.unitar && imId) {
+          await addSpatiu({ denumire: formI.nume, imobilId: imId, managerId: formI.managerId, status: 'Liber', preiaMgrImobil: true, clienti: [], clientId: '' })
+          toast('Spațiu creat automat — imobil unitar.')
+        }
+      }
       setModalI(false); load()
     } catch { toast('Eroare.', 'error') }
     finally { setSaving(false) }
@@ -250,7 +266,10 @@ export default function Spatii() {
                     <i className="ti ti-building" style={{ color: '#fff', fontSize: 18 }} />
                   </div>
                   <div>
-                    <div style={{ fontWeight: 600, fontSize: 15 }}>{im.nume}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontWeight: 600, fontSize: 15 }}>{im.nume}</span>
+                    {im.unitar && <span className="badge badge-blue" style={{ fontSize: 10 }}>Unitar</span>}
+                  </div>
                     <div style={{ fontSize: 12, color: 'var(--slate)' }}>
                       {im.adresa && <span>{im.adresa} · </span>}
                       <span>{spatiiIm.length} spații · </span>
@@ -326,6 +345,40 @@ export default function Spatii() {
                                         {sc.rol === 'Chiriaș principal' && <i className="ti ti-star-filled" style={{ color: 'var(--amber)', fontSize: 10 }} title="Principal" />}
                                         <span style={{ fontWeight: sc.rol === 'Chiriaș principal' ? 600 : 400 }}>{cl.nume}</span>
                                         <span style={{ color: 'var(--slate)', fontSize: 10 }}>({sc.rol})</span>
+                                        {/* Butoane contact rapid */}
+                                        <div style={{ display: 'inline-flex', gap: 3, marginLeft: 6 }}>
+                                          {cl.telefon && (
+                                            <a href={`tel:${cl.telefon}`}
+                                              className="btn btn-ghost btn-sm"
+                                              style={{ padding: '1px 5px', height: 20 }}
+                                              title={`Sună: ${cl.telefon}`}
+                                              onClick={e => e.stopPropagation()}>
+                                              <i className="ti ti-phone" style={{ fontSize: 11 }} />
+                                            </a>
+                                          )}
+                                          {(cl.whatsapp || cl.telefon || (cl.contacte?.[0]?.whatsapp) || (cl.contacte?.[0]?.telefon)) && (
+                                            <a href={whatsappLink(
+                                                cl.whatsapp || cl.telefon || cl.contacte?.[0]?.whatsapp || cl.contacte?.[0]?.telefon,
+                                                `Bună ziua${cl.nume ? ', ' + cl.nume : ''}!`
+                                              )}
+                                              target="_blank" rel="noreferrer"
+                                              className="btn btn-success btn-sm"
+                                              style={{ padding: '1px 5px', height: 20 }}
+                                              title="WhatsApp"
+                                              onClick={e => e.stopPropagation()}>
+                                              <i className="ti ti-brand-whatsapp" style={{ fontSize: 11 }} />
+                                            </a>
+                                          )}
+                                          {cl.email && (
+                                            <a href={`mailto:${cl.email}`}
+                                              className="btn btn-ghost btn-sm"
+                                              style={{ padding: '1px 5px', height: 20 }}
+                                              title={cl.email}
+                                              onClick={e => e.stopPropagation()}>
+                                              <i className="ti ti-mail" style={{ fontSize: 11 }} />
+                                            </a>
+                                          )}
+                                        </div>
                                       </div>
                                     ) : null
                                   })}
@@ -424,6 +477,20 @@ export default function Spatii() {
                       <option key={u.id} value={u.id}>{u.nume || u.email} {u.rol === 'admin' ? '(Admin)' : ''}</option>
                     ))}
                   </select>
+                </div>
+                <div className="form-group full">
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '10px 12px', background: formI.unitar ? 'var(--blue-light)' : 'var(--slate-light)', borderRadius: 8, border: `1px solid ${formI.unitar ? 'var(--blue-mid)' : 'var(--border)'}` }}>
+                    <input type="checkbox" checked={formI.unitar || false}
+                      onChange={e => setFormI(f => ({ ...f, unitar: e.target.checked }))}
+                      style={{ width: 18, height: 18 }} />
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: 14 }}>Imobil unitar</div>
+                      <div style={{ fontSize: 12, color: 'var(--slate)', marginTop: 2 }}>
+                        Imobilul este același cu spațiul (apartament, garsonieră, birou unic).
+                        Se creează automat un spațiu cu același nume — nu mai trebuie adăugat manual.
+                      </div>
+                    </div>
+                  </label>
                 </div>
                 <div className="form-group"><label>Antet notă de calcul</label><input value={formI.antetNota} onChange={e => setFormI(f => ({ ...f, antetNota: e.target.value }))} placeholder="ex. Proprietar: Ion Ungureanu" /></div>
                 <div className="form-group"><label>Sub-antet</label><input value={formI.subAntetNota} onChange={e => setFormI(f => ({ ...f, subAntetNota: e.target.value }))} placeholder="ex. Str. Florilor 12, Ploiești" /></div>
