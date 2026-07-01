@@ -154,7 +154,14 @@ export default function Clienti() {
       <td>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <ToggleActiv client={c} onToggle={load} />
-          <span style={{ fontWeight: 500 }}>{c.nume}</span>
+          <div>
+            <div style={{ fontWeight: 500 }}>{c.nume}</div>
+            {c.email && (
+              <a href={`mailto:${c.email}`} style={{ fontSize: 11, color: 'var(--blue)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3, marginTop: 2 }}>
+                <i className="ti ti-mail" style={{ fontSize: 11 }} />{c.email}
+              </a>
+            )}
+          </div>
         </div>
       </td>
       <td style={{ color: 'var(--slate)', fontSize: 12 }}>{c.cui || '—'}</td>
@@ -213,28 +220,37 @@ export default function Clienti() {
       <td>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <ToggleActiv client={c} onToggle={load} />
-          <span style={{ fontWeight: 500 }}>{c.nume}</span>
+          <div>
+            <div style={{ fontWeight: 500 }}>{c.nume}</div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 3, flexWrap: 'wrap' }}>
+              {c.telefon && (
+                <a href={`tel:${c.telefon}`} style={{ fontSize: 11, color: 'var(--slate)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}>
+                  <i className="ti ti-phone" style={{ fontSize: 11 }} />{c.telefon}
+                </a>
+              )}
+              {c.email && (
+                <a href={`mailto:${c.email}`} style={{ fontSize: 11, color: 'var(--blue)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}>
+                  <i className="ti ti-mail" style={{ fontSize: 11 }} />{c.email}
+                </a>
+              )}
+              {(c.whatsapp || c.telefon) && (
+                <a href={whatsappLink(c.whatsapp || c.telefon, `Bună ziua, ${c.nume}!`)} target="_blank" rel="noreferrer"
+                  style={{ fontSize: 11, color: '#16a34a', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}>
+                  <i className="ti ti-brand-whatsapp" style={{ fontSize: 11 }} />WA
+                </a>
+              )}
+            </div>
+          </div>
         </div>
       </td>
       <td style={{ color: 'var(--slate)', fontSize: 12 }}>{c.cnp || '—'}</td>
       <td style={{ fontSize: 13 }}>{c.telefon || '—'}</td>
-      <td style={{ fontSize: 12 }}>
-        {c.email ? <a href={`mailto:${c.email}`} style={{ color: 'var(--blue)', textDecoration: 'none' }}>{c.email}</a> : '—'}
-      </td>
       <td style={{ color: 'var(--slate)', fontSize: 12 }}>{c.spatiu || '—'}</td>
       <td>
         <div style={{ display: 'flex', gap: 4 }}>
-          {c.email    && <a href={`mailto:${c.email}`} className="btn btn-ghost btn-sm"><i className="ti ti-mail" /></a>}
-          {c.telefon  && <a href={`tel:${c.telefon}`} className="btn btn-ghost btn-sm"><i className="ti ti-phone" /></a>}
-          {(c.whatsapp || c.telefon) && (
-            <a href={whatsappLink(c.whatsapp || c.telefon, `Bună ziua, ${c.nume}!`)} target="_blank" rel="noreferrer" className="btn btn-success btn-sm">
-              <i className="ti ti-brand-whatsapp" />
-            </a>
-          )}
-        </div>
-      </td>
-      <td>
-        <div style={{ display: 'flex', gap: 4 }}>
+          <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/nota-calcul?clientId=${c.id}`)} title="Notă calcul">
+            <i className="ti ti-calculator" />
+          </button>
           <button className="btn btn-ghost btn-sm" onClick={() => openEdit(c)}><i className="ti ti-pencil" /></button>
           <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/clienti/${c.id}`)}><i className="ti ti-message-circle" /></button>
           <button className="btn btn-danger btn-sm" onClick={() => handleDelete(c.id, c.nume)}><i className="ti ti-trash" /></button>
@@ -293,7 +309,7 @@ export default function Clienti() {
           <div className="card">
             <table>
               <thead>
-                <tr><th>Denumire</th><th>CUI</th><th>TVA</th><th>Contacte</th><th>Emailuri</th><th>Contact rapid</th><th></th></tr>
+                <tr><th>Denumire</th><th>CUI</th><th>TVA</th><th>Contacte</th><th>Emailuri</th><th></th></tr>
               </thead>
               <tbody>
                 {activiPJ.length === 0 && inactiviPJ.length === 0 ? (
@@ -319,7 +335,7 @@ export default function Clienti() {
           <div className="card">
             <table>
               <thead>
-                <tr><th>Nume</th><th>CNP</th><th>Telefon</th><th>Email</th><th>Spațiu</th><th>Contact rapid</th><th></th></tr>
+                <tr><th>Nume</th><th>CNP</th><th>Telefon</th><th>Spațiu</th><th></th></tr>
               </thead>
               <tbody>
                 {activiPF.length === 0 && inactiviPF.length === 0 ? (
