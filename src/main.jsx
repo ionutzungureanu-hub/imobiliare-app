@@ -1,10 +1,13 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
+import EnvCheck from './components/EnvCheck'
 import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <App />
+    <EnvCheck>
+      <App />
+    </EnvCheck>
   </React.StrictMode>
 )
