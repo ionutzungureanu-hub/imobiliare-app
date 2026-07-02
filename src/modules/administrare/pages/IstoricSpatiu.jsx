@@ -190,7 +190,7 @@ export default function IstoricSpatiu() {
             return (
               <div key={contor.id} className="card" style={{ marginBottom: 16 }}>
                 <div className="card-header">
-                  <div className="card-title">{contor.tip} <span style={{ fontSize: 12, color: 'var(--slate)', fontWeight: 400 }}>({contor.um})</span></div>
+                  <div className="card-title">{contor.denumire || contor.tip} <span style={{ fontSize: 12, color: 'var(--slate)', fontWeight: 400 }}>({contor.um})</span></div>
                   <span className="badge badge-gray">{citiri.length} citiri</span>
                 </div>
                 {citiri.length === 0 ? (

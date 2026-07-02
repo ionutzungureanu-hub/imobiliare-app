@@ -34,12 +34,12 @@ export default function PortalSetari() {
           setPortal(p)
           setTitlu(p.titlu || '')
           setAdresare(p.adresare || '')
-          setActive(p.utilitatiActive || ctIndex.map(c => c.tip))
+          setActive(p.utilitatiActive || ctIndex.map(c => c.denumire || c.tip))
           setToken(p.token || '')
         } else {
           setTitlu(s?.denumire || '')
           setAdresare('Bună ziua! Vă rugăm să introduceți indexurile lunare:')
-          setActive(ctIndex.map(c => c.tip))
+          setActive(ctIndex.map(c => c.denumire || c.tip))
           setToken(genToken())
         }
       })
@@ -66,6 +66,7 @@ export default function PortalSetari() {
     setActive(a => a.includes(tip) ? a.filter(t => t !== tip) : [...a, tip])
 
   const iconForTip = (tip) => {
+    if (!tip) return '📊'
     if (tip.includes('Energie')) return '⚡'
     if (tip.includes('rece'))    return '💧'
     if (tip.includes('cald'))    return '🌡️'
@@ -151,21 +152,24 @@ export default function PortalSetari() {
                 Niciun contor cu index configurat pentru acest spațiu.
                 Adaugă contoare din secțiunea Utilități.
               </div>
-            ) : contoare.map(c => (
-              <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', marginBottom: 12, padding: '10px 12px', background: active.includes(c.tip) ? 'var(--blue-light)' : 'var(--slate-light)', borderRadius: 8, border: `1px solid ${active.includes(c.tip) ? 'var(--blue-mid)' : 'var(--border)'}` }}>
-                <input
-                  type="checkbox"
-                  checked={active.includes(c.tip)}
-                  onChange={() => toggleUtilitate(c.tip)}
-                  style={{ width: 18, height: 18 }}
-                />
-                <span style={{ fontSize: 20 }}>{iconForTip(c.tip)}</span>
-                <div>
-                  <div style={{ fontWeight: 500, fontSize: 14 }}>{c.tip}</div>
-                  <div style={{ fontSize: 12, color: 'var(--slate)' }}>unitate: {c.um}</div>
-                </div>
-              </label>
-            ))}
+            ) : contoare.map(c => {
+              const numeContor = c.denumire || c.tip || 'Contor fără nume'
+              return (
+                <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', marginBottom: 12, padding: '10px 12px', background: active.includes(numeContor) ? 'var(--blue-light)' : 'var(--slate-light)', borderRadius: 8, border: `1px solid ${active.includes(numeContor) ? 'var(--blue-mid)' : 'var(--border)'}` }}>
+                  <input
+                    type="checkbox"
+                    checked={active.includes(numeContor)}
+                    onChange={() => toggleUtilitate(numeContor)}
+                    style={{ width: 18, height: 18 }}
+                  />
+                  <span style={{ fontSize: 20 }}>{iconForTip(numeContor)}</span>
+                  <div>
+                    <div style={{ fontWeight: 500, fontSize: 14 }}>{numeContor}</div>
+                    <div style={{ fontSize: 12, color: 'var(--slate)' }}>unitate: {c.um}</div>
+                  </div>
+                </label>
+              )
+            })}
           </div>
         </div>
 

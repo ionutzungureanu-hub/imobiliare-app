@@ -36,13 +36,13 @@ export default function NotaAdministratie() {
     if (!spatiuId) { setCitiriApa([]); return }
     setLoading(true)
     getContoareSpatiu(spatiuId).then(async ct => {
-      const contoareApa = ct.filter(c => TIPURI_APA.includes(c.tip) && c.mod === 'index')
+      const contoareApa = ct.filter(c => TIPURI_APA.includes(c.denumire || c.tip) && c.mod === 'index')
       const toateCitirile = []
       for (const c of contoareApa) {
         const citiri = await getCitiriContor(c.id)
         if (citiri.length > 0) {
           // Cea mai recentă citire
-          toateCitirile.push({ ...citiri[0], tip: c.tip, um: c.um })
+          toateCitirile.push({ ...citiri[0], tip: c.denumire || c.tip, um: c.um })
         }
       }
       setCitiriApa(toateCitirile)

@@ -23,7 +23,7 @@ export default function Portal() {
       setPortal(p)
       // Încarcă contoarele active
       const ct = await getContoareSpatiu(p.spatiuId)
-      const active = ct.filter(c => c.mod === 'index' && (p.utilitatiActive?.includes(c.tip) ?? true))
+      const active = ct.filter(c => c.mod === 'index' && (p.utilitatiActive?.includes(c.denumire || c.tip) ?? true))
       setContoare(active)
       // Încarcă ultima citire per contor
       const map = {}
@@ -71,7 +71,7 @@ export default function Portal() {
           spatiuId:  portal.spatiuId,
           imobilId:  portal.imobilId,
           contorId:  c.id,
-          tip:       c.tip,
+          tip:       c.denumire || c.tip,
           um:        c.um,
           indexNou,
           indexPrecedent: ultima?.index ?? null,
@@ -89,6 +89,7 @@ export default function Portal() {
   }
 
   const iconForTip = (tip) => {
+    if (!tip) return '📊'
     if (tip.includes('Energie')) return '⚡'
     if (tip.includes('Apă rece')) return '💧'
     if (tip.includes('Apă caldă')) return '🌡️'
@@ -153,6 +154,7 @@ export default function Portal() {
             Niciun contor configurat pentru acest spațiu.
           </div>
         ) : contoare.map(c => {
+          const numeContor = c.denumire || c.tip || 'Contor fără nume'
           const ultima   = ultimeCitiri[c.id]
           const poza     = poze[c.id]
           const valoare  = valori[c.id]
@@ -161,9 +163,9 @@ export default function Portal() {
             <div key={c.id} style={styles.card}>
               {/* Header utilitate */}
               <div style={styles.cardHeader}>
-                <span style={{ fontSize: 24 }}>{iconForTip(c.tip)}</span>
+                <span style={{ fontSize: 24 }}>{iconForTip(numeContor)}</span>
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: 16, color: '#0f172a' }}>{c.tip}</div>
+                  <div style={{ fontWeight: 700, fontSize: 16, color: '#0f172a' }}>{numeContor}</div>
                   {ultima && (
                     <div style={{ fontSize: 13, color: '#64748b' }}>
                       Index anterior: <strong>{ultima.index} {c.um}</strong>
