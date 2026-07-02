@@ -1,67 +1,89 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { AuthProvider, useAuth } from './context/AuthContext'
-import Layout from './components/Layout'
-import Login from './pages/Login'
-import Dashboard from './pages/Dashboard'
-import Clienti from './pages/Clienti'
-import ClientDetail from './pages/ClientDetail'
-import Spatii from './pages/Spatii'
-import Utilitati from './pages/Utilitati'
-import NotaCalcul from './pages/NotaCalcul'
-import EmiteFactura from './pages/EmiteFactura'
-import EmiteFacturaUtilitati from './pages/EmiteFacturaUtilitati'
-import FacturiEmise from './pages/FacturiEmise'
-import FurnizoriFacturi from './pages/FurnizoriFacturi'
-import Utilizatori from './pages/Utilizatori'
-import Config from './pages/Config'
-import ImportClienti from './pages/ImportClienti'
-import Biblioteca from './pages/Biblioteca'
-import UtilitatiMobile from './pages/UtilitatiMobile'
-import IstoricSpatiu from './pages/IstoricSpatiu'
-import NotaAdministratie from './pages/NotaAdministratie'
-import Contracte from './pages/Contracte'
-import Rapoarte from './pages/Rapoarte'
-import Portal from './pages/Portal'
-import PortalSetari from './pages/PortalSetari'
-import ValidareIndexuri from './pages/ValidareIndexuri'
+import { AuthProvider, useAuth } from './shared/context/AuthContext'
+import Layout from './shared/components/Layout'
+
+// ── Shared (rute publice / pre-autentificare) ──────────────────
+import Login from './shared/pages/Login'
+import Portal from './shared/pages/Portal'
+
+// ── Modul Administrare (lazy-loaded) ───────────────────────────
+const Dashboard          = lazy(() => import('./modules/administrare/pages/Dashboard'))
+const Clienti             = lazy(() => import('./modules/administrare/pages/Clienti'))
+const ClientDetail        = lazy(() => import('./modules/administrare/pages/ClientDetail'))
+const Spatii               = lazy(() => import('./modules/administrare/pages/Spatii'))
+const Utilitati             = lazy(() => import('./modules/administrare/pages/Utilitati'))
+const UtilitatiMobile        = lazy(() => import('./modules/administrare/pages/UtilitatiMobile'))
+const NotaCalcul               = lazy(() => import('./modules/administrare/pages/NotaCalcul'))
+const NotaAdministratie          = lazy(() => import('./modules/administrare/pages/NotaAdministratie'))
+const ValidareIndexuri             = lazy(() => import('./modules/administrare/pages/ValidareIndexuri'))
+const PortalSetari                   = lazy(() => import('./modules/administrare/pages/PortalSetari'))
+const IstoricSpatiu                    = lazy(() => import('./modules/administrare/pages/IstoricSpatiu'))
+const Biblioteca                         = lazy(() => import('./modules/administrare/pages/Biblioteca'))
+const Contracte                            = lazy(() => import('./modules/administrare/pages/Contracte'))
+const Rapoarte                               = lazy(() => import('./modules/administrare/pages/Rapoarte'))
+const ImportClienti                            = lazy(() => import('./modules/administrare/pages/ImportClienti'))
+const Utilizatori                                = lazy(() => import('./modules/administrare/pages/Utilizatori'))
+const Config                                       = lazy(() => import('./modules/administrare/pages/Config'))
+
+// ── Modul Facturare (lazy-loaded) ──────────────────────────────
+const EmiteFactura          = lazy(() => import('./modules/facturare/pages/EmiteFactura'))
+const EmiteFacturaUtilitati  = lazy(() => import('./modules/facturare/pages/EmiteFacturaUtilitati'))
+const FacturiEmise             = lazy(() => import('./modules/facturare/pages/FacturiEmise'))
+const FurnizoriFacturi           = lazy(() => import('./modules/facturare/pages/FurnizoriFacturi'))
 
 function PrivateRoute({ children }) {
   const { user } = useAuth()
   return user ? children : <Navigate to="/login" replace />
 }
 
+function PageLoading() {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', color: 'var(--slate)', fontSize: 14 }}>
+      <i className="ti ti-refresh" style={{ marginRight: 8, animation: 'spin 1s linear infinite' }} />
+      Se încarcă...
+    </div>
+  )
+}
+
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/portal/:token" element={<Portal />} />
-          <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
-            <Route index element={<Navigate to="/dashboard" replace />} />
-            <Route path="dashboard"        element={<Dashboard />} />
-            <Route path="clienti"          element={<Clienti />} />
-            <Route path="clienti/:id"      element={<ClientDetail />} />
-            <Route path="spatii"           element={<Spatii />} />
-            <Route path="utilitati"        element={<Utilitati />} />
-            <Route path="nota-calcul"      element={<NotaCalcul />} />
-            <Route path="emite"            element={<EmiteFactura />} />
-            <Route path="emite-utilitati"  element={<EmiteFacturaUtilitati />} />
-            <Route path="emise"            element={<FacturiEmise />} />
-            <Route path="furnizori"        element={<FurnizoriFacturi />} />
-            <Route path="utilizatori"      element={<Utilizatori />} />
-            <Route path="config"           element={<Config />} />
-            <Route path="import-clienti"   element={<ImportClienti />} />
-            <Route path="biblioteca"         element={<Biblioteca />} />
-            <Route path="utilitati-mobile"    element={<UtilitatiMobile />} />
-            <Route path="spatii/:spatiuId/istoric" element={<IstoricSpatiu />} />
-            <Route path="nota-administratie"   element={<NotaAdministratie />} />
-            <Route path="contracte"             element={<Contracte />} />
-            <Route path="rapoarte"               element={<Rapoarte />} />
-            <Route path="spatii/:spatiuId/portal" element={<PortalSetari />} />
-            <Route path="validare-indexuri"        element={<ValidareIndexuri />} />
-          </Route>
-        </Routes>
+        <Suspense fallback={<PageLoading />}>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/portal/:token" element={<Portal />} />
+            <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
+              <Route index element={<Navigate to="/dashboard" replace />} />
+
+              {/* ── Administrare ── */}
+              <Route path="dashboard"        element={<Dashboard />} />
+              <Route path="clienti"          element={<Clienti />} />
+              <Route path="clienti/:id"      element={<ClientDetail />} />
+              <Route path="spatii"           element={<Spatii />} />
+              <Route path="utilitati"        element={<Utilitati />} />
+              <Route path="nota-calcul"      element={<NotaCalcul />} />
+              <Route path="utilizatori"      element={<Utilizatori />} />
+              <Route path="config"           element={<Config />} />
+              <Route path="import-clienti"   element={<ImportClienti />} />
+              <Route path="biblioteca"       element={<Biblioteca />} />
+              <Route path="utilitati-mobile" element={<UtilitatiMobile />} />
+              <Route path="spatii/:spatiuId/istoric" element={<IstoricSpatiu />} />
+              <Route path="nota-administratie"       element={<NotaAdministratie />} />
+              <Route path="contracte"                element={<Contracte />} />
+              <Route path="rapoarte"                 element={<Rapoarte />} />
+              <Route path="spatii/:spatiuId/portal"  element={<PortalSetari />} />
+              <Route path="validare-indexuri"        element={<ValidareIndexuri />} />
+
+              {/* ── Facturare ── */}
+              <Route path="emite"            element={<EmiteFactura />} />
+              <Route path="emite-utilitati"  element={<EmiteFacturaUtilitati />} />
+              <Route path="emise"            element={<FacturiEmise />} />
+              <Route path="furnizori"        element={<FurnizoriFacturi />} />
+            </Route>
+          </Routes>
+        </Suspense>
       </BrowserRouter>
     </AuthProvider>
   )

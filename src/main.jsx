@@ -1,7 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
-import EnvCheck from './components/EnvCheck'
+import EnvCheck from './shared/components/EnvCheck'
 import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
