@@ -114,13 +114,33 @@ export default function UtilitatiMobile() {
           <div className="card-body">
             <div className="form-group" style={{ marginBottom: 12 }}>
               <label>Imobil</label>
-              <select value={imobilId} onChange={e => { setImobilId(e.target.value); setSpatiuId(''); setContorId('') }}>
+              <select value={imobilId} onChange={e => {
+                const newImobilId = e.target.value
+                setImobilId(newImobilId)
+                setContorId('')
+                const im = imobile.find(i => i.id === newImobilId)
+                if (im?.unitar) {
+                  const spUnitar = spatii.find(s => s.imobilId === newImobilId)
+                  setSpatiuId(spUnitar?.id || '')
+                } else {
+                  setSpatiuId('')
+                }
+              }}>
                 <option value="">— Alege imobil —</option>
-                {imobile.map(im => <option key={im.id} value={im.id}>{im.nume}</option>)}
+                {imobile.map(im => <option key={im.id} value={im.id}>{im.nume}{im.unitar ? ' (unitar)' : ''}</option>)}
               </select>
             </div>
 
-            {imobilId && (
+            {imobilId && imobile.find(im => im.id === imobilId)?.unitar ? (
+              <div className="form-group" style={{ marginBottom: 12 }}>
+                <label>Spațiu</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', background: 'var(--blue-light)', borderRadius: 8, border: '1px solid var(--blue-mid)', fontSize: 13 }}>
+                  <i className="ti ti-lock" style={{ fontSize: 13, color: 'var(--blue)' }} />
+                  <span style={{ fontWeight: 500 }}>{spatiiImobil[0]?.denumire || '—'}</span>
+                  <span style={{ fontSize: 11, color: 'var(--slate)' }}>— automat</span>
+                </div>
+              </div>
+            ) : imobilId && (
               <div className="form-group" style={{ marginBottom: 12 }}>
                 <label>Spațiu</label>
                 <select value={spatiuId} onChange={e => { setSpatiuId(e.target.value); setContorId('') }}>

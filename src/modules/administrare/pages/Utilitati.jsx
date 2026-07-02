@@ -541,12 +541,32 @@ export default function Utilitati() {
           <div style={{ display: 'flex', gap: 16, alignItems: 'flex-end', flexWrap: 'wrap' }}>
             <div className="form-group" style={{ flex: 1, minWidth: 180, marginBottom: 0 }}>
               <label>Imobil</label>
-              <select value={imobilId} onChange={e => { setImobilId(e.target.value); setSpatiuId('') }}>
+              <select value={imobilId} onChange={e => {
+                const newImobilId = e.target.value
+                setImobilId(newImobilId)
+                const im = allImobile.find(i => i.id === newImobilId)
+                if (im?.unitar) {
+                  // Imobil unitar → selectează automat singurul spațiu asociat
+                  const spUnitar = allSpatii.find(s => s.imobilId === newImobilId)
+                  setSpatiuId(spUnitar?.id || '')
+                } else {
+                  setSpatiuId('')
+                }
+              }}>
                 <option value="">— Alege imobil —</option>
-                {imobile.map(im => <option key={im.id} value={im.id}>{im.nume}</option>)}
+                {imobile.map(im => <option key={im.id} value={im.id}>{im.nume}{im.unitar ? ' (unitar)' : ''}</option>)}
               </select>
             </div>
-            {imobilId && (
+            {imobilId && imobilCurent?.unitar ? (
+              <div className="form-group" style={{ flex: 1, minWidth: 180, marginBottom: 0 }}>
+                <label>Spațiu</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', background: 'var(--blue-light)', borderRadius: 8, border: '1px solid var(--blue-mid)', fontSize: 13 }}>
+                  <i className="ti ti-lock" style={{ fontSize: 13, color: 'var(--blue)' }} />
+                  <span style={{ fontWeight: 500 }}>{spatiiImobil[0]?.denumire || imobilCurent.nume}</span>
+                  <span style={{ fontSize: 11, color: 'var(--slate)' }}>— selectat automat (imobil unitar)</span>
+                </div>
+              </div>
+            ) : imobilId && (
               <div className="form-group" style={{ flex: 1, minWidth: 180, marginBottom: 0 }}>
                 <label>Spațiu</label>
                 <select value={spatiuId} onChange={e => setSpatiuId(e.target.value)}>
