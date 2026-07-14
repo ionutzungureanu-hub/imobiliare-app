@@ -13,7 +13,7 @@ const NAV_ALL = [
   { to: '/nota-calcul',       icon: 'ti-calculator',     label: 'Notă calcul',      section: 'Documente',  modul: 'administrare', adminOnly: false },
   { to: '/nota-administratie', icon: 'ti-droplet',       label: 'Notă apă bloc',    section: 'Documente',  modul: 'administrare', adminOnly: false },
   { to: '/validare-indexuri',  icon: 'ti-checks',        label: 'Validare indexuri', section: 'Documente',  modul: 'administrare', adminOnly: false },
-  { to: '/biblioteca',      icon: 'ti-books',            label: 'Bibliotecă',       section: 'Bibliotecă', modul: 'administrare', adminOnly: false, desktopOnly: true },
+  { to: '/biblioteca',      icon: 'ti-books',            label: 'Bibliotecă',       section: 'Bibliotecă', modul: 'administrare', adminOnly: false },
   { to: '/contracte',       icon: 'ti-file-text',        label: 'Contracte',        section: 'Bibliotecă', modul: 'administrare', adminOnly: false, desktopOnly: true },
   { to: '/rapoarte',        icon: 'ti-chart-bar',        label: 'Rapoarte',         section: 'Rapoarte',   modul: 'administrare', adminOnly: false, desktopOnly: true },
   { to: '/utilizatori',     icon: 'ti-user-cog',         label: 'Utilizatori',      section: 'Setări',     modul: 'administrare', adminOnly: true,  desktopOnly: true },

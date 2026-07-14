@@ -4,7 +4,7 @@ import Topbar from '../../../shared/components/Topbar'
 import { useToast } from '../../../shared/components/Toast'
 import { useAuth } from '../../../shared/context/AuthContext'
 import { addClient } from '../../../shared/firebase/firestore'
-import { serverTimestamp } from 'firebase/firestore'
+import { serverTimestamp } from 'firebase/firestore/lite'
 
 // Clienți importați din FGO KADO Excelsior — 27 Iunie 2026
 const CLIENTI_IMPORT = [
