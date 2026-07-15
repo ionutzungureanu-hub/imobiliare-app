@@ -9,7 +9,7 @@ import {
   getImobile, addImobil, updateImobil, deleteImobil,
   getSpatii, addSpatiu, updateSpatiu, deleteSpatiu,
   getClienti, getUsers,
-  addClientToSpatiu, removeClientFromSpatiu, updateClientRolInSpatiu
+  addClientToSpatiu, removeClientFromSpatiu, updateClientRolInSpatiu, updateContractClient
 } from '../../../shared/firebase/firestore'
 import DocumentUpload from '../../../shared/components/DocumentUpload'
 
@@ -51,6 +51,9 @@ export default function Spatii() {
   const [modalClienti, setModalClienti] = useState(null) // spatiuId
   const [addClientId,  setAddClientId]  = useState('')
   const [addClientRol, setAddClientRol] = useState('Chiriaș principal')
+  const [addDataStart, setAddDataStart] = useState('')
+  const [addDataFinal, setAddDataFinal] = useState('')
+  const [editContractId, setEditContractId] = useState(null) // clientId al cărui contract e editat inline
 
   // Modal propagare manager
   const [modalPropagate, setModalPropagate] = useState(null)
@@ -197,9 +200,9 @@ export default function Spatii() {
 
   const handleAddClient = async () => {
     if (!addClientId) { toast('Selectează un client.', 'error'); return }
-    await addClientToSpatiu(modalClienti.id, addClientId, addClientRol)
+    await addClientToSpatiu(modalClienti.id, addClientId, addClientRol, addDataStart, addDataFinal)
     toast('Client adăugat în spațiu!')
-    setAddClientId(''); load()
+    setAddClientId(''); setAddDataStart(''); setAddDataFinal(''); load()
     // Refresh modalClienti data
     const refreshed = (await getSpatii()).find(s => s.id === modalClienti.id)
     if (refreshed) {
@@ -223,6 +226,15 @@ export default function Spatii() {
 
   const handleChangeRol = async (clientId, rol) => {
     await updateClientRolInSpatiu(modalClienti.id, clientId, rol)
+    load()
+    const refreshed = (await getSpatii()).find(s => s.id === modalClienti.id)
+    if (refreshed) setModalClienti({ ...refreshed, clienti: refreshed.clienti || [] })
+  }
+
+  const handleUpdateContract = async (clientId, dataStart, dataFinal) => {
+    await updateContractClient(modalClienti.id, clientId, { dataStart, dataFinal })
+    toast('Perioadă contract actualizată.')
+    setEditContractId(null)
     load()
     const refreshed = (await getSpatii()).find(s => s.id === modalClienti.id)
     if (refreshed) setModalClienti({ ...refreshed, clienti: refreshed.clienti || [] })
@@ -603,26 +615,64 @@ export default function Spatii() {
                   {(modalClienti.clienti || []).map((sc, i) => {
                     const cl = getClient(sc.clientId)
                     if (!cl) return null
+                    const editing = editContractId === sc.clientId
                     return (
-                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: sc.rol === 'Chiriaș principal' ? 'var(--blue-light)' : 'var(--slate-light)', borderRadius: 8, marginBottom: 8, border: `1px solid ${sc.rol === 'Chiriaș principal' ? 'var(--blue-mid)' : 'var(--border)'}` }}>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            {sc.rol === 'Chiriaș principal' && <i className="ti ti-star-filled" style={{ color: 'var(--amber)', fontSize: 13 }} />}
-                            <span style={{ fontWeight: 600, fontSize: 13 }}>{cl.nume}</span>
-                            <span className="badge badge-gray" style={{ fontSize: 10 }}>{cl.tip || 'PJ'}</span>
+                      <div key={i} style={{ padding: '10px 12px', background: sc.rol === 'Chiriaș principal' ? 'var(--blue-light)' : 'var(--slate-light)', borderRadius: 8, marginBottom: 8, border: `1px solid ${sc.rol === 'Chiriaș principal' ? 'var(--blue-mid)' : 'var(--border)'}` }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              {sc.rol === 'Chiriaș principal' && <i className="ti ti-star-filled" style={{ color: 'var(--amber)', fontSize: 13 }} />}
+                              <span style={{ fontWeight: 600, fontSize: 13 }}>{cl.nume}</span>
+                              <span className="badge badge-gray" style={{ fontSize: 10 }}>{cl.tip || 'PJ'}</span>
+                            </div>
+                            {cl.telefon && <div style={{ fontSize: 11, color: 'var(--slate)', marginTop: 2 }}>{cl.telefon}</div>}
                           </div>
-                          {cl.telefon && <div style={{ fontSize: 11, color: 'var(--slate)', marginTop: 2 }}>{cl.telefon}</div>}
+                          <select
+                            value={sc.rol}
+                            onChange={e => handleChangeRol(sc.clientId, e.target.value)}
+                            style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6, border: '1px solid var(--border)', background: 'white' }}
+                          >
+                            {ROLURI.map(r => <option key={r} value={r}>{r}</option>)}
+                          </select>
+                          <button className="btn btn-danger btn-sm" onClick={() => handleRemoveClient(sc.clientId)} title="Elimină din spațiu">
+                            <i className="ti ti-user-minus" />
+                          </button>
                         </div>
-                        <select
-                          value={sc.rol}
-                          onChange={e => handleChangeRol(sc.clientId, e.target.value)}
-                          style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6, border: '1px solid var(--border)', background: 'white' }}
-                        >
-                          {ROLURI.map(r => <option key={r} value={r}>{r}</option>)}
-                        </select>
-                        <button className="btn btn-danger btn-sm" onClick={() => handleRemoveClient(sc.clientId)} title="Elimină din spațiu">
-                          <i className="ti ti-user-minus" />
-                        </button>
+
+                        {/* Perioadă contract — afișare sau editare inline */}
+                        {editing ? (
+                          <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+                            <div className="form-group" style={{ marginBottom: 0, flex: 1 }}>
+                              <label style={{ fontSize: 10 }}>Început contract</label>
+                              <input type="date" defaultValue={sc.dataStart || ''} id={`ds-${sc.clientId}`} style={{ fontSize: 12, padding: '5px 8px' }} />
+                            </div>
+                            <div className="form-group" style={{ marginBottom: 0, flex: 1 }}>
+                              <label style={{ fontSize: 10 }}>Final contract</label>
+                              <input type="date" defaultValue={sc.dataFinal || ''} id={`df-${sc.clientId}`} style={{ fontSize: 12, padding: '5px 8px' }} />
+                            </div>
+                            <button className="btn btn-primary btn-sm" onClick={() => {
+                              const ds = document.getElementById(`ds-${sc.clientId}`).value
+                              const df = document.getElementById(`df-${sc.clientId}`).value
+                              handleUpdateContract(sc.clientId, ds, df)
+                            }}>
+                              <i className="ti ti-check" />
+                            </button>
+                            <button className="btn btn-ghost btn-sm" onClick={() => setEditContractId(null)}>
+                              <i className="ti ti-x" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border)', fontSize: 11, color: 'var(--slate)' }}>
+                            <i className="ti ti-calendar-event" style={{ fontSize: 12 }} />
+                            {sc.dataStart || sc.dataFinal
+                              ? <span>Contract: <strong>{sc.dataStart || '—'}</strong> → <strong>{sc.dataFinal || 'nedeterminat'}</strong></span>
+                              : <span>Perioadă contract nesetată</span>
+                            }
+                            <button className="btn btn-ghost btn-sm" style={{ padding: '2px 6px', marginLeft: 'auto' }} onClick={() => setEditContractId(sc.clientId)}>
+                              <i className="ti ti-pencil" style={{ fontSize: 11 }} />
+                            </button>
+                          </div>
+                        )}
                       </div>
                     )
                   })}
@@ -654,6 +704,14 @@ export default function Spatii() {
                     <select value={addClientRol} onChange={e => setAddClientRol(e.target.value)}>
                       {ROLURI.map(r => <option key={r} value={r}>{r}</option>)}
                     </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Început contract <span style={{ color: 'var(--slate)', fontWeight: 400 }}>(opțional)</span></label>
+                    <input type="date" value={addDataStart} onChange={e => setAddDataStart(e.target.value)} />
+                  </div>
+                  <div className="form-group">
+                    <label>Final contract <span style={{ color: 'var(--slate)', fontWeight: 400 }}>(opțional)</span></label>
+                    <input type="date" value={addDataFinal} onChange={e => setAddDataFinal(e.target.value)} />
                   </div>
                 </div>
                 <button className="btn btn-primary btn-sm" onClick={handleAddClient} disabled={!addClientId}>

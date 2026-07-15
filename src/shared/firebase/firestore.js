@@ -226,14 +226,14 @@ export const toggleClientActiv = async (clientId, activ, spatiuId = null) => {
 
 // ── CLIENȚI PER SPAȚIU ────────────────────────────────────────
 // spatiuClienti: [{ clientId, rol, activ }]
-export const addClientToSpatiu = async (spatiuId, clientId, rol = 'Chiriaș principal') => {
+export const addClientToSpatiu = async (spatiuId, clientId, rol = 'Chiriaș principal', dataStart = '', dataFinal = '') => {
   const snap = await getDoc(doc(db, 'spatii', spatiuId))
   if (!snap.exists()) return
   const data = snap.data()
   const clienti = data.clienti || (data.clientId ? [{ clientId: data.clientId, rol: 'Chiriaș principal', activ: true }] : [])
   // Avoid duplicates
   if (clienti.find(c => c.clientId === clientId)) return
-  clienti.push({ clientId, rol, activ: true })
+  clienti.push(stripUndefined({ clientId, rol, activ: true, dataStart, dataFinal }))
   await updateDoc(doc(db, 'spatii', spatiuId), {
     clienti,
     clientId: clienti.find(c => c.rol === 'Chiriaș principal')?.clientId || clienti[0]?.clientId || '',
@@ -261,6 +261,18 @@ export const updateClientRolInSpatiu = async (spatiuId, clientId, rol) => {
   const clienti = (data.clienti || []).map(c => c.clientId === clientId ? { ...c, rol } : c)
   const principal = clienti.find(c => c.rol === 'Chiriaș principal')?.clientId || clienti[0]?.clientId || ''
   await updateDoc(doc(db, 'spatii', spatiuId), { clienti, clientId: principal })
+}
+
+// Editează datele de început/final ale contractului pentru un client asociat unui spațiu.
+// dataStart/dataFinal sunt string-uri 'YYYY-MM-DD' sau '' dacă nu sunt setate (contract nedeterminat/necunoscut).
+export const updateContractClient = async (spatiuId, clientId, { dataStart, dataFinal }) => {
+  const snap = await getDoc(doc(db, 'spatii', spatiuId))
+  if (!snap.exists()) return
+  const data = snap.data()
+  const clienti = (data.clienti || []).map(c =>
+    c.clientId === clientId ? { ...c, dataStart: dataStart ?? c.dataStart ?? '', dataFinal: dataFinal ?? c.dataFinal ?? '' } : c
+  )
+  await updateDoc(doc(db, 'spatii', spatiuId), { clienti })
 }
 
 // ── TEMPLATE NOTE DE CALCUL ────────────────────────────────────
