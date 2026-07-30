@@ -1,6 +1,6 @@
 import {
   collection, doc, getDocs, getDoc,
-  addDoc, updateDoc, deleteDoc,
+  addDoc, updateDoc, deleteDoc, deleteField,
   query, where, orderBy, serverTimestamp
 } from 'firebase/firestore/lite'
 import { db } from './config'
@@ -554,8 +554,9 @@ export const repairDrafturiContracte = async (onProgress) => {
 
   let reparat = 0
   for (const d of corupte) {
-    const { docId, id, ...rest } = d
-    await updateDoc(doc(db, 'contracte_drafturi', docId), stripUndefined(rest))
+    // updateDoc face merge parțial — omiterea câmpului 'id' din payload NU îl șterge din document.
+    // Trebuie folosit explicit deleteField() ca să dispară efectiv câmpul corupt.
+    await updateDoc(doc(db, 'contracte_drafturi', d.docId), { id: deleteField() })
     reparat++
     onProgress?.({ pas: 'reparat', reparat, total: corupte.length })
   }
