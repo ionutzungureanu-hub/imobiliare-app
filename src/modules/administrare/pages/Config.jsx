@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import Topbar from '../../../shared/components/Topbar'
 import { useToast } from '../../../shared/components/Toast'
 import { useAuth } from '../../../shared/context/AuthContext'
-import { getConfig, saveConfig, getImobile, getSpatii, getPreturiImobil, savePreturiImobil, getContoareSpatiu, saveContor, deleteContor, getCitiriContor, migreazaContoare } from '../../../shared/firebase/firestore'
+import { getConfig, saveConfig, getImobile, getSpatii, getPreturiImobil, savePreturiImobil, getContoareSpatiu, saveContor, deleteContor, getCitiriContor, migreazaContoare, repairDrafturiContracte } from '../../../shared/firebase/firestore'
 import { FURNIZORI, testeazaConexiunea } from '../../../shared/services/facturareApi'
 
 const emptyConfig = () => ({
@@ -28,6 +28,8 @@ export default function Config() {
   const [tabConfig,  setTabConfig]  = useState('contoare')
   const [migrStatus, setMigrStatus] = useState(null) // null | 'running' | 'done' | 'error'
   const [migrLog,    setMigrLog]    = useState([])
+  const [repStatus,  setRepStatus]  = useState(null) // null | 'running' | 'done' | 'error'
+  const [repLog,     setRepLog]     = useState([])
   const [spatii,     setSpatii]     = useState([])
   const [selImobilC, setSelImobilC] = useState('')
   const [selSpatiuC, setSelSpatiuC] = useState('')
@@ -705,6 +707,97 @@ service cloud.firestore {
                 {migrStatus === 'done' && (
                   <div style={{ marginTop: 12, padding: '10px 14px', background: '#f0fdf4', borderRadius: 8, border: '1px solid #86efac', fontSize: 13, color: '#166534' }}>
                     <i className="ti ti-check-circle" /> Migrarea s-a finalizat. Contoarele vechi funcționează acum cu noul sistem. Poți rula din nou oricând — operațiunea e idempotentă.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Reparare drafturi contracte */}
+            <div className="card">
+              <div className="card-header">
+                <div>
+                  <div className="card-title">Reparare drafturi contracte</div>
+                  <div className="card-subtitle">
+                    Corectează drafturile de contract afectate de un bug care împiedica editarea și ștergerea
+                    (fiecare editare crea un draft nou în loc să suprascrie). Operațiunea este sigură și poate fi repetată.
+                  </div>
+                </div>
+              </div>
+              <div className="card-body">
+
+                <div style={{ padding: '12px 16px', background: 'var(--blue-light)', borderRadius: 8, fontSize: 13, marginBottom: 16, border: '1px solid var(--blue-mid)' }}>
+                  <div style={{ fontWeight: 600, marginBottom: 6, color: 'var(--blue)' }}>
+                    <i className="ti ti-info-circle" /> De ce e necesară această reparare?
+                  </div>
+                  <p style={{ margin: 0, color: 'var(--slate)', lineHeight: 1.6 }}>
+                    O versiune anterioară salva greșit un câmp <code>id</code> în interiorul documentelor de contract,
+                    ceea ce bloca editarea și ștergerea ulterioară. Această operațiune elimină acel câmp corupt
+                    fără să afecteze conținutul contractelor.
+                  </p>
+                </div>
+
+                <button
+                  className="btn btn-primary"
+                  disabled={repStatus === 'running'}
+                  onClick={async () => {
+                    setRepStatus('running')
+                    setRepLog([{ timp: new Date().toLocaleTimeString('ro-RO'), msg: 'Se analizează colecția contracte_drafturi...', tip: 'info' }])
+                    try {
+                      await repairDrafturiContracte((prog) => {
+                        if (prog.pas === 'analiza') {
+                          setRepLog(l => [...l, {
+                            timp: new Date().toLocaleTimeString('ro-RO'),
+                            msg: `Găsite ${prog.total} drafturi total: ${prog.corupte} afectate de bug.`,
+                            tip: 'info'
+                          }])
+                        } else if (prog.pas === 'reparat') {
+                          setRepLog(l => [...l, {
+                            timp: new Date().toLocaleTimeString('ro-RO'),
+                            msg: `✓ Reparat ${prog.reparat}/${prog.total}`,
+                            tip: 'ok'
+                          }])
+                        } else if (prog.pas === 'gata') {
+                          setRepLog(l => [...l, {
+                            timp: new Date().toLocaleTimeString('ro-RO'),
+                            msg: prog.reparat === 0
+                              ? `✅ Niciun draft afectat — toate documentele sunt deja corecte.`
+                              : `✅ Reparare completă! ${prog.reparat} drafturi corectate din ${prog.total}.`,
+                            tip: 'success'
+                          }])
+                          setRepStatus('done')
+                        }
+                      })
+                    } catch (err) {
+                      setRepLog(l => [...l, { timp: new Date().toLocaleTimeString('ro-RO'), msg: '❌ Eroare: ' + err.message, tip: 'error' }])
+                      setRepStatus('error')
+                    }
+                  }}
+                >
+                  <i className={`ti ${repStatus === 'running' ? 'ti-refresh' : 'ti-tool'}`} />
+                  {repStatus === 'running' ? 'Se repară...' : 'Rulează reparare drafturi'}
+                </button>
+
+                {repLog.length > 0 && (
+                  <div style={{ marginTop: 16, background: '#0f172a', borderRadius: 8, padding: 14, fontFamily: 'monospace', fontSize: 12 }}>
+                    {repLog.map((entry, i) => (
+                      <div key={i} style={{
+                        marginBottom: 4,
+                        color: entry.tip === 'error' ? '#f87171' : entry.tip === 'success' ? '#4ade80' : entry.tip === 'ok' ? '#86efac' : '#94a3b8'
+                      }}>
+                        <span style={{ color: '#475569' }}>[{entry.timp}]</span> {entry.msg}
+                      </div>
+                    ))}
+                    {repStatus === 'running' && (
+                      <div style={{ color: '#60a5fa', marginTop: 4 }}>
+                        <i className="ti ti-refresh" style={{ animation: 'spin 1s linear infinite' }} /> În curs...
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {repStatus === 'done' && (
+                  <div style={{ marginTop: 12, padding: '10px 14px', background: '#f0fdf4', borderRadius: 8, border: '1px solid #86efac', fontSize: 13, color: '#166534' }}>
+                    <i className="ti ti-check-circle" /> Reparare finalizată. Editarea și ștergerea drafturilor funcționează acum corect. Reîmprospătează pagina Contracte pentru a vedea efectul.
                   </div>
                 )}
               </div>

@@ -492,12 +492,12 @@ export const getDraftContract = async (id) => {
 }
 
 export const saveDraftContract = async (data) => {
-  if (data.id) {
-    const { id, ...rest } = data
-    await updateDoc(doc(db, 'contracte_drafturi', id), { ...rest, updatedAt: serverTimestamp() })
+  const { id, ...rest } = data
+  if (id) {
+    await updateDoc(doc(db, 'contracte_drafturi', id), stripUndefined({ ...rest, updatedAt: serverTimestamp() }))
     return id
   }
-  const ref = await addDoc(collection(db, 'contracte_drafturi'), stripUndefined({ ...data, createdAt: serverTimestamp(), updatedAt: serverTimestamp() }))
+  const ref = await addDoc(collection(db, 'contracte_drafturi'), stripUndefined({ ...rest, createdAt: serverTimestamp(), updatedAt: serverTimestamp() }))
   return ref.id
 }
 
@@ -535,6 +535,33 @@ export const migreazaContoare = async (onProgress) => {
 
   onProgress?.({ pas: 'gata', migrat, total: docs.length })
   return { migrat, total: docs.length, deja: deja.length, fara: fara.length }
+}
+
+// Repară drafturile de contract salvate anterior cu câmpul intern 'id' corupt (null/undefined),
+// bug cauzat de o versiune veche a saveDraftContract. Elimină doar câmpul 'id' din interiorul
+// documentului — id-ul real al documentului Firestore (folosit pentru editare/ștergere) rămâne intact.
+export const repairDrafturiContracte = async (onProgress) => {
+  const snap = await getDocs(collection(db, 'contracte_drafturi'))
+  const docs = snap.docs.map(d => ({ docId: d.id, ...d.data() }))
+  const corupte = docs.filter(d => 'id' in d)
+
+  onProgress?.({ total: docs.length, corupte: corupte.length, pas: 'analiza' })
+
+  if (corupte.length === 0) {
+    onProgress?.({ pas: 'gata', reparat: 0, total: docs.length })
+    return { reparat: 0, total: docs.length }
+  }
+
+  let reparat = 0
+  for (const d of corupte) {
+    const { docId, id, ...rest } = d
+    await updateDoc(doc(db, 'contracte_drafturi', docId), stripUndefined(rest))
+    reparat++
+    onProgress?.({ pas: 'reparat', reparat, total: corupte.length })
+  }
+
+  onProgress?.({ pas: 'gata', reparat, total: docs.length })
+  return { reparat, total: docs.length }
 }
 
 // ── RAPOARTE ───────────────────────────────────────────────────
