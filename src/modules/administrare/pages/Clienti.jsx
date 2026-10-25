@@ -1,8 +1,9 @@
 import { mesajEroare } from '../../../shared/utils/eroare'
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
+import { esteActiv } from '../services/registruUtils'
 import Topbar from '../../../shared/components/Topbar'
-import { getClienti, addClient, updateClient, deleteClient, toggleClientActiv, getSpatii } from '../../../shared/firebase/firestore'
+import { getClienti, getRegistru, addClient, updateClient, deleteClient, toggleClientActiv, getSpatii } from '../../../shared/firebase/firestore'
 import { useToast } from '../../../shared/components/Toast'
 import { whatsappLink } from '../../../shared/utils'
 
@@ -62,6 +63,7 @@ function SeparatorInactivi({ count }) {
 
 export default function Clienti() {
   const navigate = useNavigate()
+  const location = useLocation()
   const toast    = useToast()
 
   const [clienti,  setClienti]  = useState([])
@@ -73,11 +75,14 @@ export default function Clienti() {
   const [form,     setForm]     = useState(emptyFormPJ())
   const [saving,   setSaving]   = useState(false)
   const [search,   setSearch]   = useState('')
+  const [registru, setRegistru] = useState([])
 
   const load = async () => {
     const [cl, sp] = await Promise.all([getClienti(), getSpatii()])
     setClienti(cl)
     setSpatii(sp)
+    // Starea contractelor (nu blochează lista dacă registrul nu poate fi citit)
+    Promise.all([getRegistru('comercial'), getRegistru('rezidential')]).then(([a, b]) => setRegistru([...a, ...b])).catch(() => {})
   }
   useEffect(() => { load() }, [])
 
@@ -149,108 +154,63 @@ export default function Clienti() {
   const activiPF   = clientiPF.filter(c => c.activ !== false)
   const inactiviPF = clientiPF.filter(c => c.activ === false)
 
-  // ── Row PJ ───────────────────────────────────────────────────
+  // Venind din cardul clientului cu "Editează": deschide direct formularul
+  useEffect(() => {
+    const eid = location.state?.editId
+    if (!eid || !clienti.length) return
+    const c = clienti.find(x => x.id === eid)
+    if (c) { openEdit(c); window.history.replaceState({}, '') }
+  }, [clienti])
+
+  // ── Rânduri compacte: click = card complet al clientului ─────────
+  const spatiiClient = (c) => c.spatiu || spatii.filter(s => (s.clienti || []).some(a => a.clientId === c.id)).map(s => s.denumire).filter(Boolean).join(', ') || '—'
+  const ContractBadge = ({ id }) => {
+    const r = registru.filter(x => x.clientId === id)
+    const k = r.find(esteActiv) || r[0]
+    if (!k) return <span style={{ color: 'var(--slate)', fontSize: 12 }}>—</span>
+    const activ = esteActiv(k)
+    const z = activ && k.dataFinal ? Math.ceil((new Date(k.dataFinal + 'T00:00:00') - new Date(new Date().toISOString().slice(0, 10) + 'T00:00:00')) / 86400000) : null
+    return <span className={`badge ${activ ? (z !== null && z <= 60 ? 'badge-amber' : 'badge-green') : 'badge-gray'}`}>
+      {activ ? (z !== null && z <= 60 ? `expiră în ${z} zile` : 'Activ') : 'Încheiat'}
+    </span>
+  }
+  const Actiuni = ({ c }) => (
+    <div style={{ display: 'flex', gap: 4, alignItems: 'center' }} onClick={e => e.stopPropagation()}>
+      <button className="btn btn-ghost btn-sm" onClick={() => openEdit(c)} title="Editează"><i className="ti ti-pencil" /></button>
+      <button className="btn btn-danger btn-sm" onClick={() => handleDelete(c.id, c.nume)} title="Șterge"><i className="ti ti-trash" /></button>
+      <i className="ti ti-chevron-right" style={{ color: 'var(--slate)', marginLeft: 4 }} />
+    </div>
+  )
   const RowPJ = ({ c }) => (
-    <tr key={c.id} style={{ opacity: c.activ === false ? 0.55 : 1 }}>
+    <tr key={c.id} onClick={() => navigate(`/clienti/${c.id}`)} style={{ opacity: c.activ === false ? 0.55 : 1, cursor: 'pointer' }}>
       <td>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <ToggleActiv client={c} onToggle={load} />
           <div>
             <div style={{ fontWeight: 500 }}>{c.nume}</div>
-            <div style={{ display: 'flex', gap: 8, marginTop: 3, flexWrap: 'wrap' }}>
-              {/* Email(uri) principale sub nume */}
-              {(c.emailuri?.length ? c.emailuri : c.email ? [{ adresa: c.email, trimiteMail: true }] : [])
-                .filter(e => e.adresa)
-                .map((em, i) => (
-                  <a key={i} href={`mailto:${em.adresa}`}
-                    style={{ fontSize: 11, color: 'var(--blue)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}>
-                    <i className="ti ti-mail" style={{ fontSize: 11 }} />{em.adresa}
-                  </a>
-                ))
-              }
-            </div>
+            {c.cui && <div style={{ fontSize: 11, color: 'var(--slate)' }}>CUI {c.cui}</div>}
           </div>
         </div>
       </td>
-      <td style={{ color: 'var(--slate)', fontSize: 12 }}>{c.cui || '—'}</td>
-      <td>
-        {c.platitorTVA === true
-          ? <span className="badge badge-green" style={{ fontSize: 10 }}>TVA</span>
-          : c.platitorTVA === false
-            ? <span className="badge badge-amber" style={{ fontSize: 10 }}>Fără TVA</span>
-            : <span className="badge badge-gray" style={{ fontSize: 10 }}>—</span>
-        }
-      </td>
-      <td>
-        {(c.contacte || []).filter(x => x.nume || x.telefon).map((ct, i) => (
-          <div key={i} style={{ fontSize: 12, marginBottom: 2 }}>
-            <span style={{ fontWeight: 500 }}>{ct.nume}</span>
-            {ct.functie && <span style={{ color: 'var(--slate)' }}> — {ct.functie}</span>}
-            <div style={{ display: 'flex', gap: 3, marginTop: 2 }}>
-              {ct.telefon && <a href={`tel:${ct.telefon}`} className="btn btn-ghost btn-sm" style={{ padding: '2px 5px' }}><i className="ti ti-phone" style={{ fontSize: 11 }} /></a>}
-              {ct.trimiteMesaj && (ct.whatsapp || ct.telefon) && (
-                <a href={whatsappLink(ct.whatsapp || ct.telefon, `Bună ziua${ct.nume ? ', ' + ct.nume : ''}!`)}
-                  target="_blank" rel="noreferrer" className="btn btn-success btn-sm" style={{ padding: '2px 5px' }}>
-                  <i className="ti ti-brand-whatsapp" style={{ fontSize: 11 }} />
-                </a>
-              )}
-            </div>
-          </div>
-        ))}
-      </td>
-
-      <td>
-        <div style={{ display: 'flex', gap: 4 }}>
-          <button className="btn btn-ghost btn-sm" onClick={() => openEdit(c)}><i className="ti ti-pencil" /></button>
-          <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/clienti/${c.id}`)}><i className="ti ti-message-circle" /></button>
-          <button className="btn btn-danger btn-sm" onClick={() => handleDelete(c.id, c.nume)}><i className="ti ti-trash" /></button>
-        </div>
-      </td>
+      <td style={{ color: 'var(--slate)', fontSize: 12 }}>{spatiiClient(c)}</td>
+      <td><ContractBadge id={c.id} /></td>
+      <td><Actiuni c={c} /></td>
     </tr>
   )
-
-  // ── Row PF ───────────────────────────────────────────────────
   const RowPF = ({ c }) => (
-    <tr key={c.id} style={{ opacity: c.activ === false ? 0.55 : 1 }}>
+    <tr key={c.id} onClick={() => navigate(`/clienti/${c.id}`)} style={{ opacity: c.activ === false ? 0.55 : 1, cursor: 'pointer' }}>
       <td>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <ToggleActiv client={c} onToggle={load} />
           <div>
             <div style={{ fontWeight: 500 }}>{c.nume}</div>
-            <div style={{ display: 'flex', gap: 8, marginTop: 3, flexWrap: 'wrap' }}>
-              {c.telefon && (
-                <a href={`tel:${c.telefon}`} style={{ fontSize: 11, color: 'var(--slate)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}>
-                  <i className="ti ti-phone" style={{ fontSize: 11 }} />{c.telefon}
-                </a>
-              )}
-              {c.email && (
-                <a href={`mailto:${c.email}`} style={{ fontSize: 11, color: 'var(--blue)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}>
-                  <i className="ti ti-mail" style={{ fontSize: 11 }} />{c.email}
-                </a>
-              )}
-              {(c.whatsapp || c.telefon) && (
-                <a href={whatsappLink(c.whatsapp || c.telefon, `Bună ziua, ${c.nume}!`)} target="_blank" rel="noreferrer"
-                  style={{ fontSize: 11, color: '#16a34a', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}>
-                  <i className="ti ti-brand-whatsapp" style={{ fontSize: 11 }} />WA
-                </a>
-              )}
-            </div>
+            {c.telefon && <div style={{ fontSize: 11, color: 'var(--slate)' }}>{c.telefon}</div>}
           </div>
         </div>
       </td>
-      <td style={{ color: 'var(--slate)', fontSize: 12 }}>{c.cnp || '—'}</td>
-      <td style={{ fontSize: 13 }}>{c.telefon || '—'}</td>
-      <td style={{ color: 'var(--slate)', fontSize: 12 }}>{c.spatiu || '—'}</td>
-      <td>
-        <div style={{ display: 'flex', gap: 4 }}>
-          <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/nota-calcul?clientId=${c.id}`)} title="Notă calcul">
-            <i className="ti ti-calculator" />
-          </button>
-          <button className="btn btn-ghost btn-sm" onClick={() => openEdit(c)}><i className="ti ti-pencil" /></button>
-          <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/clienti/${c.id}`)}><i className="ti ti-message-circle" /></button>
-          <button className="btn btn-danger btn-sm" onClick={() => handleDelete(c.id, c.nume)}><i className="ti ti-trash" /></button>
-        </div>
-      </td>
+      <td style={{ color: 'var(--slate)', fontSize: 12 }}>{spatiiClient(c)}</td>
+      <td><ContractBadge id={c.id} /></td>
+      <td><Actiuni c={c} /></td>
     </tr>
   )
 
@@ -304,7 +264,7 @@ export default function Clienti() {
           <div className="card">
             <table>
               <thead>
-                <tr><th>Denumire</th><th>CUI</th><th>TVA</th><th>Contacte</th><th></th></tr>
+                <tr><th>Denumire</th><th>Spațiu</th><th>Contract</th><th></th></tr>
               </thead>
               <tbody>
                 {activiPJ.length === 0 && inactiviPJ.length === 0 ? (
@@ -330,7 +290,7 @@ export default function Clienti() {
           <div className="card">
             <table>
               <thead>
-                <tr><th>Nume</th><th>CNP</th><th>Telefon</th><th>Spațiu</th><th></th></tr>
+                <tr><th>Nume</th><th>Spațiu</th><th>Contract</th><th></th></tr>
               </thead>
               <tbody>
                 {activiPF.length === 0 && inactiviPF.length === 0 ? (

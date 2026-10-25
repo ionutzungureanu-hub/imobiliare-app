@@ -27,6 +27,8 @@ export default function UtilitatiMobile() {
   const [valoare, setValoare] = useState('')
   const [data,    setData]    = useState(TODAY)
   const [nota,    setNota]    = useState('')
+  const [istoricOpen, setIstoricOpen] = useState(false)
+  const [vezi, setVezi] = useState(false)
   const [saving,  setSaving]  = useState(false)
 
   useEffect(() => {
@@ -293,29 +295,43 @@ export default function UtilitatiMobile() {
             {/* Istoric */}
             {citiri.length > 0 && (
               <div className="card">
-                <div className="card-header">
-                  <div className="card-title" style={{ fontSize: 14 }}>Istoric — {contor.denumire || contor.tip}</div>
-                </div>
+                <button onClick={() => setIstoricOpen(o => !o)}
+                  style={{ width: '100%', padding: '12px 16px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 600, fontFamily: 'inherit', textAlign: 'left' }}>
+                  <i className="ti ti-chevron-right" style={{ fontSize: 16, transition: 'transform .15s', transform: istoricOpen ? 'rotate(90deg)' : 'none' }} />
+                  Istoric — {contor.denumire || contor.tip}
+                  <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--slate)', fontWeight: 400 }}>{citiri.length} citiri</span>
+                </button>
+                {istoricOpen && (<>
                 <table style={{ fontSize: 13 }}>
                   <thead>
                     <tr>
                       <th>Data</th>
                       <th style={{ textAlign: 'center' }}>Index</th>
                       <th style={{ textAlign: 'center' }}>Consum</th>
+                      <th style={{ textAlign: 'right' }}>Cost</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {citiri.map((cit, i) => (
+                    {(vezi ? citiri : citiri.slice(0, 3)).map((cit, i) => (
                       <tr key={cit.id} style={{ background: i === 0 ? 'var(--blue-light)' : 'transparent' }}>
                         <td style={{ fontWeight: i === 0 ? 600 : 400 }}>{cit.data}</td>
                         <td style={{ textAlign: 'center', fontWeight: 600 }}>{cit.index} {contor.um}</td>
                         <td style={{ textAlign: 'center', color: 'var(--green)', fontWeight: 600 }}>
                           {cit.consum != null ? `${cit.consum} ${contor.um}` : '—'}
                         </td>
+                        <td style={{ textAlign: 'right' }}>{cit.valoare != null ? `${Number(cit.valoare).toFixed(2)} RON` : '—'}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
+                {citiri.length > 3 && (
+                  <div style={{ padding: 10, textAlign: 'center' }}>
+                    <button className="btn btn-ghost btn-sm" onClick={() => setVezi(v => !v)}>
+                      {vezi ? 'Arată doar ultimele 3' : `Vezi toate (${citiri.length})`}
+                    </button>
+                  </div>
+                )}
+                </>)}
               </div>
             )}
           </>

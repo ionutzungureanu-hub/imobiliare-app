@@ -30,10 +30,9 @@ const GRUPURI = [
     titlu: 'Facturare',
     culoare: '#16a34a',
     itemi: [
-      { to: '/emite',           icon: 'ti-file-plus', label: 'Factură chirie', desktopOnly: true },
-      { to: '/emite-utilitati', icon: 'ti-receipt',   label: 'Factură utilități', desktopOnly: true },
-      { to: '/emise',           icon: 'ti-files',     label: 'Facturi emise', desktopOnly: true },
-      { to: '/furnizori',       icon: 'ti-file-import', label: 'Furnizori', adminOnly: true, desktopOnly: true },
+      { to: '/facturi?tab=chirie',   icon: 'ti-file-plus', label: 'Factură chirie', desktopOnly: true },
+      { to: '/facturi?tab=utilitati', icon: 'ti-receipt', label: 'Factură utilități', desktopOnly: true },
+      { to: '/facturi?tab=istoric', icon: 'ti-files', label: 'Istoric facturi', desktopOnly: true },
     ],
   },
   {
@@ -42,6 +41,7 @@ const GRUPURI = [
     itemi: [
       { to: '/utilizatori', icon: 'ti-user-cog', label: 'Utilizatori', adminOnly: true, desktopOnly: true },
       { to: '/config',      icon: 'ti-settings',  label: 'Configurare', adminOnly: true, desktopOnly: true },
+      { to: '/furnizori',   icon: 'ti-file-import', label: 'Furnizori', adminOnly: true, desktopOnly: true },
     ],
   },
 ]
@@ -56,7 +56,7 @@ export default function Dashboard() {
         <button className="btn btn-primary btn-sm" onClick={() => navigate('/nota-calcul')}>
           <i className="ti ti-calculator" /> Notă de calcul
         </button>
-        <button className="btn btn-ghost btn-sm" onClick={() => navigate('/emite')}>
+        <button className="btn btn-ghost btn-sm" onClick={() => navigate('/facturi')}>
           <i className="ti ti-file-plus" /> Factură nouă
         </button>
       </Topbar>

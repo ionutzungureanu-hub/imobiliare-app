@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './shared/context/AuthContext'
 import Layout from './shared/components/Layout'
 
@@ -26,10 +26,21 @@ const Utilizatori                                = lazy(() => import('./modules/
 const Config                                       = lazy(() => import('./modules/administrare/pages/Config'))
 
 // ── Modul Facturare (lazy-loaded) ──────────────────────────────
-const EmiteFactura          = lazy(() => import('./modules/facturare/pages/EmiteFactura'))
-const EmiteFacturaUtilitati  = lazy(() => import('./modules/facturare/pages/EmiteFacturaUtilitati'))
-const FacturiEmise             = lazy(() => import('./modules/facturare/pages/FacturiEmise'))
+const Facturi                = lazy(() => import('./modules/facturare/pages/Facturi'))
 const FurnizoriFacturi           = lazy(() => import('./modules/facturare/pages/FurnizoriFacturi'))
+
+// Păstrează parametrii din URL (ex. ?clientId=...) când redirecționează spre fila potrivită din Facturi
+function RedirectFacturi({ tab }) {
+  const loc = useLocation()
+  const p = new URLSearchParams(loc.search)
+  p.set('tab', tab)
+  return <Navigate to={`/facturi?${p.toString()}`} replace />
+}
+
+// Pe desktop nota de calcul face parte din Facturi; pe telefon rămâne pagina separată (din bara de jos)
+function RouteNota() {
+  return window.innerWidth > 768 ? <RedirectFacturi tab="nota" /> : <NotaCalcul />
+}
 
 function PrivateRoute({ children }) {
   const { user } = useAuth()
@@ -64,7 +75,7 @@ export default function App() {
               <Route path="comunicare"       element={<Comunicare />} />
               <Route path="citire"           element={<Citire />} />
               <Route path="utilitati"        element={<Navigate to="/citire" replace />} />
-              <Route path="nota-calcul"      element={<NotaCalcul />} />
+              <Route path="nota-calcul"      element={<RouteNota />} />
               <Route path="utilizatori"      element={<Utilizatori />} />
               <Route path="config"           element={<Config />} />
               <Route path="import-clienti"   element={<ImportClienti />} />
@@ -78,9 +89,10 @@ export default function App() {
               <Route path="validare-indexuri"        element={<Navigate to="/citire?tab=validare" replace />} />
 
               {/* ── Facturare ── */}
-              <Route path="emite"            element={<EmiteFactura />} />
-              <Route path="emite-utilitati"  element={<EmiteFacturaUtilitati />} />
-              <Route path="emise"            element={<FacturiEmise />} />
+              <Route path="facturi"          element={<Facturi />} />
+              <Route path="emite"            element={<RedirectFacturi tab="chirie" />} />
+              <Route path="emite-utilitati"  element={<RedirectFacturi tab="utilitati" />} />
+              <Route path="emise"            element={<RedirectFacturi tab="istoric" />} />
               <Route path="furnizori"        element={<FurnizoriFacturi />} />
             </Route>
           </Routes>

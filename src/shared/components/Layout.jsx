@@ -13,19 +13,16 @@ const NAV_ALL = [
   { to: '/contracte',          icon: 'ti-file-text',        label: 'Contracte',         section: 'Persoane și spații', desktopOnly: true },
   { to: '/comunicare',         icon: 'ti-mail',             label: 'Comunicare',        section: 'Persoane și spații', desktopOnly: true },
 
-  { to: '/citire',             icon: 'ti-bolt',             label: 'Citire indexuri',   section: 'Ciclul lunar', badge: true },
-  { to: '/nota-calcul',        icon: 'ti-calculator',       label: 'Notă calcul',       section: 'Ciclul lunar' },
-  { to: '/nota-administratie', icon: 'ti-droplet',          label: 'Notă apă bloc',     section: 'Ciclul lunar' },
-  { to: '/emite',              icon: 'ti-file-plus',        label: 'Factură chirie',    section: 'Ciclul lunar', desktopOnly: true },
-  { to: '/emite-utilitati',    icon: 'ti-receipt',          label: 'Factură utilități', section: 'Ciclul lunar', desktopOnly: true },
-  { to: '/emise',              icon: 'ti-files',            label: 'Facturi emise',     section: 'Ciclul lunar', desktopOnly: true },
-  { to: '/furnizori',          icon: 'ti-file-import',      label: 'Furnizori',         section: 'Ciclul lunar', adminOnly: true, desktopOnly: true },
+  { to: '/citire',             icon: 'ti-bolt',             label: '1 · Citire indexuri', section: 'Ciclul lunar', badge: true },
+  { to: '/nota-administratie', icon: 'ti-droplet',          label: '2 · Notă apă bloc',   section: 'Ciclul lunar' },
+  { to: '/facturi',            icon: 'ti-receipt',          label: '3 · Facturi',         section: 'Ciclul lunar', desktopOnly: true },
 
   { to: '/biblioteca',         icon: 'ti-books',            label: 'Bibliotecă',        section: 'Documente și rapoarte' },
   { to: '/rapoarte',           icon: 'ti-chart-bar',        label: 'Rapoarte',          section: 'Documente și rapoarte', desktopOnly: true },
 
   { to: '/utilizatori',        icon: 'ti-user-cog',         label: 'Utilizatori',       section: 'Setări', adminOnly: true, desktopOnly: true },
   { to: '/config',             icon: 'ti-settings',         label: 'Configurare',       section: 'Setări', adminOnly: true, desktopOnly: true },
+  { to: '/furnizori',          icon: 'ti-file-import',      label: 'Furnizori',         section: 'Setări', adminOnly: true, desktopOnly: true },
 ]
 
 const MOBILE_NAV = [
@@ -183,7 +180,7 @@ function getPageTitle(path) {
   const map = {
     '/dashboard': 'Dashboard', '/clienti': 'Clienți',
     '/spatii': 'Spații & Imobile', '/utilitati': 'Utilități',
-    '/utilitati-mobile': 'Citire rapidă', '/citire': 'Citire indexuri', '/comunicare': 'Comunicare',
+    '/utilitati-mobile': 'Citire rapidă', '/citire': 'Citire indexuri', '/comunicare': 'Comunicare', '/facturi': 'Facturi',
     '/nota-calcul': 'Notă de calcul', '/nota-administratie': 'Notă apă bloc',
     '/validare-indexuri': 'Validare indexuri',
     '/biblioteca': 'Bibliotecă', '/contracte': 'Contracte', '/rapoarte': 'Rapoarte',
