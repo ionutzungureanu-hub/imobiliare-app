@@ -16,7 +16,7 @@ export async function exportDateContoare(allContoare, spatii, imobile) {
   setF(16, 'bold'); color(20, 33, 61)
   doc.text('EXPORT DATE CONTOARE', W / 2, y, { align: 'center' }); y += 7
   setF(9, 'normal'); color(100, 100, 100)
-  doc.text(`Generat: ${new Date().toLocaleDateString('ro-RO')} · AdminChirie`, W / 2, y, { align: 'center' }); y += 8
+  doc.text(`Generat: ${new Date().toLocaleDateString('ro-RO')} · Rentis`, W / 2, y, { align: 'center' }); y += 8
   draw(200, 200, 200); doc.line(ml, y, mr, y); y += 6
 
   // Grupare pe imobil → spațiu

@@ -120,7 +120,7 @@ export function genereazaNotaAdministratie({ spatiu, imobil, client, citiri, per
   draw(200, 200, 200); line(ml, y, mr, y); y += 8
   setF(8, 'normal'); color(150, 150, 150)
   doc.text(`Întocmit: ${userNume || ''}   ·   Data: ${data}`, ml, y)
-  doc.text('Document generat — AdminChirie', mr, y, { align: 'right' })
+  doc.text('Document generat — Rentis', mr, y, { align: 'right' })
 
   return { doc, nr }
 }

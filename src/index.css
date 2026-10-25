@@ -457,3 +457,7 @@ input[type=checkbox], input[type=radio] { accent-color: var(--blue); }
   th, td { padding: 12px 14px; }
   .modal-box { border-radius: var(--radius) var(--radius) 0 0; }
 }
+
+/* Slogan sub logo: încape pe 1–2 rânduri în meniul lateral */
+.sidebar-logo-sub { font-size: 9.5px; letter-spacing: .14em; line-height: 1.6; margin-top: 12px; }
+.login-logo img   { display: block; margin: 0 auto 6px; }

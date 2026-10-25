@@ -36,16 +36,6 @@ const Badge = ({ n }) => n > 0 ? (
   <span style={{ marginLeft: 'auto', background: '#9B2C2C', color: '#fff', borderRadius: 10, fontSize: 11, fontWeight: 700, padding: '1px 7px' }}>{n}</span>
 ) : null
 
-function AdminChirieLogo({ size = 32 }) {
-  // Monogramă: contur auriu pe navy
-  return (
-    <svg width={size} height={size} viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <rect x="2" y="2" width="96" height="96" fill="none" stroke="#B8975A" strokeWidth="4"/>
-      <text x="50" y="66" textAnchor="middle" fontFamily="'Cormorant Garamond', Georgia, serif" fontSize="48" fontWeight="600" fill="#D9BF8A">AC</text>
-    </svg>
-  )
-}
-
 export default function Layout() {
   const { user, profile, isAdmin, logout } = useAuth()
   const navigate  = useNavigate()
@@ -85,16 +75,13 @@ export default function Layout() {
         <aside className={`sidebar${sidebarOpen ? ' open' : ''}`}>
           <div className="sidebar-logo">
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div className="sidebar-logo-mark" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <AdminChirieLogo size={28} />
-                <span>AdminChirie</span>
-              </div>
+              <img src="/logo-rentis-mark-light.png" alt="Rentis" style={{ width: 168, height: 'auto', display: 'block' }} />
               <button onClick={() => setSidebarOpen(false)} className="sidebar-close-btn"
                 style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#D9BF8A', padding: 4, display: 'none' }}>
                 <i className="ti ti-x" />
               </button>
             </div>
-            <div className="sidebar-logo-sub">Gestionare imobile</div>
+            <div className="sidebar-logo-sub">Intelligent Property Management</div>
           </div>
 
           <nav className="sidebar-nav">
@@ -186,5 +173,5 @@ function getPageTitle(path) {
     '/emite-utilitati': 'Factură utilități', '/emise': 'Facturi emise',
     '/furnizori': 'Furnizori', '/utilizatori': 'Utilizatori', '/config': 'Configurare',
   }
-  return map[path] || map[path.split('/').slice(0, 2).join('/')] || 'AdminChirie'
+  return map[path] || map[path.split('/').slice(0, 2).join('/')] || 'Rentis'
 }

@@ -1,4 +1,4 @@
-// SVG logo AdminChirie — folosit în app și exportat ca favicon
+// SVG logo Rentis — folosit în app și exportat ca favicon
 export const LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <rect width="100" height="100" rx="16" fill="#14213D"/>
   <path d="M50 18 L82 42 L82 78 L18 78 L18 42 Z" fill="white" opacity="0.15"/>

@@ -15,7 +15,7 @@ function header(doc, W, ml, mr, titlu, subtitlu, perioada) {
   doc.setFillColor(20, 33, 61)
   doc.rect(ml, y, mr - ml, 12, 'F')
   doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255)
-  doc.text('AdminChirie — ' + titlu, ml + 4, y + 8)
+  doc.text('Rentis — ' + titlu, ml + 4, y + 8)
   doc.setFontSize(9); doc.setFont('helvetica', 'normal')
   doc.text(TODAY, mr - 2, y + 8, { align: 'right' })
   y += 16
@@ -126,7 +126,7 @@ export function exportRaportClient({ client, spatii, contoare, citiri, perioada 
   y += 10
 
   doc.setFontSize(7); doc.setTextColor(150, 150, 150); doc.setFont('helvetica', 'normal')
-  doc.text('Raport generat automat — AdminChirie', W / 2, y, { align: 'center' })
+  doc.text('Raport generat automat — Rentis', W / 2, y, { align: 'center' })
 
   doc.save(`Raport_${client?.nume?.replace(/\s+/g, '_') || 'client'}_${TODAY.replace(/\s/g, '_')}.pdf`)
 }
@@ -210,7 +210,7 @@ export function exportRaportGeneral({ clienti, spatii, contoare, citiri, perioad
   }
 
   doc.setFontSize(7); doc.setTextColor(150, 150, 150); doc.setFont('helvetica', 'normal')
-  doc.text('Raport generat automat — AdminChirie', W / 2, 285, { align: 'center' })
+  doc.text('Raport generat automat — Rentis', W / 2, 285, { align: 'center' })
   doc.save(`Raport_General_${TODAY.replace(/\s/g, '_')}.pdf`)
 }
 
@@ -280,6 +280,6 @@ export function exportRaportImobil({ imobile, spatii, clienti, contoare, citiri,
   })
 
   doc.setFontSize(7); doc.setTextColor(150, 150, 150); doc.setFont('helvetica', 'normal')
-  doc.text('Raport generat automat — AdminChirie', W / 2, 285, { align: 'center' })
+  doc.text('Raport generat automat — Rentis', W / 2, 285, { align: 'center' })
   doc.save(`Raport_Imobil_${TODAY.replace(/\s/g, '_')}.pdf`)
 }

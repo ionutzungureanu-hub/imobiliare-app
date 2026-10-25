@@ -32,7 +32,7 @@ export default function EnvCheck({ children }) {
     // Toate variabilele obligatorii sunt prezente — pornește normal
     // Dacă există variabile opționale lipsă, afișează doar un avertisment mic în consolă
     if (optional.length > 0) {
-      console.warn('[AdminChirie] Variabile opționale lipsă (funcționalitate redusă):', optional.map(v => v.key).join(', '))
+      console.warn('[Rentis] Variabile opționale lipsă (funcționalitate redusă):', optional.map(v => v.key).join(', '))
     }
     return children
   }
@@ -49,14 +49,9 @@ export default function EnvCheck({ children }) {
       <div style={{ maxWidth: 560, width: '100%' }}>
         {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 32 }}>
-          <svg width="40" height="40" viewBox="0 0 100 100">
-            <rect width="100" height="100" rx="16" fill="#14213D"/>
-            <polygon points="50,18 80,40 80,75 20,75 20,40" fill="white"/>
-            <rect x="40" y="55" width="20" height="20" rx="2" fill="#14213D"/>
-            <polyline points="16,43 50,15 84,43" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round"/>
-          </svg>
+          
           <div>
-            <div style={{ color: 'white', fontWeight: 700, fontSize: 20 }}>AdminChirie</div>
+            <div style={{ color: 'white', fontWeight: 700, fontSize: 20 }}>Rentis</div>
             <div style={{ color: '#6B6B70', fontSize: 13 }}>Configurare incompletă</div>
           </div>
         </div>
@@ -131,7 +126,7 @@ export default function EnvCheck({ children }) {
 
         {/* Footer */}
         <div style={{ textAlign: 'center', marginTop: 24, color: '#2A2A30', fontSize: 12 }}>
-          AdminChirie — verificare automată la pornire
+          Rentis — verificare automată la pornire
         </div>
       </div>
     </div>

@@ -113,7 +113,7 @@ export function genereazaNotaCalcul({ imobil, spatiu, client, chirie, liniiUtili
   // ── Footer ────────────────────────────────────────────────────
   setF(8, 'normal'); color(150, 150, 150)
   text(`Întocmit: ${userNume || ''}   |   Data: ${data}`, ml, y)
-  text('Document generat automat — Imobiliare Admin', mr, y, { align: 'right' })
+  text('Document generat automat — Rentis', mr, y, { align: 'right' })
 
   return { doc, nr }
 }

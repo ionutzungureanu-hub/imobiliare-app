@@ -135,13 +135,7 @@ export default function Portal() {
       {/* Header */}
       <div style={styles.header}>
         <div style={styles.logo}>
-          <svg width="36" height="36" viewBox="0 0 100 100">
-            <rect width="100" height="100" rx="16" fill="#14213D"/>
-            <polygon points="50,18 80,40 80,75 20,75 20,40" fill="white"/>
-            <rect x="40" y="55" width="20" height="20" rx="2" fill="#14213D"/>
-            <polyline points="16,43 50,15 84,43" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round"/>
-          </svg>
-          <span style={{ fontWeight: 700, color: '#14213D', fontSize: 18 }}>AdminChirie</span>
+          <img src="/logo-rentis-mark.png" alt="Rentis" style={{ height: 40, width: 'auto' }} />
         </div>
         <h1 style={styles.titlu}>{portal?.titlu || 'Citire contoare'}</h1>
         <p style={styles.adresare}>{portal?.adresare || 'Vă rugăm să introduceți indexurile lunare:'}</p>

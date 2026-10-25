@@ -1,4 +1,4 @@
-# Imobiliare Admin
+# Rentis — Intelligent Property Management
 
 Aplicație web pentru gestionarea facturilor de chirie și utilități, cu integrare FGO, EmailJS și Firebase.
 
