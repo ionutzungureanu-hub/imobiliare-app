@@ -186,7 +186,7 @@ export default function NotaCalcul() {
 
             {spatiuId && !client && (
               <div className="form-group full">
-                <div className="alert" style={{ background: 'var(--amber-light)', color: 'var(--amber)', border: '1px solid #fcd34d' }}>
+                <div className="alert" style={{ background: 'var(--amber-light)', color: 'var(--amber)', border: '1px solid #E3C77D' }}>
                   <i className="ti ti-alert-triangle" />
                   <span>Spațiul nu are chiriaș asociat. Asociază un client în secțiunea Spații.</span>
                 </div>

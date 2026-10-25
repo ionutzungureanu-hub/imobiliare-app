@@ -13,7 +13,7 @@ export async function exportDateContoare(allContoare, spatii, imobile) {
   const checkPage = (needed = 20) => { if (y + needed > 280) newPage() }
 
   // Titlu
-  setF(16, 'bold'); color(27, 79, 216)
+  setF(16, 'bold'); color(20, 33, 61)
   doc.text('EXPORT DATE CONTOARE', W / 2, y, { align: 'center' }); y += 7
   setF(9, 'normal'); color(100, 100, 100)
   doc.text(`Generat: ${new Date().toLocaleDateString('ro-RO')} · AdminChirie`, W / 2, y, { align: 'center' }); y += 8
@@ -35,7 +35,7 @@ export async function exportDateContoare(allContoare, spatii, imobile) {
   Object.values(byImobil).forEach(({ imobil, spatii: spatiiGrup }) => {
     checkPage(12)
     // Header imobil
-    fill(27, 79, 216); doc.rect(ml, y, mr - ml, 8, 'F')
+    fill(20, 33, 61); doc.rect(ml, y, mr - ml, 8, 'F')
     setF(10, 'bold'); color(255, 255, 255)
     doc.text(`🏢 ${imobil?.nume || 'Imobil necunoscut'}`, ml + 3, y + 5.5); y += 10
 
@@ -44,7 +44,7 @@ export async function exportDateContoare(allContoare, spatii, imobile) {
       // Header spațiu
       fill(238, 242, 255); doc.rect(ml, y, mr - ml, 7, 'F')
       draw(199, 210, 254); doc.rect(ml, y, mr - ml, 7, 'S')
-      setF(9, 'bold'); color(27, 79, 216)
+      setF(9, 'bold'); color(20, 33, 61)
       doc.text(`  📍 ${spatiu.denumire}${spatiu.etaj ? ` — ${spatiu.etaj}` : ''}`, ml + 3, y + 4.8); y += 9
 
       contoare.forEach(contor => {
@@ -101,13 +101,13 @@ export async function exportIstoricContor(contor, citiri) {
   const color = (r, g, b) => doc.setTextColor(r, g, b)
   const fill  = (r, g, b) => doc.setFillColor(r, g, b)
 
-  setF(14, 'bold'); color(27, 79, 216)
+  setF(14, 'bold'); color(20, 33, 61)
   doc.text(`Istoric — ${contor.denumire}`, W / 2, y, { align: 'center' }); y += 7
   setF(9, 'normal'); color(100, 100, 100)
   doc.text(`Unitate: ${contor.um} · Mod: ${contor.mod} · Export: ${new Date().toLocaleDateString('ro-RO')}`, W / 2, y, { align: 'center' }); y += 10
 
   // Header tabel
-  fill(27, 79, 216); doc.rect(ml, y, mr - ml, 8, 'F')
+  fill(20, 33, 61); doc.rect(ml, y, mr - ml, 8, 'F')
   doc.setFontSize(9); doc.setFont('helvetica', 'bold'); color(255, 255, 255)
   doc.text('Data', ml + 3, y + 5.5)
   doc.text('Index', ml + 38, y + 5.5)
@@ -126,7 +126,7 @@ export async function exportIstoricContor(contor, citiri) {
     doc.text(cit.data || '—', ml + 3, y + 4.5)
     doc.text(cit.index != null ? String(cit.index) : '—', ml + 38, y + 4.5)
     doc.text(cit.indexPrecedent != null ? String(cit.indexPrecedent) : '—', ml + 68, y + 4.5)
-    setF(8, 'bold'); color(27, 79, 216)
+    setF(8, 'bold'); color(20, 33, 61)
     doc.text(cit.consum != null ? `${cit.consum} ${contor.um}` : '—', ml + 108, y + 4.5)
     setF(8, 'normal'); color(15, 23, 42)
     doc.text(cit.pret != null ? String(cit.pret) : '—', ml + 133, y + 4.5)

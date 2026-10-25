@@ -82,7 +82,7 @@ export default function Comunicare() {
   )
 
   const bannerServer = server && (server.eroare || !server.cheie || (!server.domeniu && !server.test)) && (
-    <div style={{ background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13 }}>
+    <div style={{ background: '#F8F1DF', border: '1px solid #E3C77D', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13 }}>
       ⚠ Trimiterea de email nu este încă configurată pe server
       {server.eroare ? ` (${server.eroare})` : ' (lipsește cheia API sau domeniul)'}. Poți pregăti șabloane și expeditori, dar mesajele nu pot fi trimise până nu urmezi pașii din ghidul de configurare.
     </div>
@@ -251,15 +251,15 @@ function Compune({ clienti, registru, expeditori, sabloane, spatiuLabel, user, s
                   <input type="checkbox" checked={sel.has(c.id)} onChange={() => toggle(c.id)} style={{ marginTop: 3 }} />
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: 14, fontWeight: 600 }}>{c.nume} <span style={{ fontSize: 11, color: 'var(--slate)' }}>{c.tip || 'PJ'}</span></div>
-                    <div style={{ fontSize: 12, color: ad.length ? 'var(--slate)' : '#d97706' }}>{ad.length ? ad.join(', ') : 'fără adresă de email'}</div>
-                    {z !== null && z <= 90 && z >= 0 && <div style={{ fontSize: 11, color: z <= 30 ? '#dc2626' : '#d97706' }}>contract expiră în {z} zile</div>}
+                    <div style={{ fontSize: 12, color: ad.length ? 'var(--slate)' : '#8A5A12' }}>{ad.length ? ad.join(', ') : 'fără adresă de email'}</div>
+                    {z !== null && z <= 90 && z >= 0 && <div style={{ fontSize: 11, color: z <= 30 ? '#9B2C2C' : '#8A5A12' }}>contract expiră în {z} zile</div>}
                   </div>
                 </label>
               )
             })}
           </div>
           <Camp label="Alte adrese (separate prin virgulă)"><input value={manual} onChange={e => setManual(e.target.value)} placeholder="nume@exemplu.ro" /></Camp>
-          {fara.length > 0 && <div style={{ fontSize: 12, color: '#d97706', marginTop: 8 }}>Fără email (nu primesc mesaj): {fara.map(d => d.client?.nume).filter(Boolean).join(', ')}</div>}
+          {fara.length > 0 && <div style={{ fontSize: 12, color: '#8A5A12', marginTop: 8 }}>Fără email (nu primesc mesaj): {fara.map(d => d.client?.nume).filter(Boolean).join(', ')}</div>}
         </div>
       </div>
 
@@ -286,7 +286,7 @@ function Compune({ clienti, registru, expeditori, sabloane, spatiuLabel, user, s
             Variabile: {VARIABILE.map(([k]) => `{{${k}}}`).join('  ')}
           </div>
           {prev && (
-            <div style={{ marginTop: 14, border: '1px dashed var(--border)', borderRadius: 8, padding: 12, background: '#f8fafc' }}>
+            <div style={{ marginTop: 14, border: '1px dashed var(--border)', borderRadius: 8, padding: 12, background: '#F7F5F0' }}>
               <div style={{ fontSize: 11, color: 'var(--slate)', marginBottom: 6 }}>Previzualizare pentru: {primul.client?.nume || primul.adrese[0]}</div>
               <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 6 }}>{prev.subj || '(fără subiect)'}</div>
               <div dangerouslySetInnerHTML={{ __html: prev.html }} />
@@ -338,8 +338,8 @@ function Istoric({ istoric, clienti, clientInitial }) {
                     <td><span className={`badge ${h.stare === 'esuat' ? 'badge-red' : 'badge-green'}`}>{h.stare === 'esuat' ? 'Eșuat' : 'Trimis'}</span></td>
                   </tr>
                   {deschis === h.id && (
-                    <tr><td colSpan={6} style={{ background: '#f8fafc' }}>
-                      {h.eroare && <div style={{ color: '#dc2626', fontSize: 12, marginBottom: 6 }}>Eroare: {h.eroare}</div>}
+                    <tr><td colSpan={6} style={{ background: '#F7F5F0' }}>
+                      {h.eroare && <div style={{ color: '#9B2C2C', fontSize: 12, marginBottom: 6 }}>Eroare: {h.eroare}</div>}
                       <div style={{ whiteSpace: 'pre-wrap', fontSize: 13 }}>{h.mesaj}</div>
                     </td></tr>
                   )}

@@ -28,9 +28,9 @@ export default function Login() {
     <div className="login-wrap">
       <div className="login-card">
         <div className="login-logo">
-          <i className="ti ti-building" style={{ fontSize: 32, color: 'var(--blue)' }} aria-hidden="true" />
-          <h1>Imobiliare Admin</h1>
-          <p>Gestionare facturi și clienți</p>
+          <div style={{ width: 52, height: 52, margin: '0 auto 14px', border: '1px solid var(--gold)', background: 'var(--blue)', color: 'var(--gold-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--serif)', fontSize: 26, fontWeight: 600 }} aria-hidden="true">AC</div>
+          <h1>AdminChirie</h1>
+          <p style={{ letterSpacing: '.18em', textTransform: 'uppercase', fontSize: 10.5 }}>Gestionare imobile</p>
         </div>
 
         {error && <div className="login-err">{error}</div>}

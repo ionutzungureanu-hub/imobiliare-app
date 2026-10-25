@@ -166,9 +166,9 @@ export default function Biblioteca() {
         borderBottom: '1px solid var(--border)', flexWrap: 'wrap'
       }}>
         <div style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: isPDF ? '#FEE2E2' : 'var(--blue-light)', borderRadius: 6, flexShrink: 0 }}>
+          background: isPDF ? '#F5E3E1' : 'var(--blue-light)', borderRadius: 6, flexShrink: 0 }}>
           <i className={`ti ${isPDF ? 'ti-file-type-pdf' : 'ti-photo'}`}
-            style={{ color: isPDF ? '#ef4444' : 'var(--blue)', fontSize: 18 }} />
+            style={{ color: isPDF ? '#B24A4A' : 'var(--blue)', fontSize: 18 }} />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: 500, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

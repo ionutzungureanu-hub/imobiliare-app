@@ -597,8 +597,8 @@ export default function Utilitati() {
             {ctAdministratie.length > 0 && (
               <div style={{ marginBottom: 20 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, padding: '6px 12px', background: '#7c3aed20', borderRadius: 8, border: '1px solid #7c3aed40' }}>
-                  <i className="ti ti-building" style={{ color: '#7c3aed' }} />
-                  <span style={{ fontWeight: 700, fontSize: 13, color: '#7c3aed', textTransform: 'uppercase', letterSpacing: '.5px' }}>
+                  <i className="ti ti-building" style={{ color: '#8A6D3B' }} />
+                  <span style={{ fontWeight: 700, fontSize: 13, color: '#8A6D3B', textTransform: 'uppercase', letterSpacing: '.5px' }}>
                     Administrație bloc
                   </span>
                   <span style={{ fontSize: 11, color: '#7c3aed80' }}>— indexuri transmise la bloc</span>
@@ -621,8 +621,8 @@ export default function Utilitati() {
             {ctBloc.length > 0 && (
               <div style={{ marginBottom: 20 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, padding: '6px 12px', background: '#0284c720', borderRadius: 8, border: '1px solid #0284c740' }}>
-                  <i className="ti ti-currency-leu" style={{ color: '#0284c7' }} />
-                  <span style={{ fontWeight: 700, fontSize: 13, color: '#0284c7', textTransform: 'uppercase', letterSpacing: '.5px' }}>
+                  <i className="ti ti-currency-leu" style={{ color: '#14213D' }} />
+                  <span style={{ fontWeight: 700, fontSize: 13, color: '#14213D', textTransform: 'uppercase', letterSpacing: '.5px' }}>
                     Sumă comunicată de bloc
                   </span>
                   <span style={{ fontSize: 11, color: '#0284c780' }}>— introdusă după primirea chitanței</span>
@@ -641,8 +641,8 @@ export default function Utilitati() {
             {ctChirias.length > 0 && (
               <div style={{ marginBottom: 20 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, padding: '6px 12px', background: '#16a34a20', borderRadius: 8, border: '1px solid #16a34a40' }}>
-                  <i className="ti ti-plug" style={{ color: '#16a34a' }} />
-                  <span style={{ fontWeight: 700, fontSize: 13, color: '#16a34a', textTransform: 'uppercase', letterSpacing: '.5px' }}>
+                  <i className="ti ti-plug" style={{ color: '#2F6F4F' }} />
+                  <span style={{ fontWeight: 700, fontSize: 13, color: '#2F6F4F', textTransform: 'uppercase', letterSpacing: '.5px' }}>
                     Utilități chiriaș
                   </span>
                 </div>

@@ -205,7 +205,7 @@ export default function UtilitatiMobile() {
                 </div>
               </div>
             ) : (
-              <div style={{ padding: '10px 14px', background: '#fef3c7', borderRadius: 8, border: '1px solid #fcd34d', fontSize: 13, marginBottom: 16, color: '#92400e' }}>
+              <div style={{ padding: '10px 14px', background: '#F6EBD3', borderRadius: 8, border: '1px solid #E3C77D', fontSize: 13, marginBottom: 16, color: '#7A4E0E' }}>
                 <i className="ti ti-alert-triangle" /> Prima citire pentru acest contor — introdu indexul inițial.
               </div>
             )}
@@ -229,9 +229,9 @@ export default function UtilitatiMobile() {
                     style={{ fontSize: 28, padding: '14px 16px', textAlign: 'center', fontWeight: 700, color: 'var(--blue)', border: '2px solid var(--blue)', borderRadius: 10 }}
                   />
                   {consum !== null && (
-                    <div style={{ marginTop: 8, padding: '10px 14px', background: '#f0fdf4', borderRadius: 8, border: '1px solid #86efac', textAlign: 'center' }}>
-                      <span style={{ fontSize: 12, color: '#166534' }}>Consum calculat: </span>
-                      <strong style={{ color: '#166534', fontSize: 18 }}>{consum} {contor.um}</strong>
+                    <div style={{ marginTop: 8, padding: '10px 14px', background: '#E7F0EA', borderRadius: 8, border: '1px solid #A9CDB8', textAlign: 'center' }}>
+                      <span style={{ fontSize: 12, color: '#24543C' }}>Consum calculat: </span>
+                      <strong style={{ color: '#24543C', fontSize: 18 }}>{consum} {contor.um}</strong>
                     </div>
                   )}
                 </div>

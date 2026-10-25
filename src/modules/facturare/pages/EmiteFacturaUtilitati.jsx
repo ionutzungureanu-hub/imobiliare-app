@@ -146,7 +146,7 @@ export default function EmiteFacturaUtilitati() {
             )}
             {spatiuId && !client && (
               <div className="form-group full">
-                <div className="alert" style={{ background: 'var(--amber-light)', color: 'var(--amber)', border: '1px solid #fcd34d' }}>
+                <div className="alert" style={{ background: 'var(--amber-light)', color: 'var(--amber)', border: '1px solid #E3C77D' }}>
                   <i className="ti ti-alert-triangle" />
                   <span>Acest spațiu nu are client asociat. Asociază un client în secțiunea Spații.</span>
                 </div>
@@ -243,7 +243,7 @@ export default function EmiteFacturaUtilitati() {
                     {/* Total */}
                     <div style={{
                       fontSize: 13, fontWeight: 600, textAlign: 'right',
-                      color: l.activ ? 'var(--color-text-primary, #0f172a)' : 'var(--slate)'
+                      color: l.activ ? 'var(--color-text-primary, #1B1B1F)' : 'var(--slate)'
                     }}>
                       {l.activ && l.total > 0 ? fmt(l.total) + ' RON' : '—'}
                     </div>

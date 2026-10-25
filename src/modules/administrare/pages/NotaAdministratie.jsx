@@ -158,7 +158,7 @@ export default function NotaAdministratie() {
                       <tr key={i}>
                         <td style={{ fontWeight: 500 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <i className="ti ti-droplet" style={{ color: cit.tip.includes('cald') ? '#f97316' : '#3b82f6', fontSize: 14 }} />
+                            <i className="ti ti-droplet" style={{ color: cit.tip.includes('cald') ? '#A8692B' : '#5B6B8C', fontSize: 14 }} />
                             {cit.tip}
                           </div>
                         </td>
@@ -183,11 +183,11 @@ export default function NotaAdministratie() {
                 <div style={{ padding: '12px 20px', background: 'var(--blue-light)', borderTop: '1px solid var(--blue-mid)', display: 'flex', gap: 24, flexWrap: 'wrap' }}>
                   <div style={{ fontSize: 13 }}>
                     <span style={{ color: 'var(--slate)' }}>Total apă rece: </span>
-                    <strong style={{ color: '#3b82f6', fontSize: 15 }}>{totalRece.toFixed(2)} mc</strong>
+                    <strong style={{ color: '#5B6B8C', fontSize: 15 }}>{totalRece.toFixed(2)} mc</strong>
                   </div>
                   <div style={{ fontSize: 13 }}>
                     <span style={{ color: 'var(--slate)' }}>Total apă caldă: </span>
-                    <strong style={{ color: '#f97316', fontSize: 15 }}>{totalCald.toFixed(2)} mc</strong>
+                    <strong style={{ color: '#A8692B', fontSize: 15 }}>{totalCald.toFixed(2)} mc</strong>
                   </div>
                   <div style={{ fontSize: 13, fontWeight: 700 }}>
                     Total general: {(totalRece + totalCald).toFixed(2)} mc
@@ -263,8 +263,8 @@ export default function NotaAdministratie() {
                 </tbody>
               </table>
               <div style={{ marginTop: 12, padding: '10px 14px', background: 'var(--blue-light)', borderRadius: 8, display: 'flex', gap: 20 }}>
-                <div style={{ fontSize: 13 }}>Apă rece: <strong style={{ color: '#3b82f6' }}>{totalRece.toFixed(2)} mc</strong></div>
-                <div style={{ fontSize: 13 }}>Apă caldă: <strong style={{ color: '#f97316' }}>{totalCald.toFixed(2)} mc</strong></div>
+                <div style={{ fontSize: 13 }}>Apă rece: <strong style={{ color: '#5B6B8C' }}>{totalRece.toFixed(2)} mc</strong></div>
+                <div style={{ fontSize: 13 }}>Apă caldă: <strong style={{ color: '#A8692B' }}>{totalCald.toFixed(2)} mc</strong></div>
                 <div style={{ fontSize: 13, fontWeight: 700 }}>Total: {(totalRece + totalCald).toFixed(2)} mc</div>
               </div>
             </div>

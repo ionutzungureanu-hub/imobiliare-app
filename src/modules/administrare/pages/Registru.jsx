@@ -244,13 +244,13 @@ export default function Registru({ tip, serii }) {
                     <td>{r.identificator || '—'}</td>
                     <td>{r.nume}</td>
                     {comercial && <td>{r.administrator || '—'}</td>}
-                    <td style={{ fontSize: 12 }}>{r.entitate || <span style={{ color: '#d97706' }}>—</span>}</td>
+                    <td style={{ fontSize: 12 }}>{r.entitate || <span style={{ color: '#8A5A12' }}>—</span>}</td>
                     <td style={{ fontSize: 12 }}>{spatiuLabel(r.spatiuId)}</td>
                     <td>{fmtData(r.dataStart)}</td>
                     <td>
                       {fmtData(r.dataFinal)}
                       {activ && zile !== null && zile <= 60 && (
-                        <div style={{ fontSize: 11, color: zile <= 30 ? '#dc2626' : '#d97706' }}>expiră în {zile} zile</div>
+                        <div style={{ fontSize: 11, color: zile <= 30 ? '#9B2C2C' : '#8A5A12' }}>expiră în {zile} zile</div>
                       )}
                     </td>
                     <td>{r.chirie ? `${r.chirie} ${r.moneda || ''}` : '—'}</td>
@@ -282,7 +282,7 @@ export default function Registru({ tip, serii }) {
                   <input value={form.identificator} onChange={e => set('identificator', e.target.value)}
                     onBlur={cautaClient} onKeyDown={e => e.key === 'Enter' && cautaClient()}
                     placeholder={comercial ? 'ex. RO12345678' : 'CNP'} autoFocus />
-                  {lookupMsg && <div style={{ fontSize: 12, marginTop: 4, color: lookupMsg.startsWith('Client găsit') || lookupMsg.startsWith('Client creat') ? '#16a34a' : '#d97706' }}>{lookupMsg}</div>}
+                  {lookupMsg && <div style={{ fontSize: 12, marginTop: 4, color: lookupMsg.startsWith('Client găsit') || lookupMsg.startsWith('Client creat') ? '#2F6F4F' : '#8A5A12' }}>{lookupMsg}</div>}
                 </Camp>
                 <Camp label={comercial ? 'Nume firmă' : 'Nume'}>
                   <input value={form.nume} onChange={e => set('nume', e.target.value)} />

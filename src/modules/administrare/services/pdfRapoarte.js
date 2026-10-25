@@ -12,7 +12,7 @@ function initDoc() {
 function header(doc, W, ml, mr, titlu, subtitlu, perioada) {
   let y = 14
   // Antet
-  doc.setFillColor(27, 79, 216)
+  doc.setFillColor(20, 33, 61)
   doc.rect(ml, y, mr - ml, 12, 'F')
   doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255)
   doc.text('AdminChirie — ' + titlu, ml + 4, y + 8)
@@ -33,16 +33,16 @@ function header(doc, W, ml, mr, titlu, subtitlu, perioada) {
 }
 
 function tableHeader(doc, ml, mr, y, cols) {
-  doc.setFillColor(240, 244, 255)
+  doc.setFillColor(243, 240, 232)
   doc.rect(ml, y, mr - ml, 7, 'F')
-  doc.setDrawColor(200, 210, 240); doc.rect(ml, y, mr - ml, 7, 'S')
-  doc.setFontSize(7.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(50, 70, 150)
+  doc.setDrawColor(216, 210, 196); doc.rect(ml, y, mr - ml, 7, 'S')
+  doc.setFontSize(7.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(60, 70, 100)
   cols.forEach(c => doc.text(c.label, c.x, y + 5))
   return y + 8
 }
 
 function tableRow(doc, ml, mr, y, cols, values, shade, bold = false) {
-  if (shade) { doc.setFillColor(250, 251, 255); doc.rect(ml, y, mr - ml, 6.5, 'F') }
+  if (shade) { doc.setFillColor(247, 245, 240); doc.rect(ml, y, mr - ml, 6.5, 'F') }
   doc.setDrawColor(235, 235, 235); doc.line(ml, y + 6.5, mr, y + 6.5)
   doc.setFontSize(7.5); doc.setFont('helvetica', bold ? 'bold' : 'normal'); doc.setTextColor(20, 20, 20)
   cols.forEach((c, i) => {
@@ -110,8 +110,8 @@ export function exportRaportClient({ client, spatii, contoare, citiri, perioada 
     })
     // Subtotal per contor
     y = checkPage(doc, y)
-    doc.setFillColor(232, 240, 255); doc.rect(ml, y, mr - ml, 6, 'F')
-    doc.setFontSize(7.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(27, 79, 216)
+    doc.setFillColor(228, 232, 242); doc.rect(ml, y, mr - ml, 6, 'F')
+    doc.setFontSize(7.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(20, 33, 61)
     doc.text(`Subtotal ${contorNume(contorId)}:`, ml + 2, y + 4.2)
     if (consumTotal > 0) doc.text(`${consumTotal.toFixed(2)} ${ct?.um || ''}`, ml + 148, y + 4.2, { align: 'right' })
     y += 7
@@ -119,7 +119,7 @@ export function exportRaportClient({ client, spatii, contoare, citiri, perioada 
 
   // Total general
   y = checkPage(doc, y)
-  doc.setFillColor(27, 79, 216); doc.rect(ml, y, mr - ml, 8, 'F')
+  doc.setFillColor(20, 33, 61); doc.rect(ml, y, mr - ml, 8, 'F')
   doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255)
   doc.text('TOTAL VALOARE PERIOADĂ:', ml + 2, y + 5.5)
   doc.text(fmt(totalValoare), mr - 2, y + 5.5, { align: 'right' })
@@ -153,7 +153,7 @@ export function exportRaportGeneral({ clienti, spatii, contoare, citiri, perioad
   if (tip !== 'PJ') {
     const pf = clientiFiltered.filter(c => c.tip === 'PF')
     if (pf.length > 0) {
-      doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(22, 163, 74)
+      doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(47, 111, 79)
       doc.text('PERSOANE FIZICE', ml, y); y += 5
       y = tableHeader(doc, ml, mr, y, COLS)
       pf.forEach((cl, ci) => {
@@ -184,7 +184,7 @@ export function exportRaportGeneral({ clienti, spatii, contoare, citiri, perioad
     const pj = clientiFiltered.filter(c => (c.tip || 'PJ') === 'PJ')
     if (pj.length > 0) {
       y = checkPage(doc, y, 20)
-      doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(27, 79, 216)
+      doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(20, 33, 61)
       doc.text('PERSOANE JURIDICE', ml, y); y += 5
       y = tableHeader(doc, ml, mr, y, COLS)
       pj.forEach((cl, ci) => {
@@ -241,7 +241,7 @@ export function exportRaportImobil({ imobile, spatii, clienti, contoare, citiri,
     if (citiriIm.length === 0 && spatiiIm.length === 0) return
 
     y = checkPage(doc, y, 20)
-    doc.setFillColor(27, 79, 216); doc.rect(ml, y, mr - ml, 7, 'F')
+    doc.setFillColor(20, 33, 61); doc.rect(ml, y, mr - ml, 7, 'F')
     doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255)
     doc.text(`🏢 ${im.nume}${im.adresa ? '  —  ' + im.adresa : ''}`, ml + 2, y + 5)
     y += 9
@@ -272,8 +272,8 @@ export function exportRaportImobil({ imobile, spatii, clienti, contoare, citiri,
 
     // Total imobil
     y = checkPage(doc, y)
-    doc.setFillColor(232, 240, 255); doc.rect(ml, y, mr - ml, 6.5, 'F')
-    doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(27, 79, 216)
+    doc.setFillColor(228, 232, 242); doc.rect(ml, y, mr - ml, 6.5, 'F')
+    doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(20, 33, 61)
     doc.text(`Total ${im.nume}:`, ml + 2, y + 4.5)
     doc.text(fmt(totalIm), mr - 2, y + 4.5, { align: 'right' })
     y += 10

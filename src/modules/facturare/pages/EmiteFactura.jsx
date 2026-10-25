@@ -116,7 +116,7 @@ export default function EmiteFactura() {
 
       <div className="content">
         {!config?.furnizorId && (
-          <div className="alert" style={{ background: 'var(--amber-light)', color: 'var(--amber)', border: '1px solid #fcd34d', marginBottom: 16 }}>
+          <div className="alert" style={{ background: 'var(--amber-light)', color: 'var(--amber)', border: '1px solid #E3C77D', marginBottom: 16 }}>
             <i className="ti ti-alert-triangle" />
             <span>
               Niciun furnizor de facturare configurat. Factura se va salva local și trimite pe email,

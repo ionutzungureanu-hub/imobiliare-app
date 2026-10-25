@@ -155,7 +155,7 @@ export default function RaportVenituri() {
       </div>
 
       {(faraChirie > 0 || faraEntitate > 0) && (
-        <div style={{ background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13 }}>
+        <div style={{ background: '#F8F1DF', border: '1px solid #E3C77D', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13 }}>
           {faraChirie > 0 && <div>⚠ {faraChirie} contracte nu au chiria completată și nu sunt incluse.</div>}
           {faraEntitate > 0 && <div>⚠ {faraEntitate} contracte nu au entitatea setată și apar la „{NESPECIFICAT}”. Le poți seta din Contracte → Registru.</div>}
         </div>

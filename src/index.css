@@ -1,27 +1,33 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --blue:        #1B4FD8;
-  --blue-light:  #EEF2FF;
-  --blue-mid:    #C7D2FE;
-  --slate:       #64748B;
-  --slate-light: #F1F5F9;
-  --green:       #16A34A;
-  --green-light: #F0FDF4;
-  --amber:       #D97706;
-  --amber-light: #FFFBEB;
-  --red:         #DC2626;
-  --red-light:   #FEF2F2;
-  --border:      #E2E8F0;
+  --blue:        #14213D;
+  --blue-light:  #E4E8F2;
+  --blue-mid:    #C4CCE0;
+  --slate:       #6B6B70;
+  --slate-light: #F3F0E8;
+  --green:       #2F6F4F;
+  --green-light: #E7F0EA;
+  --amber:       #8A5A12;
+  --amber-light: #F8F1DF;
+  --red:         #9B2C2C;
+  --red-light:   #F8EAE8;
+  --border:      #E8E3D8;
   --white:       #fff;
-  --bg:          #F8FAFC;
-  --radius:      10px;
-  --radius-sm:   6px;
-  --text:        #0F172A;
+  --bg:          #F7F5F0;
+  --radius:      3px;
+  --radius-sm:   2px;
+  --text:        #1B1B1F;
+  --gold:        #B8975A;
+  --gold-light:  #D9BF8A;
+  --gold-dark:   #8A6D3B;
+  --navy-deep:   #0C1630;
+  --serif:       'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --sans:        'Manrope', system-ui, sans-serif;
 }
 
 body {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Manrope', system-ui, sans-serif;
   font-size: 14px;
   color: var(--text);
   background: var(--bg);
@@ -55,7 +61,7 @@ body {
 /* ── Buttons ─────────────────────────────────────── */
 .btn           { display: inline-flex; align-items: center; gap: 7px; padding: 8px 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid transparent; transition: all .15s; font-family: inherit; text-decoration: none; }
 .btn-primary   { background: var(--blue); color: #fff; border-color: var(--blue); }
-.btn-primary:hover { background: #1642b8; }
+.btn-primary:hover { background: #0C1630; }
 .btn-ghost     { background: transparent; color: var(--slate); border-color: var(--border); }
 .btn-ghost:hover { background: var(--slate-light); color: var(--text); }
 .btn-danger    { background: transparent; color: var(--red); border-color: var(--border); }
@@ -93,7 +99,7 @@ table           { width: 100%; border-collapse: collapse; }
 th              { text-align: left; font-size: 11px; font-weight: 600; color: var(--slate); text-transform: uppercase; letter-spacing: .5px; padding: 10px 20px; background: var(--slate-light); border-bottom: 1px solid var(--border); }
 td              { padding: 12px 20px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: middle; }
 tr:last-child td { border-bottom: none; }
-tr:hover td     { background: #fafafa; }
+tr:hover td     { background: #FAF8F3; }
 .amount         { font-weight: 600; font-variant-numeric: tabular-nums; }
 
 /* ── Forms ───────────────────────────────────────── */
@@ -106,7 +112,7 @@ input, select, textarea {
   font-size: 13px; font-family: inherit; background: var(--white); color: var(--text);
   transition: border .15s; outline: none;
 }
-input:focus, select:focus, textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(27,79,216,.1); }
+input:focus, select:focus, textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(20, 33, 61,.1); }
 textarea        { resize: vertical; min-height: 72px; }
 .form-section   { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
 .form-section-title { font-size: 13px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
@@ -122,7 +128,7 @@ textarea        { resize: vertical; min-height: 72px; }
 
 /* ── Alert ───────────────────────────────────────── */
 .alert      { padding: 12px 16px; border-radius: var(--radius-sm); font-size: 13px; display: flex; align-items: flex-start; gap: 10px; margin-bottom: 16px; }
-.alert-info { background: var(--blue-light); color: #1e3a8a; border: 1px solid var(--blue-mid); }
+.alert-info { background: var(--blue-light); color: #14213D; border: 1px solid var(--blue-mid); }
 .alert i    { margin-top: 1px; flex-shrink: 0; font-size: 16px; }
 
 /* ── Toolbar (above tables) ──────────────────────── */
@@ -166,8 +172,8 @@ textarea        { resize: vertical; min-height: 72px; }
 .toast-wrap   { position: fixed; bottom: 24px; right: 24px; display: flex; flex-direction: column; gap: 8px; z-index: 9999; }
 .toast        { background: #1a1a1a; color: #fff; padding: 12px 18px; border-radius: var(--radius); font-size: 13px; display: flex; align-items: center; gap: 10px; animation: slideUp .25s ease; }
 .toast i      { font-size: 16px; }
-.toast.success i { color: #4ade80; }
-.toast.error i   { color: #f87171; }
+.toast.success i { color: #7FB896; }
+.toast.error i   { color: #B24A4A; }
 @keyframes slideUp { from { opacity:0; transform: translateY(12px); } to { opacity:1; transform: translateY(0); } }
 
 /* ── Modal ───────────────────────────────────────── */
@@ -358,4 +364,96 @@ textarea        { resize: vertical; min-height: 72px; }
 @keyframes spin {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
+}
+
+
+/* ═══════════════════════════════════════════════════
+   TEMĂ — Navy & Auriu (Cormorant Garamond + Manrope)
+   ═══════════════════════════════════════════════════ */
+h1, h2, h3 { font-family: var(--serif); }
+
+/* Meniu lateral */
+.sidebar            { width: 248px; background: var(--blue); border-right: none; color: #F3EEE3; }
+.sidebar-logo       { padding: 26px 24px 20px; border-bottom: 1px solid rgba(184,151,90,.35); }
+.sidebar-logo-mark  { font-family: var(--serif); font-size: 25px; font-weight: 600; color: #F3EEE3; letter-spacing: .01em; }
+.sidebar-logo-sub   { font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: var(--gold-light); margin-top: 10px; }
+.sidebar-nav        { padding: 8px 0 16px; overflow-y: auto; }
+.nav-section        { font-size: 10px; font-weight: 600; letter-spacing: .2em; color: var(--gold-light); padding: 14px 24px 8px; }
+.nav-item           { border-radius: 0; padding: 10px 24px 10px 26px; margin-bottom: 0; color: #D8D3C6; font-size: 14px; font-weight: 500; border-left: 2px solid transparent; gap: 12px; }
+.nav-item:hover     { background: rgba(255,255,255,.05); color: #fff; }
+.nav-item.active    { background: rgba(255,255,255,.07); color: #fff; font-weight: 600; border-left-color: var(--gold); }
+.nav-item i         { font-size: 16px; color: var(--gold-light); }
+.sidebar-footer     { padding: 18px 24px; border-top: 1px solid rgba(184,151,90,.35); }
+.sidebar .btn-ghost, .sidebar-logout { color: #F3EEE3; border-color: rgba(184,151,90,.5); }
+.sidebar .btn-ghost:hover, .sidebar-logout:hover { background: rgba(255,255,255,.08); color: #fff; }
+
+/* Bară de sus */
+.topbar         { padding: 18px 40px; border-bottom: 1px solid var(--border); }
+.topbar-left h1 { font-family: var(--serif); font-size: 32px; font-weight: 600; line-height: 1.05; color: var(--blue); letter-spacing: -.01em; }
+.topbar-left p  { font-size: 13px; margin-top: 4px; }
+.content        { padding: 28px 40px 44px; }
+
+/* Butoane */
+.btn            { font-weight: 600; letter-spacing: .02em; padding: 9px 18px; }
+.btn-primary:hover { background: var(--navy-deep); border-color: var(--navy-deep); }
+.btn-ghost      { color: var(--blue); border-color: #D8D2C4; background: var(--white); }
+.btn-ghost:hover{ background: #FAF8F3; color: var(--blue); border-color: var(--blue); }
+.btn-success    { background: var(--green); border-color: var(--green); }
+.btn-sm         { padding: 6px 13px; }
+
+/* Carduri */
+.card           { border-radius: var(--radius); }
+.card-header    { padding: 18px 24px; }
+.card-title     { font-family: var(--serif); font-size: 21px; font-weight: 600; color: var(--blue); }
+.card-body      { padding: 24px; }
+.stat-card      { border-top: 2px solid var(--gold); padding: 20px 24px; }
+.stat-label     { font-size: 10.5px; letter-spacing: .16em; }
+.stat-value     { font-family: var(--serif); font-size: 34px; font-weight: 600; color: var(--blue); letter-spacing: -.01em; }
+
+/* Insigne */
+.badge          { border-radius: 2px; font-weight: 600; padding: 3px 11px; font-size: 11.5px; }
+.badge-blue     { background: var(--blue-light); color: var(--blue); }
+
+/* Tabele */
+th              { font-size: 10.5px; letter-spacing: .16em; padding: 14px 24px; background: var(--white); border-bottom: 1px solid var(--border); }
+td              { padding: 16px 24px; border-bottom: 1px solid #F0ECE2; font-size: 14px; }
+tr:hover td     { background: #FAF8F3; }
+
+/* Formulare */
+label           { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--slate); }
+input, select, textarea { padding: 10px 13px; border-color: #D8D2C4; }
+input:focus, select:focus, textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(184,151,90,.18); }
+.form-section-title { font-family: var(--serif); font-size: 20px; font-weight: 600; color: var(--blue); }
+.form-section-title i { color: var(--gold); }
+input[type=checkbox], input[type=radio] { accent-color: var(--blue); }
+
+/* Alerte, chat, login, toast */
+.alert-info     { color: var(--blue); }
+.chat-bubble    { border-radius: 4px; }
+.chat-msg.sent .chat-bubble { border-bottom-right-radius: 4px; }
+.chat-msg.note .chat-bubble { border-bottom-left-radius: 4px; }
+.login-wrap     { background: var(--blue); }
+.login-card     { border-radius: var(--radius); border-top: 2px solid var(--gold); padding: 44px 36px; }
+.login-logo h1  { font-family: var(--serif); font-size: 32px; font-weight: 600; color: var(--blue); }
+.toast          { background: var(--blue); border-left: 3px solid var(--gold); }
+
+/* Ferestre */
+.modal-overlay  { background: rgba(12,22,48,.55); }
+.modal-box      { border-radius: var(--radius); border-top: 2px solid var(--gold); }
+.modal-head     { padding: 20px 26px; }
+.modal-head h3  { font-family: var(--serif); font-size: 24px; font-weight: 600; color: var(--blue); }
+.modal-body     { padding: 24px 26px; }
+.modal-footer   { padding: 18px 26px; }
+
+/* Telefon */
+.mobile-nav        { background: var(--blue); border-top: 1px solid rgba(184,151,90,.45); }
+.mobile-nav-item   { color: #D8D3C6; }
+.mobile-nav-item.active, .mobile-nav-item.active i { color: var(--gold-light); }
+@media (max-width: 768px) {
+  .sidebar { width: 280px; }
+  .topbar { padding: 12px 16px; }
+  .topbar-left h1 { font-size: 24px; }
+  .content { padding: 16px; padding-bottom: 80px; }
+  th, td { padding: 12px 14px; }
+  .modal-box { border-radius: var(--radius) var(--radius) 0 0; }
 }

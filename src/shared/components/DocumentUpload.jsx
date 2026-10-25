@@ -59,7 +59,7 @@ export default function DocumentUpload({
           <a href={value} target="_blank" rel="noreferrer"
             className="btn btn-ghost btn-sm" style={{ color: 'var(--blue)' }}>
             <i className={`ti ${isPDF ? 'ti-file-type-pdf' : 'ti-photo'}`}
-              style={{ color: isPDF ? '#ef4444' : 'var(--blue)' }} />
+              style={{ color: isPDF ? '#B24A4A' : 'var(--blue)' }} />
             {meta?.fileName || 'Vezi document'}
             {meta?.bytes && <span style={{ fontSize: 10, color: 'var(--slate)', marginLeft: 4 }}>
               ({formatBytes(meta.bytes)})

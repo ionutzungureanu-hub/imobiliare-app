@@ -24,7 +24,7 @@ export const aplicaVariabile = (text, vars) =>
 
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 export const textLaHtml = (text) =>
-  `<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1e293b">${esc(text).replace(/\n/g, '<br>')}</div>`
+  `<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#2A2A30">${esc(text).replace(/\n/g, '<br>')}</div>`
 
 export const VARIABILE = [
   ['nume', 'Nume client / firmă'], ['administrator', 'Administrator / persoană de contact'],

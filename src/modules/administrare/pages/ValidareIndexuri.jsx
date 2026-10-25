@@ -141,7 +141,7 @@ export default function ValidareIndexuri() {
                           {idx.indexNou} <span style={{ fontSize: 12 }}>{idx.um}</span>
                         </div>
                       </div>
-                      <div style={{ textAlign: 'center', padding: 12, background: consum >= 0 ? '#f0fdf4' : '#fef2f2', borderRadius: 8 }}>
+                      <div style={{ textAlign: 'center', padding: 12, background: consum >= 0 ? '#E7F0EA' : '#F8EAE8', borderRadius: 8 }}>
                         <div style={{ fontSize: 11, color: 'var(--slate)', marginBottom: 4 }}>Consum calculat</div>
                         <div style={{ fontSize: 18, fontWeight: 700, color: consum >= 0 ? 'var(--green)' : 'var(--red)' }}>
                           {consum != null ? consum : '—'} <span style={{ fontSize: 12 }}>{idx.um}</span>

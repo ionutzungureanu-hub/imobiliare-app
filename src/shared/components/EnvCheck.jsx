@@ -42,7 +42,7 @@ export default function EnvCheck({ children }) {
 
   return (
     <div style={{
-      minHeight: '100vh', background: '#0f172a',
+      minHeight: '100vh', background: '#1B1B1F',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       fontFamily: "'Inter', system-ui, sans-serif", padding: 24,
     }}>
@@ -50,26 +50,26 @@ export default function EnvCheck({ children }) {
         {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 32 }}>
           <svg width="40" height="40" viewBox="0 0 100 100">
-            <rect width="100" height="100" rx="16" fill="#1B4FD8"/>
+            <rect width="100" height="100" rx="16" fill="#14213D"/>
             <polygon points="50,18 80,40 80,75 20,75 20,40" fill="white"/>
-            <rect x="40" y="55" width="20" height="20" rx="2" fill="#1B4FD8"/>
+            <rect x="40" y="55" width="20" height="20" rx="2" fill="#14213D"/>
             <polyline points="16,43 50,15 84,43" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round"/>
           </svg>
           <div>
             <div style={{ color: 'white', fontWeight: 700, fontSize: 20 }}>AdminChirie</div>
-            <div style={{ color: '#64748b', fontSize: 13 }}>Configurare incompletă</div>
+            <div style={{ color: '#6B6B70', fontSize: 13 }}>Configurare incompletă</div>
           </div>
         </div>
 
         {/* Eroare principală */}
-        <div style={{ background: '#1e293b', borderRadius: 12, padding: 24, marginBottom: 20, border: '1px solid #334155' }}>
+        <div style={{ background: '#2A2A30', borderRadius: 12, padding: 24, marginBottom: 20, border: '1px solid #2A2A30' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
             <span style={{ fontSize: 24 }}>⚠️</span>
             <div>
-              <div style={{ color: '#f87171', fontWeight: 700, fontSize: 16 }}>
+              <div style={{ color: '#B24A4A', fontWeight: 700, fontSize: 16 }}>
                 {missing.length} {missing.length === 1 ? 'variabilă lipsă' : 'variabile lipsă'}
               </div>
-              <div style={{ color: '#64748b', fontSize: 13, marginTop: 2 }}>
+              <div style={{ color: '#6B6B70', fontSize: 13, marginTop: 2 }}>
                 Aplicația nu poate porni fără aceste variabile de mediu.
               </div>
             </div>
@@ -78,16 +78,16 @@ export default function EnvCheck({ children }) {
           {/* Lista variabilelor lipsă grupate */}
           {grupuri.map(grup => (
             <div key={grup} style={{ marginBottom: 14 }}>
-              <div style={{ color: '#94a3b8', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8 }}>
+              <div style={{ color: '#9A978C', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8 }}>
                 {grup}
               </div>
               {missing.filter(v => v.grup === grup).map(v => (
                 <div key={v.key} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
-                  <span style={{ color: '#f87171', fontSize: 16 }}>✗</span>
-                  <code style={{ color: '#fbbf24', fontSize: 13, background: '#0f172a', padding: '2px 8px', borderRadius: 4 }}>
+                  <span style={{ color: '#B24A4A', fontSize: 16 }}>✗</span>
+                  <code style={{ color: '#B8975A', fontSize: 13, background: '#1B1B1F', padding: '2px 8px', borderRadius: 4 }}>
                     {v.key}
                   </code>
-                  <span style={{ color: '#475569', fontSize: 12 }}>{v.label}</span>
+                  <span style={{ color: '#4A4A50', fontSize: 12 }}>{v.label}</span>
                 </div>
               ))}
             </div>
@@ -95,8 +95,8 @@ export default function EnvCheck({ children }) {
         </div>
 
         {/* Instrucțiuni */}
-        <div style={{ background: '#1e293b', borderRadius: 12, padding: 24, marginBottom: 20, border: '1px solid #334155' }}>
-          <div style={{ color: '#94a3b8', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 12 }}>
+        <div style={{ background: '#2A2A30', borderRadius: 12, padding: 24, marginBottom: 20, border: '1px solid #2A2A30' }}>
+          <div style={{ color: '#9A978C', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 12 }}>
             Cum se rezolvă
           </div>
           {[
@@ -105,32 +105,32 @@ export default function EnvCheck({ children }) {
             { nr: 3, text: 'Redeploy: Deploys → Trigger deploy → Deploy site' },
           ].map(step => (
             <div key={step.nr} style={{ display: 'flex', gap: 12, marginBottom: 10 }}>
-              <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#1B4FD8', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 12, fontWeight: 700, color: 'white' }}>
+              <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#14213D', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 12, fontWeight: 700, color: 'white' }}>
                 {step.nr}
               </div>
-              <div style={{ color: '#cbd5e1', fontSize: 13, paddingTop: 3 }}>{step.text}</div>
+              <div style={{ color: '#D8D2C4', fontSize: 13, paddingTop: 3 }}>{step.text}</div>
             </div>
           ))}
         </div>
 
         {/* Variabile opționale lipsă */}
         {optional.length > 0 && (
-          <div style={{ background: '#1e293b', borderRadius: 12, padding: 20, border: '1px solid #334155', opacity: 0.8 }}>
-            <div style={{ color: '#94a3b8', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 10 }}>
+          <div style={{ background: '#2A2A30', borderRadius: 12, padding: 20, border: '1px solid #2A2A30', opacity: 0.8 }}>
+            <div style={{ color: '#9A978C', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 10 }}>
               Variabile opționale lipsă (funcționalitate redusă)
             </div>
             {optional.map(v => (
               <div key={v.key} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                <span style={{ color: '#f59e0b', fontSize: 14 }}>⚠</span>
-                <code style={{ color: '#94a3b8', fontSize: 12 }}>{v.key}</code>
-                <span style={{ color: '#475569', fontSize: 11 }}>— afectează: {v.functie}</span>
+                <span style={{ color: '#B8975A', fontSize: 14 }}>⚠</span>
+                <code style={{ color: '#9A978C', fontSize: 12 }}>{v.key}</code>
+                <span style={{ color: '#4A4A50', fontSize: 11 }}>— afectează: {v.functie}</span>
               </div>
             ))}
           </div>
         )}
 
         {/* Footer */}
-        <div style={{ textAlign: 'center', marginTop: 24, color: '#334155', fontSize: 12 }}>
+        <div style={{ textAlign: 'center', marginTop: 24, color: '#2A2A30', fontSize: 12 }}>
           AdminChirie — verificare automată la pornire
         </div>
       </div>

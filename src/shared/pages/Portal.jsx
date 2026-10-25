@@ -102,15 +102,15 @@ export default function Portal() {
   if (loading) return (
     <div style={styles.center}>
       <div style={styles.spinner} />
-      <p style={{ color: '#64748b', marginTop: 16 }}>Se încarcă...</p>
+      <p style={{ color: '#6B6B70', marginTop: 16 }}>Se încarcă...</p>
     </div>
   )
 
   if (error && !portal) return (
     <div style={styles.center}>
       <div style={{ fontSize: 48 }}>⚠️</div>
-      <h2 style={{ color: '#ef4444', margin: '12px 0 8px' }}>Link invalid</h2>
-      <p style={{ color: '#64748b' }}>{error}</p>
+      <h2 style={{ color: '#B24A4A', margin: '12px 0 8px' }}>Link invalid</h2>
+      <p style={{ color: '#6B6B70' }}>{error}</p>
     </div>
   )
 
@@ -118,8 +118,8 @@ export default function Portal() {
   if (trimis) return (
     <div style={styles.center}>
       <div style={{ fontSize: 64 }}>✅</div>
-      <h2 style={{ color: '#1B4FD8', margin: '16px 0 8px' }}>Indexuri trimise!</h2>
-      <p style={{ color: '#64748b', textAlign: 'center', maxWidth: 300 }}>
+      <h2 style={{ color: '#14213D', margin: '16px 0 8px' }}>Indexuri trimise!</h2>
+      <p style={{ color: '#6B6B70', textAlign: 'center', maxWidth: 300 }}>
         Indexurile au fost transmise cu succes și vor fi verificate.
         <br /><br />
         Dacă ați greșit, puteți retrimite folosind același link.
@@ -136,12 +136,12 @@ export default function Portal() {
       <div style={styles.header}>
         <div style={styles.logo}>
           <svg width="36" height="36" viewBox="0 0 100 100">
-            <rect width="100" height="100" rx="16" fill="#1B4FD8"/>
+            <rect width="100" height="100" rx="16" fill="#14213D"/>
             <polygon points="50,18 80,40 80,75 20,75 20,40" fill="white"/>
-            <rect x="40" y="55" width="20" height="20" rx="2" fill="#1B4FD8"/>
+            <rect x="40" y="55" width="20" height="20" rx="2" fill="#14213D"/>
             <polyline points="16,43 50,15 84,43" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round"/>
           </svg>
-          <span style={{ fontWeight: 700, color: '#1B4FD8', fontSize: 18 }}>AdminChirie</span>
+          <span style={{ fontWeight: 700, color: '#14213D', fontSize: 18 }}>AdminChirie</span>
         </div>
         <h1 style={styles.titlu}>{portal?.titlu || 'Citire contoare'}</h1>
         <p style={styles.adresare}>{portal?.adresare || 'Vă rugăm să introduceți indexurile lunare:'}</p>
@@ -150,7 +150,7 @@ export default function Portal() {
       {/* Contoare */}
       <div style={styles.content}>
         {contoare.length === 0 ? (
-          <div style={{ textAlign: 'center', color: '#64748b', padding: 32 }}>
+          <div style={{ textAlign: 'center', color: '#6B6B70', padding: 32 }}>
             Niciun contor configurat pentru acest spațiu.
           </div>
         ) : contoare.map(c => {
@@ -165,9 +165,9 @@ export default function Portal() {
               <div style={styles.cardHeader}>
                 <span style={{ fontSize: 24 }}>{iconForTip(numeContor)}</span>
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: 16, color: '#0f172a' }}>{numeContor}</div>
+                  <div style={{ fontWeight: 700, fontSize: 16, color: '#1B1B1F' }}>{numeContor}</div>
                   {ultima && (
-                    <div style={{ fontSize: 13, color: '#64748b' }}>
+                    <div style={{ fontSize: 13, color: '#6B6B70' }}>
                       Index anterior: <strong>{ultima.index} {c.um}</strong>
                       {ultima.data && ` (${ultima.data})`}
                     </div>
@@ -195,7 +195,7 @@ export default function Portal() {
 
               {/* Poză contor */}
               <div>
-                <label style={styles.label}>Fotografie contor <span style={{ color: '#94a3b8' }}>(opțional)</span></label>
+                <label style={styles.label}>Fotografie contor <span style={{ color: '#9A978C' }}>(opțional)</span></label>
 
                 {poza?.preview ? (
                   <div style={{ position: 'relative' }}>
@@ -218,7 +218,7 @@ export default function Portal() {
                       📷 Fotografiați
                     </button>
                     {/* Upload */}
-                    <button style={{ ...styles.btnPoza, background: '#f1f5f9' }}
+                    <button style={{ ...styles.btnPoza, background: '#F3F0E8' }}
                       onClick={() => {
                         const inp = document.createElement('input')
                         inp.type = 'file'; inp.accept = 'image/*'
@@ -254,7 +254,7 @@ export default function Portal() {
           {sending ? '⏳ Se trimite...' : '📤 Trimite indexurile'}
         </button>
 
-        <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: 12, marginTop: 12 }}>
+        <p style={{ textAlign: 'center', color: '#9A978C', fontSize: 12, marginTop: 12 }}>
           Puteți retrimite oricând dacă ați greșit.
         </p>
       </div>
@@ -266,13 +266,13 @@ export default function Portal() {
 const styles = {
   page: {
     minHeight: '100vh',
-    background: '#f8fafc',
+    background: '#F7F5F0',
     fontFamily: "'Inter', system-ui, sans-serif",
     paddingBottom: 40,
   },
   header: {
     background: 'white',
-    borderBottom: '1px solid #e2e8f0',
+    borderBottom: '1px solid #E8E3D8',
     padding: '20px 20px 16px',
     marginBottom: 20,
   },
@@ -281,46 +281,46 @@ const styles = {
     marginBottom: 12,
   },
   titlu: {
-    fontSize: 22, fontWeight: 700, color: '#0f172a',
+    fontSize: 22, fontWeight: 700, color: '#1B1B1F',
     margin: '0 0 6px', lineHeight: 1.3,
   },
   adresare: {
-    fontSize: 14, color: '#475569', margin: 0, lineHeight: 1.5,
+    fontSize: 14, color: '#4A4A50', margin: 0, lineHeight: 1.5,
   },
   content: {
     maxWidth: 480, margin: '0 auto', padding: '0 16px',
   },
   card: {
     background: 'white', borderRadius: 12,
-    border: '1px solid #e2e8f0',
+    border: '1px solid #E8E3D8',
     padding: 20, marginBottom: 16,
     boxShadow: '0 1px 3px rgba(0,0,0,.05)',
   },
   cardHeader: {
     display: 'flex', alignItems: 'center', gap: 12,
     marginBottom: 16, paddingBottom: 14,
-    borderBottom: '1px solid #f1f5f9',
+    borderBottom: '1px solid #F3F0E8',
   },
   label: {
     display: 'block', fontSize: 13, fontWeight: 600,
-    color: '#374151', marginBottom: 8,
+    color: '#2A2A30', marginBottom: 8,
   },
   input: {
     width: '100%', padding: '14px 16px',
     fontSize: 24, fontWeight: 700,
-    border: '2px solid #e2e8f0', borderRadius: 10,
-    textAlign: 'center', color: '#1B4FD8',
+    border: '2px solid #E8E3D8', borderRadius: 10,
+    textAlign: 'center', color: '#14213D',
     boxSizing: 'border-box', outline: 'none',
     transition: 'border-color .2s',
   },
   consumPreview: {
     marginTop: 8, padding: '6px 12px',
-    background: '#eff6ff', borderRadius: 6,
-    fontSize: 13, color: '#1d4ed8', textAlign: 'center',
+    background: '#E4E8F2', borderRadius: 6,
+    fontSize: 13, color: '#14213D', textAlign: 'center',
   },
   btnPoza: {
     flex: 1, padding: '12px 8px',
-    background: '#1B4FD8', color: 'white',
+    background: '#14213D', color: 'white',
     border: 'none', borderRadius: 10,
     fontSize: 14, fontWeight: 600,
     cursor: 'pointer',
@@ -331,34 +331,34 @@ const styles = {
     marginBottom: 8,
   },
   ocrStatus: {
-    padding: '8px 12px', background: '#f8fafc',
+    padding: '8px 12px', background: '#F7F5F0',
     borderRadius: 8, fontSize: 13,
-    color: '#374151', marginBottom: 8,
-    border: '1px solid #e2e8f0',
+    color: '#2A2A30', marginBottom: 8,
+    border: '1px solid #E8E3D8',
   },
   removePoza: {
-    background: 'none', border: '1px solid #fca5a5',
-    color: '#ef4444', borderRadius: 6,
+    background: 'none', border: '1px solid #E0AEAA',
+    color: '#B24A4A', borderRadius: 6,
     padding: '6px 12px', fontSize: 12,
     cursor: 'pointer',
   },
   btnPrimary: {
     width: '100%', padding: '16px',
-    background: '#1B4FD8', color: 'white',
+    background: '#14213D', color: 'white',
     border: 'none', borderRadius: 12,
     fontSize: 18, fontWeight: 700,
     cursor: 'pointer', marginTop: 8,
   },
   btnSecondary: {
     padding: '12px 24px', background: 'white',
-    color: '#1B4FD8', border: '2px solid #1B4FD8',
+    color: '#14213D', border: '2px solid #14213D',
     borderRadius: 10, fontSize: 15, fontWeight: 600,
     cursor: 'pointer', marginTop: 16,
   },
   errorBox: {
-    padding: '12px 16px', background: '#fef2f2',
-    border: '1px solid #fca5a5', borderRadius: 10,
-    color: '#ef4444', fontSize: 14, marginBottom: 16,
+    padding: '12px 16px', background: '#F8EAE8',
+    border: '1px solid #E0AEAA', borderRadius: 10,
+    color: '#B24A4A', fontSize: 14, marginBottom: 16,
   },
   center: {
     minHeight: '100vh', display: 'flex',
@@ -368,8 +368,8 @@ const styles = {
   },
   spinner: {
     width: 40, height: 40,
-    border: '4px solid #e2e8f0',
-    borderTop: '4px solid #1B4FD8',
+    border: '4px solid #E8E3D8',
+    borderTop: '4px solid #14213D',
     borderRadius: '50%',
     animation: 'spin 1s linear infinite',
   },

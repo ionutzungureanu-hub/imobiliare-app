@@ -33,17 +33,15 @@ const MOBILE_NAV = [
 ]
 
 const Badge = ({ n }) => n > 0 ? (
-  <span style={{ marginLeft: 'auto', background: '#dc2626', color: '#fff', borderRadius: 10, fontSize: 11, fontWeight: 700, padding: '1px 7px' }}>{n}</span>
+  <span style={{ marginLeft: 'auto', background: '#9B2C2C', color: '#fff', borderRadius: 10, fontSize: 11, fontWeight: 700, padding: '1px 7px' }}>{n}</span>
 ) : null
 
 function AdminChirieLogo({ size = 32 }) {
+  // Monogramă: contur auriu pe navy
   return (
-    <svg width={size} height={size} viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-      <rect width="100" height="100" rx="16" fill="#1B4FD8"/>
-      <polygon points="50,18 80,40 80,75 20,75 20,40" fill="white"/>
-      <rect x="40" y="55" width="20" height="20" rx="2" fill="#1B4FD8"/>
-      <circle cx="58" cy="65" r="2" fill="white"/>
-      <polyline points="16,43 50,15 84,43" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
+    <svg width={size} height={size} viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect x="2" y="2" width="96" height="96" fill="none" stroke="#B8975A" strokeWidth="4"/>
+      <text x="50" y="66" textAnchor="middle" fontFamily="'Cormorant Garamond', Georgia, serif" fontSize="48" fontWeight="600" fill="#D9BF8A">AC</text>
     </svg>
   )
 }
@@ -92,7 +90,7 @@ export default function Layout() {
                 <span>AdminChirie</span>
               </div>
               <button onClick={() => setSidebarOpen(false)} className="sidebar-close-btn"
-                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: 'var(--slate)', padding: 4, display: 'none' }}>
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#D9BF8A', padding: 4, display: 'none' }}>
                 <i className="ti ti-x" />
               </button>
             </div>
@@ -129,13 +127,13 @@ export default function Layout() {
           </nav>
 
           <div className="sidebar-footer">
-            <div style={{ fontSize: 11, color: 'var(--slate)', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <div style={{ fontSize: 12, color: '#F3EEE3', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {profile?.nume || user?.email}
             </div>
-            <div style={{ fontSize: 10, color: 'var(--blue)', marginBottom: 8, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.5px' }}>
+            <div style={{ fontSize: 10, color: '#D9BF8A', marginBottom: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.16em' }}>
               {isAdmin ? '⬤ Administrator' : '⬤ Manager'}
             </div>
-            <button className="btn btn-ghost btn-sm" style={{ width: '100%' }} onClick={handleLogout}>
+            <button className="btn btn-ghost btn-sm sidebar-logout" style={{ width: '100%' }} onClick={handleLogout}>
               <i className="ti ti-logout" /> Deconectare
             </button>
           </div>
@@ -165,7 +163,7 @@ export default function Layout() {
                 <i className={`ti ${item.icon}`} />
                 {item.label}
                 {item.badge && inAsteptare > 0 && (
-                  <span style={{ position: 'absolute', top: 2, right: '22%', background: '#dc2626', color: '#fff', borderRadius: 10, fontSize: 10, fontWeight: 700, padding: '0 5px' }}>{inAsteptare}</span>
+                  <span style={{ position: 'absolute', top: 2, right: '22%', background: '#9B2C2C', color: '#fff', borderRadius: 10, fontSize: 10, fontWeight: 700, padding: '0 5px' }}>{inAsteptare}</span>
                 )}
               </NavLink>
             ))}

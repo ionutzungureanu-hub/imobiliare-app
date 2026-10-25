@@ -33,7 +33,7 @@ export function genereazaNotaCalcul({ imobil, spatiu, client, chirie, liniiUtili
   draw(200, 200, 200); line(ml, y, mr, y); y += 8
 
   // ── Titlu ─────────────────────────────────────────────────────
-  setF(16, 'bold'); color(27, 79, 216)
+  setF(16, 'bold'); color(20, 33, 61)
   text('NOTĂ DE CALCUL', W / 2, y, { align: 'center' }); y += 7
   setF(9, 'normal'); color(100, 100, 100)
   const nr   = 'NC-' + Date.now().toString().slice(-6)
@@ -103,7 +103,7 @@ export function genereazaNotaCalcul({ imobil, spatiu, client, chirie, liniiUtili
   const totalGeneral = totalChirie + totalUtil
 
   y += 4
-  fill(27, 79, 216); doc.rect(ml, y, mr - ml, 11, 'F')
+  fill(20, 33, 61); doc.rect(ml, y, mr - ml, 11, 'F')
   y += 7
   setF(12, 'bold'); color(255, 255, 255)
   text('TOTAL DE PLATĂ', ml + 4, y)

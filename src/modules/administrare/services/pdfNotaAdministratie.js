@@ -27,7 +27,7 @@ export function genereazaNotaAdministratie({ spatiu, imobil, client, citiri, per
   y += 4; draw(200, 200, 200); line(ml, y, mr, y); y += 8
 
   // ── Titlu ─────────────────────────────────────────────────────
-  setF(15, 'bold'); color(27, 79, 216)
+  setF(15, 'bold'); color(20, 33, 61)
   doc.text('NOTĂ DE CONSUM APĂ', W / 2, y, { align: 'center' }); y += 6
   setF(9, 'normal'); color(100, 100, 100)
   doc.text('Comunicare către administrația blocului', W / 2, y, { align: 'center' }); y += 5
@@ -60,7 +60,7 @@ export function genereazaNotaAdministratie({ spatiu, imobil, client, citiri, per
     y += 10
   } else {
     // Header tabel
-    fill(27, 79, 216); doc.rect(ml, y, mr - ml, 9, 'F')
+    fill(20, 33, 61); doc.rect(ml, y, mr - ml, 9, 'F')
     setF(9, 'bold'); color(255, 255, 255)
     doc.text('Tip utilitate', ml + 4, y + 6)
     doc.text('Index anterior', ml + 70, y + 6)
@@ -81,7 +81,7 @@ export function genereazaNotaAdministratie({ spatiu, imobil, client, citiri, per
       doc.text(cit.indexPrecedent != null ? String(cit.indexPrecedent) : '—', ml + 70, y + 6)
       doc.text(cit.index != null ? String(cit.index) : '—', ml + 110, y + 6)
 
-      setF(9, 'bold'); color(27, 79, 216)
+      setF(9, 'bold'); color(20, 33, 61)
       doc.text(cit.consum != null ? `${cit.consum} mc` : '—', ml + 140, y + 6)
 
       setF(8, 'normal'); color(100, 100, 100)
@@ -101,7 +101,7 @@ export function genereazaNotaAdministratie({ spatiu, imobil, client, citiri, per
     y += 6
     setF(9, 'bold'); color(15, 23, 42)
     doc.text('TOTAL APĂ RECE:', ml + 4, y)
-    setF(10, 'bold'); color(27, 79, 216)
+    setF(10, 'bold'); color(20, 33, 61)
     doc.text(`${totalRece.toFixed(2)} mc`, ml + 60, y)
 
     setF(9, 'bold'); color(15, 23, 42)

@@ -7,7 +7,7 @@ import { useAuth } from '../../../shared/context/AuthContext'
 const GRUPURI = [
   {
     titlu: 'Zilnic',
-    culoare: '#1B4FD8',
+    culoare: '#14213D',
     itemi: [
       { to: '/clienti',           icon: 'ti-users',    label: 'Clienți' },
       { to: '/citire',            icon: 'ti-bolt',      label: 'Citire indexuri' },
@@ -17,7 +17,7 @@ const GRUPURI = [
   },
   {
     titlu: 'Documente',
-    culoare: '#7c3aed',
+    culoare: '#8A6D3B',
     itemi: [
       { to: '/nota-calcul',        icon: 'ti-calculator', label: 'Notă calcul' },
       { to: '/nota-administratie', icon: 'ti-droplet',    label: 'Notă apă bloc' },
@@ -28,7 +28,7 @@ const GRUPURI = [
   },
   {
     titlu: 'Facturare',
-    culoare: '#16a34a',
+    culoare: '#2F6F4F',
     itemi: [
       { to: '/facturi?tab=chirie',   icon: 'ti-file-plus', label: 'Factură chirie', desktopOnly: true },
       { to: '/facturi?tab=utilitati', icon: 'ti-receipt', label: 'Factură utilități', desktopOnly: true },
@@ -37,7 +37,7 @@ const GRUPURI = [
   },
   {
     titlu: 'Setări',
-    culoare: '#64748b',
+    culoare: '#6B6B70',
     itemi: [
       { to: '/utilizatori', icon: 'ti-user-cog', label: 'Utilizatori', adminOnly: true, desktopOnly: true },
       { to: '/config',      icon: 'ti-settings',  label: 'Configurare', adminOnly: true, desktopOnly: true },

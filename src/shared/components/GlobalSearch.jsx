@@ -101,7 +101,7 @@ export default function GlobalSearch({ isAdmin, isMobile }) {
           background: 'var(--white)', border: '1px solid var(--border)', borderRadius: 8, boxShadow: '0 8px 24px rgba(0,0,0,.12)',
           maxHeight: isMobile ? '70vh' : 420, overflowY: 'auto', zIndex: 300 }}>
           {loading && <div style={{ padding: 14, fontSize: 13, color: 'var(--slate)' }}>Se încarcă datele…</div>}
-          {err && <div style={{ padding: 14, fontSize: 13, color: '#dc2626' }}>{err}</div>}
+          {err && <div style={{ padding: 14, fontSize: 13, color: '#9B2C2C' }}>{err}</div>}
           {!loading && !err && q.trim().length < 2 && <div style={{ padding: 14, fontSize: 13, color: 'var(--slate)' }}>Scrie cel puțin 2 caractere.</div>}
           {!loading && !err && q.trim().length >= 2 && rezultate.length === 0 && <div style={{ padding: 14, fontSize: 13, color: 'var(--slate)' }}>Niciun rezultat.</div>}
           {rezultate.map(r => {
@@ -110,7 +110,7 @@ export default function GlobalSearch({ isAdmin, isMobile }) {
               <div key={r.k}>
                 {arata && <div className="nav-section" style={{ paddingTop: 10 }}>{r.grup}</div>}
                 <div onClick={() => go(r)} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '8px 14px', cursor: 'pointer' }}
-                  onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'} onMouseLeave={e => e.currentTarget.style.background = ''}>
+                  onMouseEnter={e => e.currentTarget.style.background = '#F3F0E8'} onMouseLeave={e => e.currentTarget.style.background = ''}>
                   <i className={`ti ${r.icon}`} style={{ color: 'var(--blue)', fontSize: 18 }} />
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: 14, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.titlu}</div>

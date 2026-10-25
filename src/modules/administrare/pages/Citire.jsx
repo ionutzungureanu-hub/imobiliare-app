@@ -40,7 +40,7 @@ export default function Citire() {
         <Tab id="citire" icon={mobil ? 'ti-bolt' : 'ti-plug'}>Citire indexuri</Tab>
         <Tab id="validare" icon="ti-checks">
           De validat{nr > 0 && (
-            <span style={{ marginLeft: 6, background: '#dc2626', color: '#fff', borderRadius: 10, fontSize: 11, padding: '1px 7px' }}>{nr}</span>
+            <span style={{ marginLeft: 6, background: '#9B2C2C', color: '#fff', borderRadius: 10, fontSize: 11, padding: '1px 7px' }}>{nr}</span>
           )}
         </Tab>
       </div>

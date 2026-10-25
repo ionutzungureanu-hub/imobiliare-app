@@ -172,7 +172,7 @@ export default function Config() {
                     const citiri = citiriMap[c.id] || []
                     const ultima = citiri[0]
                     const isOpen = expandedCt[c.id]
-                    const destColor = c.destinatie === 'administratie' ? '#7c3aed' : c.destinatie === 'intern' ? '#6b7280' : '#16a34a'
+                    const destColor = c.destinatie === 'administratie' ? '#8A6D3B' : c.destinatie === 'intern' ? '#6B6B70' : '#2F6F4F'
                     const destLabel = c.destinatie === 'administratie' ? 'Bloc' : c.destinatie === 'intern' ? 'Intern' : 'Chiriaș'
 
                     return (
@@ -371,11 +371,11 @@ export default function Config() {
                 <>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
                     {[
-                      { key: 'Energie electrică', label: 'Energie electrică', um: 'kWh', icon: 'ti-bolt', color: '#f59e0b' },
-                      { key: 'Gaze',              label: 'Gaze',              um: 'mc',  icon: 'ti-flame', color: '#ef4444' },
-                      { key: 'Apă rece',         label: 'Apă rece',         um: 'mc',  icon: 'ti-droplet', color: '#3b82f6' },
-                      { key: 'Apă caldă',        label: 'Apă caldă',        um: 'mc',  icon: 'ti-droplet', color: '#f97316' },
-                      { key: 'Internet',         label: 'Internet',         um: 'lună',icon: 'ti-wifi',    color: '#10b981' },
+                      { key: 'Energie electrică', label: 'Energie electrică', um: 'kWh', icon: 'ti-bolt', color: '#B8975A' },
+                      { key: 'Gaze',              label: 'Gaze',              um: 'mc',  icon: 'ti-flame', color: '#B24A4A' },
+                      { key: 'Apă rece',         label: 'Apă rece',         um: 'mc',  icon: 'ti-droplet', color: '#5B6B8C' },
+                      { key: 'Apă caldă',        label: 'Apă caldă',        um: 'mc',  icon: 'ti-droplet', color: '#A8692B' },
+                      { key: 'Internet',         label: 'Internet',         um: 'lună',icon: 'ti-wifi',    color: '#2F6F4F' },
                     ].map(u => (
                       <div key={u.key} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 12, background: 'var(--slate-light)', borderRadius: 8, border: '1px solid var(--border)' }}>
                         <i className={`ti ${u.icon}`} style={{ color: u.color, fontSize: 20, flexShrink: 0 }} />
@@ -687,17 +687,17 @@ service cloud.firestore {
 
                 {/* Log output */}
                 {migrLog.length > 0 && (
-                  <div style={{ marginTop: 16, background: '#0f172a', borderRadius: 8, padding: 14, fontFamily: 'monospace', fontSize: 12 }}>
+                  <div style={{ marginTop: 16, background: '#1B1B1F', borderRadius: 8, padding: 14, fontFamily: 'monospace', fontSize: 12 }}>
                     {migrLog.map((entry, i) => (
                       <div key={i} style={{
                         marginBottom: 4,
-                        color: entry.tip === 'error' ? '#f87171' : entry.tip === 'success' ? '#4ade80' : entry.tip === 'ok' ? '#86efac' : '#94a3b8'
+                        color: entry.tip === 'error' ? '#B24A4A' : entry.tip === 'success' ? '#7FB896' : entry.tip === 'ok' ? '#A9CDB8' : '#9A978C'
                       }}>
-                        <span style={{ color: '#475569' }}>[{entry.timp}]</span> {entry.msg}
+                        <span style={{ color: '#4A4A50' }}>[{entry.timp}]</span> {entry.msg}
                       </div>
                     ))}
                     {migrStatus === 'running' && (
-                      <div style={{ color: '#60a5fa', marginTop: 4 }}>
+                      <div style={{ color: '#8A97B5', marginTop: 4 }}>
                         <i className="ti ti-refresh" style={{ animation: 'spin 1s linear infinite' }} /> În curs...
                       </div>
                     )}
@@ -705,7 +705,7 @@ service cloud.firestore {
                 )}
 
                 {migrStatus === 'done' && (
-                  <div style={{ marginTop: 12, padding: '10px 14px', background: '#f0fdf4', borderRadius: 8, border: '1px solid #86efac', fontSize: 13, color: '#166534' }}>
+                  <div style={{ marginTop: 12, padding: '10px 14px', background: '#E7F0EA', borderRadius: 8, border: '1px solid #A9CDB8', fontSize: 13, color: '#24543C' }}>
                     <i className="ti ti-check-circle" /> Migrarea s-a finalizat. Contoarele vechi funcționează acum cu noul sistem. Poți rula din nou oricând — operațiunea e idempotentă.
                   </div>
                 )}
@@ -778,17 +778,17 @@ service cloud.firestore {
                 </button>
 
                 {repLog.length > 0 && (
-                  <div style={{ marginTop: 16, background: '#0f172a', borderRadius: 8, padding: 14, fontFamily: 'monospace', fontSize: 12 }}>
+                  <div style={{ marginTop: 16, background: '#1B1B1F', borderRadius: 8, padding: 14, fontFamily: 'monospace', fontSize: 12 }}>
                     {repLog.map((entry, i) => (
                       <div key={i} style={{
                         marginBottom: 4,
-                        color: entry.tip === 'error' ? '#f87171' : entry.tip === 'success' ? '#4ade80' : entry.tip === 'ok' ? '#86efac' : '#94a3b8'
+                        color: entry.tip === 'error' ? '#B24A4A' : entry.tip === 'success' ? '#7FB896' : entry.tip === 'ok' ? '#A9CDB8' : '#9A978C'
                       }}>
-                        <span style={{ color: '#475569' }}>[{entry.timp}]</span> {entry.msg}
+                        <span style={{ color: '#4A4A50' }}>[{entry.timp}]</span> {entry.msg}
                       </div>
                     ))}
                     {repStatus === 'running' && (
-                      <div style={{ color: '#60a5fa', marginTop: 4 }}>
+                      <div style={{ color: '#8A97B5', marginTop: 4 }}>
                         <i className="ti ti-refresh" style={{ animation: 'spin 1s linear infinite' }} /> În curs...
                       </div>
                     )}
@@ -796,7 +796,7 @@ service cloud.firestore {
                 )}
 
                 {repStatus === 'done' && (
-                  <div style={{ marginTop: 12, padding: '10px 14px', background: '#f0fdf4', borderRadius: 8, border: '1px solid #86efac', fontSize: 13, color: '#166534' }}>
+                  <div style={{ marginTop: 12, padding: '10px 14px', background: '#E7F0EA', borderRadius: 8, border: '1px solid #A9CDB8', fontSize: 13, color: '#24543C' }}>
                     <i className="ti ti-check-circle" /> Reparare finalizată. Editarea și ștergerea drafturilor funcționează acum corect. Reîmprospătează pagina Contracte pentru a vedea efectul.
                   </div>
                 )}

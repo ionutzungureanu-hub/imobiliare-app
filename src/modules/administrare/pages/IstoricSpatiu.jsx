@@ -236,7 +236,7 @@ export default function IstoricSpatiu() {
               </div>
             ) : documente.map(doc => (
               <div key={doc.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
-                <i className="ti ti-file-type-pdf" style={{ color: '#ef4444', fontSize: 20, flexShrink: 0 }} />
+                <i className="ti ti-file-type-pdf" style={{ color: '#B24A4A', fontSize: 20, flexShrink: 0 }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 500, fontSize: 13 }}>{doc.nume}</div>
                   <div style={{ fontSize: 11, color: 'var(--slate)' }}>{doc.tip} · {doc.an}</div>
