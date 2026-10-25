@@ -273,6 +273,54 @@ export const updateContractClient = async (spatiuId, clientId, { dataStart, data
     c.clientId === clientId ? { ...c, dataStart: dataStart ?? c.dataStart ?? '', dataFinal: dataFinal ?? c.dataFinal ?? '' } : c
   )
   await updateDoc(doc(db, 'spatii', spatiuId), { clienti })
+  // Sincronizare inversă: actualizează rândurile din registrul de contracte legate de acest spațiu + client
+  try { await syncRegistruDinSpatiu(spatiuId, clientId, { dataStart, dataFinal }) } catch (e) { console.error('sync registru', e) }
+}
+
+// ── REGISTRU CONTRACTE (comercial / rezidential) ──────────────
+export const getRegistru = async (registru) => {
+  const snap = await getDocs(query(collection(db, 'registru_contracte'), where('registru', '==', registru)))
+  return snap.docs.map(d => ({ ...d.data(), id: d.id }))
+}
+
+// Salvează un rând și sincronizează datele contractului cu asocierea client–spațiu
+export const saveRegistruRand = async (data) => {
+  const { id, ...rest } = data
+  let rid = id
+  if (id) {
+    await updateDoc(doc(db, 'registru_contracte', id), stripUndefined({ ...rest, updatedAt: serverTimestamp() }))
+  } else {
+    const ref = await addDoc(collection(db, 'registru_contracte'), stripUndefined({ ...rest, createdAt: serverTimestamp(), updatedAt: serverTimestamp() }))
+    rid = ref.id
+  }
+  if (rest.spatiuId && rest.clientId) {
+    const snap = await getDoc(doc(db, 'spatii', rest.spatiuId))
+    if (snap.exists()) {
+      const clienti = snap.data().clienti || []
+      if (clienti.some(c => c.clientId === rest.clientId)) {
+        await updateDoc(doc(db, 'spatii', rest.spatiuId), {
+          clienti: clienti.map(c => c.clientId === rest.clientId
+            ? { ...c, dataStart: rest.dataStart || '', dataFinal: rest.dataFinal || '' } : c)
+        })
+      } else if (rest.activManual !== false) {
+        await addClientToSpatiu(rest.spatiuId, rest.clientId, 'Chiriaș principal', rest.dataStart || '', rest.dataFinal || '')
+      }
+    }
+  }
+  return rid
+}
+
+export const deleteRegistruRand = async (id) => deleteDoc(doc(db, 'registru_contracte', id))
+
+export const syncRegistruDinSpatiu = async (spatiuId, clientId, { dataStart, dataFinal }) => {
+  const snap = await getDocs(query(collection(db, 'registru_contracte'), where('spatiuId', '==', spatiuId)))
+  for (const d of snap.docs) {
+    if (d.data().clientId !== clientId) continue
+    await updateDoc(doc(db, 'registru_contracte', d.id), {
+      dataStart: dataStart ?? d.data().dataStart ?? '', dataFinal: dataFinal ?? d.data().dataFinal ?? '',
+      updatedAt: serverTimestamp()
+    })
+  }
 }
 
 // ── TEMPLATE NOTE DE CALCUL ────────────────────────────────────

@@ -7,11 +7,12 @@ import {
   getTemplateContracte, addTemplateContract, deleteTemplateContract,
   getDrafturiContracte, getDraftContract, saveDraftContract, deleteDraftContract
 } from '../../../shared/firebase/firestore'
+import Registru from './Registru'
 import { docxToHtml, htmlToDocx } from '../services/docxService'
 
 export default function Contracte() {
   const toast = useToast()
-  const [tab, setTab] = useState('drafturi') // 'drafturi' | 'editor' | 'templates' | 'serii'
+  const [tab, setTab] = useState('reg_comercial') // 'reg_comercial' | 'reg_rezidential' | 'drafturi' | 'editor' | 'templates' | 'serii'
 
   const [drafturi,  setDrafturi]  = useState([])
   const [templates, setTemplates] = useState([])
@@ -167,7 +168,7 @@ export default function Contracte() {
   return (
     <>
       <Topbar title="Contracte" subtitle="Realizare și gestionare contracte">
-        {tab !== 'editor' && (
+        {(tab === 'drafturi' || tab === 'templates' || tab === 'serii') && (
           <button className="btn btn-primary btn-sm" onClick={() => startNewDraft()}>
             <i className="ti ti-plus" /> Contract nou
           </button>
@@ -179,6 +180,8 @@ export default function Contracte() {
         {tab !== 'editor' && (
           <div style={{ display: 'flex', gap: 2, borderBottom: '1px solid var(--border)', marginBottom: 20 }}>
             {[
+              { key: 'reg_comercial',   icon: 'ti-building-store', label: 'Registru comercial' },
+              { key: 'reg_rezidential', icon: 'ti-home',           label: 'Registru rezidențial' },
               { key: 'drafturi',  icon: 'ti-files',    label: `Drafturi (${drafturi.length})` },
               { key: 'templates', icon: 'ti-template',  label: `Template-uri (${templates.length})` },
               { key: 'serii',     icon: 'ti-list-numbers', label: `Serii numerotare (${serii.length})` },
@@ -196,6 +199,10 @@ export default function Contracte() {
         )}
 
         {loading && <div className="empty"><i className="ti ti-refresh" /><p>Se încarcă...</p></div>}
+
+        {(tab === 'reg_comercial' || tab === 'reg_rezidential') && (
+          <Registru key={tab} tip={tab === 'reg_comercial' ? 'comercial' : 'rezidential'} serii={serii} />
+        )}
 
         {/* ── TAB DRAFTURI ──────────────────────────────────────── */}
         {!loading && tab === 'drafturi' && (
