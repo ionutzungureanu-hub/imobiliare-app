@@ -310,6 +310,10 @@ export const saveRegistruRand = async (data) => {
   return rid
 }
 
+export const setEntitateRegistru = async (ids, entitate) => {
+  for (const id of ids) await updateDoc(doc(db, 'registru_contracte', id), { entitate, updatedAt: serverTimestamp() })
+}
+
 export const deleteRegistruRand = async (id) => deleteDoc(doc(db, 'registru_contracte', id))
 
 export const syncRegistruDinSpatiu = async (spatiuId, clientId, { dataStart, dataFinal }) => {

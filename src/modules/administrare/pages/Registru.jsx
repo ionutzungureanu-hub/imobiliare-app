@@ -2,26 +2,19 @@ import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useToast } from '../../../shared/components/Toast'
 import {
   getRegistru, saveRegistruRand, deleteRegistruRand, getNextNumarSerie,
-  getClienti, getSpatii, getImobile, addClient,
+  getClienti, getSpatii, getImobile, addClient, setEntitateRegistru,
 } from '../../../shared/firebase/firestore'
 import { mesajEroare } from '../../../shared/utils/eroare'
+import { azi, esteActiv, listaEntitati, ENTITATI_IMPLICITE } from '../services/registruUtils'
 
-const azi = () => new Date().toISOString().slice(0, 10)
 const normCui = v => String(v || '').toUpperCase().replace(/\s|-/g, '').replace(/^RO/, '')
 const normCnp = v => String(v || '').replace(/\D/g, '')
 const fmtData = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('ro-RO', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'
 const zileLa = d => d ? Math.ceil((new Date(d + 'T00:00:00') - new Date(azi() + 'T00:00:00')) / 86400000) : null
 
-// Activ: suprascriere manuală (true/false) sau calcul automat din data de final
-export const esteActiv = r => {
-  if (r.activManual === true) return true
-  if (r.activManual === false) return false
-  return !r.dataFinal || r.dataFinal >= azi()
-}
-
 const gol = tip => ({
   registru: tip, serieId: '', numar: '', identificator: '', clientId: '', nume: '', administrator: '',
-  spatiuId: '', dataStart: '', dataFinal: '', activManual: null,
+  spatiuId: '', entitate: '', dataStart: '', dataFinal: '', activManual: null,
   chirie: '', moneda: 'EUR', garantie: '', indexare: '', observatii: '',
 })
 
@@ -161,11 +154,26 @@ export default function Registru({ tip, serii }) {
     } catch (e) { console.error(e); toast(mesajEroare(e, 'Sincronizarea a eșuat'), 'error') }
   }
 
+  const seteazaEntitateLipsa = async () => {
+    const fara = rows.filter(r => !r.entitate)
+    const nume = prompt(`Cine facturează/încasează pentru cele ${fara.length} contracte fără entitate?\n(ex. ${ENTITATI_IMPLICITE.join(' sau ')})`, ENTITATI_IMPLICITE[0])
+    if (!nume || !nume.trim()) return
+    try { await setEntitateRegistru(fara.map(r => r.id), nume.trim()); toast('Entitate setată.'); load() }
+    catch (e) { console.error(e); toast(mesajEroare(e, 'Setarea entității a eșuat'), 'error') }
+  }
+
+  const entitati = useMemo(() => listaEntitati(rows), [rows])
+  const alegeEntitate = v => {
+    if (v !== '__nou') { set('entitate', v); return }
+    const nume = prompt('Numele entității care facturează/încasează:')
+    if (nume && nume.trim()) set('entitate', nume.trim())
+  }
+
   const vizibile = useMemo(() => {
     const t = cauta.trim().toLowerCase()
     return rows
       .filter(r => filtru === 'toate' || (filtru === 'active' ? esteActiv(r) : !esteActiv(r)))
-      .filter(r => !t || [r.numar, r.identificator, r.nume, r.administrator, spatiuLabel(r.spatiuId)].some(v => String(v || '').toLowerCase().includes(t)))
+      .filter(r => !t || [r.numar, r.identificator, r.nume, r.administrator, r.entitate, spatiuLabel(r.spatiuId)].some(v => String(v || '').toLowerCase().includes(t)))
       .sort((a, b) => {
         const m = sortare.dir === 'asc' ? 1 : -1
         if (sortare.camp === 'numar') {
@@ -195,6 +203,11 @@ export default function Registru({ tip, serii }) {
         <button className="btn btn-ghost btn-sm" onClick={sincronizeaza} title="Preia datele contractelor din spații">
           <i className="ti ti-refresh" /> Sincronizează cu spațiile
         </button>
+        {rows.some(r => !r.entitate) && (
+          <button className="btn btn-ghost btn-sm" onClick={seteazaEntitateLipsa} title="Setează cine încasează pentru contractele care nu au entitate">
+            <i className="ti ti-building-bank" /> Setează entitate ({rows.filter(r => !r.entitate).length} fără)
+          </button>
+        )}
         <input placeholder="Caută în registru…" value={cauta} onChange={e => setCauta(e.target.value)} style={{ maxWidth: 240 }} />
         <select value={`${sortare.camp}:${sortare.dir}`} onChange={e => { const [camp, dir] = e.target.value.split(':'); setSortare({ camp, dir }) }} style={{ maxWidth: 230 }}>
           <option value="dataFinal:asc">Expirare: cele mai apropiate întâi</option>
@@ -219,7 +232,7 @@ export default function Registru({ tip, serii }) {
             <thead><tr>
               <th onClick={() => sorteazaDupa('numar')} style={{ cursor: 'pointer', userSelect: 'none' }} title="Sortează după număr">Nr. contract{sageata('numar')}</th><th>{idLabel}</th><th>{comercial ? 'Firmă' : 'Nume'}</th>
               {comercial && <th>Administrator</th>}
-              <th>Spațiu</th><th>Început</th><th onClick={() => sorteazaDupa('dataFinal')} style={{ cursor: 'pointer', userSelect: 'none' }} title="Sortează după data expirării">Final{sageata('dataFinal')}</th><th>Chirie</th><th>Stare</th><th></th>
+              <th>Încasează</th><th>Spațiu</th><th>Început</th><th onClick={() => sorteazaDupa('dataFinal')} style={{ cursor: 'pointer', userSelect: 'none' }} title="Sortează după data expirării">Final{sageata('dataFinal')}</th><th>Chirie</th><th>Stare</th><th></th>
             </tr></thead>
             <tbody>
               {vizibile.map(r => {
@@ -231,6 +244,7 @@ export default function Registru({ tip, serii }) {
                     <td>{r.identificator || '—'}</td>
                     <td>{r.nume}</td>
                     {comercial && <td>{r.administrator || '—'}</td>}
+                    <td style={{ fontSize: 12 }}>{r.entitate || <span style={{ color: '#d97706' }}>—</span>}</td>
                     <td style={{ fontSize: 12 }}>{spatiuLabel(r.spatiuId)}</td>
                     <td>{fmtData(r.dataStart)}</td>
                     <td>
@@ -297,6 +311,13 @@ export default function Registru({ tip, serii }) {
                   <select value={form.spatiuId} onChange={e => set('spatiuId', e.target.value)}>
                     <option value="">— alege spațiul —</option>
                     {spatii.map(s => <option key={s.id} value={s.id}>{spatiuLabel(s.id)}</option>)}
+                  </select>
+                </Camp>
+                <Camp label="Cine facturează / încasează" full>
+                  <select value={form.entitate} onChange={e => alegeEntitate(e.target.value)}>
+                    <option value="">— alege entitatea —</option>
+                    {[...new Set([...entitati, form.entitate].filter(Boolean))].map(n => <option key={n} value={n}>{n}</option>)}
+                    <option value="__nou">+ Entitate nouă…</option>
                   </select>
                 </Camp>
                 <Camp label="Data început"><input type="date" value={form.dataStart} onChange={e => set('dataStart', e.target.value)} /></Camp>

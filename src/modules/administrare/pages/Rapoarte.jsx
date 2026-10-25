@@ -9,6 +9,7 @@ import {
   exportRaportClient, exportRaportGeneral, exportRaportImobil
 } from '../services/pdfRapoarte'
 import { fmt } from '../../../shared/utils'
+import RaportVenituri from './RaportVenituri'
 
 const luna = (offset = 0) => {
   const d = new Date()
@@ -185,6 +186,7 @@ export default function Rapoarte() {
             { key: 'client',  icon: 'ti-user',    label: 'Per client' },
             { key: 'general', icon: 'ti-users',   label: 'General toți clienții' },
             { key: 'imobil',  icon: 'ti-building', label: 'Consum pe imobil' },
+            { key: 'venituri', icon: 'ti-cash',    label: 'Venituri lunare' },
           ].map(t => (
             <button key={t.key} onClick={() => setTab(t.key)} style={{
               padding: '9px 20px', fontSize: 13, fontWeight: 500, border: 'none', background: 'none',
@@ -196,6 +198,8 @@ export default function Rapoarte() {
             </button>
           ))}
         </div>
+
+        {tab === 'venituri' && <RaportVenituri />}
 
         {/* ── TAB CLIENT ──────────────────────────────────────── */}
         {tab === 'client' && (
