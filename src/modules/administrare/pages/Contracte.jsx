@@ -1,3 +1,4 @@
+import { mesajEroare } from '../../../shared/utils/eroare'
 import { useEffect, useState, useRef, useCallback } from 'react'
 import Topbar from '../../../shared/components/Topbar'
 import { useToast } from '../../../shared/components/Toast'
@@ -136,9 +137,15 @@ export default function Contracte() {
 
   const handleDeleteDraft = async (id, titlu) => {
     if (!confirm(`Ștergi draftul "${titlu}"?`)) return
-    await deleteDraftContract(id)
-    toast('Draft șters.')
-    loadAll()
+    if (!id) { toast('Draft fără identificator. Rulează Configurare → Mentenanță → Reparare drafturi.', 'error'); return }
+    try {
+      await deleteDraftContract(id)
+      toast('Draft șters.')
+      loadAll()
+    } catch (e) {
+      console.error(e)
+      toast(mesajEroare(e, 'Ștergerea a eșuat'), 'error')
+    }
   }
 
   const handleExportDocx = async () => {

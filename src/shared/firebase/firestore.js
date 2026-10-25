@@ -17,12 +17,12 @@ const stripUndefined = (obj) => {
 
 export const getClienti = async () => {
   const snap = await getDocs(collection(db, 'clienti'))
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  return snap.docs.map(d => ({ ...d.data(), id: d.id }))
 }
 
 export const getClient = async (id) => {
   const snap = await getDoc(doc(db, 'clienti', id))
-  return snap.exists() ? { id: snap.id, ...snap.data() } : null
+  return snap.exists() ? { ...snap.data(), id: snap.id } : null
 }
 
 export const addClient = async (data) => {
@@ -48,7 +48,7 @@ export const getEmailuriClient = async (clientId) => {
     orderBy('trimisLa', 'desc')
   )
   const snap = await getDocs(q)
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  return snap.docs.map(d => ({ ...d.data(), id: d.id }))
 }
 
 export const saveEmail = async (emailData) => {
@@ -66,7 +66,7 @@ export const getNoteClient = async (clientId) => {
     orderBy('creatLa', 'desc')
   )
   const snap = await getDocs(q)
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  return snap.docs.map(d => ({ ...d.data(), id: d.id }))
 }
 
 export const addNota = async (clientId, text, autor) => {
@@ -95,7 +95,7 @@ export const saveConfig = async (data) => {
 // ── IMOBILE ────────────────────────────────────────────────────
 export const getImobile = async () => {
   const snap = await getDocs(collection(db, 'imobile'))
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  return snap.docs.map(d => ({ ...d.data(), id: d.id }))
 }
 export const addImobil = async (data) => {
   const ref = await addDoc(collection(db, 'imobile'), stripUndefined({ ...data, creatLa: serverTimestamp() }))
@@ -112,7 +112,7 @@ export const getSpatii = async (imobilId = null) => {
     ? query(collection(db, 'spatii'), where('imobilId', '==', imobilId))
     : collection(db, 'spatii')
   const snap = await getDocs(q)
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  return snap.docs.map(d => ({ ...d.data(), id: d.id }))
 }
 export const addSpatiu = async (data) =>
   addDoc(collection(db, 'spatii'), stripUndefined({ ...data, creatLa: serverTimestamp() }))
@@ -125,7 +125,7 @@ export const deleteSpatiu = async (id) =>
 export const getContoare = async (spatiuId) => {
   const q = query(collection(db, 'contoare'), where('spatiuId', '==', spatiuId))
   const snap = await getDocs(q)
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  return snap.docs.map(d => ({ ...d.data(), id: d.id }))
 }
 export const addContor = async (data) =>
   addDoc(collection(db, 'contoare'), stripUndefined({ ...data, creatLa: serverTimestamp() }))
@@ -142,7 +142,7 @@ export const getCitiri = async (contorId) => {
     orderBy('data', 'desc')
   )
   const snap = await getDocs(q)
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  return snap.docs.map(d => ({ ...d.data(), id: d.id }))
 }
 export const getCitiriSpatiu = async (spatiuId) => {
   const q = query(
@@ -151,7 +151,7 @@ export const getCitiriSpatiu = async (spatiuId) => {
     orderBy('data', 'desc')
   )
   const snap = await getDocs(q)
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  return snap.docs.map(d => ({ ...d.data(), id: d.id }))
 }
 export const addCitire = async (data) =>
   addDoc(collection(db, 'citiri'), stripUndefined({ ...data, creatLa: serverTimestamp() }))
@@ -161,12 +161,12 @@ export const deleteCitire = async (id) =>
 // ── USER PROFILES ──────────────────────────────────────────────
 export const getUserProfile = async (uid) => {
   const snap = await getDoc(doc(db, 'users', uid))
-  return snap.exists() ? { id: snap.id, ...snap.data() } : null
+  return snap.exists() ? { ...snap.data(), id: snap.id } : null
 }
 
 export const getUsers = async () => {
   const snap = await getDocs(collection(db, 'users'))
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  return snap.docs.map(d => ({ ...d.data(), id: d.id }))
 }
 
 export const saveUserProfile = async (uid, data) => {
@@ -199,7 +199,7 @@ export const getDocumente = async (entityType = null, entityId = null) => {
   const snap = await getDocs(q)
   // Sort client-side to avoid Firestore compound index requirement
   return snap.docs
-    .map(d => ({ id: d.id, ...d.data() }))
+    .map(d => ({ ...d.data(), id: d.id }))
     .sort((a, b) => (b.uploadatLa?.seconds || 0) - (a.uploadatLa?.seconds || 0))
 }
 
@@ -300,7 +300,7 @@ export const getNoteCalcul = async (spatiuId = null) => {
     : collection(db, 'note_calcul')
   const snap = await getDocs(q)
   return snap.docs
-    .map(d => ({ id: d.id, ...d.data() }))
+    .map(d => ({ ...d.data(), id: d.id }))
     .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0))
 }
 
@@ -312,7 +312,7 @@ export const getIstoricSpatiu = async (spatiuId) => {
   const q = query(collection(db, 'istoric_spatiu'), where('spatiuId', '==', spatiuId))
   const snap = await getDocs(q)
   return snap.docs
-    .map(d => ({ id: d.id, ...d.data() }))
+    .map(d => ({ ...d.data(), id: d.id }))
     .sort((a, b) => (b.dataStart?.seconds || 0) - (a.dataStart?.seconds || 0))
 }
 
@@ -338,7 +338,7 @@ export const savePreturiImobil = async (imobilId, preturi) => {
 export const getContoareSpatiu = async (spatiuId) => {
   const q = query(collection(db, 'contoare'), where('spatiuId', '==', spatiuId))
   const snap = await getDocs(q)
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  return snap.docs.map(d => ({ ...d.data(), id: d.id }))
     .sort((a, b) => (a.ordine || 0) - (b.ordine || 0))
 }
 
@@ -357,7 +357,7 @@ export const getCitiriContor = async (contorId) => {
   const q = query(collection(db, 'citiri'), where('contorId', '==', contorId))
   const snap = await getDocs(q)
   return snap.docs
-    .map(d => ({ id: d.id, ...d.data() }))
+    .map(d => ({ ...d.data(), id: d.id }))
     .sort((a, b) => b.data?.localeCompare?.(a.data) || 0)
 }
 
@@ -365,7 +365,7 @@ export const getCitiriSpatiu2 = async (spatiuId) => {
   const q = query(collection(db, 'citiri'), where('spatiuId', '==', spatiuId))
   const snap = await getDocs(q)
   return snap.docs
-    .map(d => ({ id: d.id, ...d.data() }))
+    .map(d => ({ ...d.data(), id: d.id }))
     .sort((a, b) => b.data?.localeCompare?.(a.data) || 0)
 }
 
@@ -405,14 +405,14 @@ export const getIndexuriPrimite = async (status = null) => {
     : collection(db, 'indexuri_primite')
   const snap = await getDocs(q)
   return snap.docs
-    .map(d => ({ id: d.id, ...d.data() }))
+    .map(d => ({ ...d.data(), id: d.id }))
     .sort((a, b) => (b.dataTrimis?.seconds || 0) - (a.dataTrimis?.seconds || 0))
 }
 
 export const getIndexuriPentruSpatiu = async (spatiuId) => {
   const q = query(collection(db, 'indexuri_primite'), where('spatiuId', '==', spatiuId))
   const snap = await getDocs(q)
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  return snap.docs.map(d => ({ ...d.data(), id: d.id }))
 }
 
 export const saveIndexPrimit = async (data) =>
@@ -434,8 +434,8 @@ export const getAllContoareCuCitiri = async () => {
     getDocs(collection(db, 'contoare')),
     getDocs(collection(db, 'citiri'))
   ])
-  const ct = contoare.docs.map(d => ({ id: d.id, ...d.data() }))
-  const ci = citiri.docs.map(d => ({ id: d.id, ...d.data() }))
+  const ct = contoare.docs.map(d => ({ ...d.data(), id: d.id }))
+  const ci = citiri.docs.map(d => ({ ...d.data(), id: d.id }))
   return ct.map(c => ({
     ...c,
     citiri: ci
@@ -447,7 +447,7 @@ export const getAllContoareCuCitiri = async () => {
 // ── SERII CONTRACTE ────────────────────────────────────────────
 export const getSeriiContracte = async () => {
   const snap = await getDocs(collection(db, 'serii_contracte'))
-  return snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => a.nume.localeCompare(b.nume))
+  return snap.docs.map(d => ({ ...d.data(), id: d.id })).sort((a, b) => a.nume.localeCompare(b.nume))
 }
 
 export const addSerieContract = async (nume) =>
@@ -471,7 +471,7 @@ export const updateNumarSerie = async (serieId, numar) =>
 // ── TEMPLATE-URI CONTRACTE ─────────────────────────────────────
 export const getTemplateContracte = async () => {
   const snap = await getDocs(collection(db, 'templates_contracte'))
-  return snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0))
+  return snap.docs.map(d => ({ ...d.data(), id: d.id })).sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0))
 }
 
 export const addTemplateContract = async (data) =>
@@ -483,12 +483,12 @@ export const deleteTemplateContract = async (id) =>
 // ── DRAFTURI CONTRACTE ─────────────────────────────────────────
 export const getDrafturiContracte = async () => {
   const snap = await getDocs(collection(db, 'contracte_drafturi'))
-  return snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (b.updatedAt?.seconds || b.createdAt?.seconds || 0) - (a.updatedAt?.seconds || a.createdAt?.seconds || 0))
+  return snap.docs.map(d => ({ ...d.data(), id: d.id })).sort((a, b) => (b.updatedAt?.seconds || b.createdAt?.seconds || 0) - (a.updatedAt?.seconds || a.createdAt?.seconds || 0))
 }
 
 export const getDraftContract = async (id) => {
   const snap = await getDoc(doc(db, 'contracte_drafturi', id))
-  return snap.exists() ? { id: snap.id, ...snap.data() } : null
+  return snap.exists() ? { ...snap.data(), id: snap.id } : null
 }
 
 export const saveDraftContract = async (data) => {
@@ -509,7 +509,7 @@ export const deleteDraftContract = async (id) =>
 // Rulează o singură dată, safe să fie repetat (idempotent)
 export const migreazaContoare = async (onProgress) => {
   const snap = await getDocs(collection(db, 'contoare'))
-  const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  const docs = snap.docs.map(d => ({ ...d.data(), id: d.id }))
   
   const deUpdate = docs.filter(d => !d.denumire && d.tip)
   const deja     = docs.filter(d => d.denumire)
@@ -569,7 +569,7 @@ export const repairDrafturiContracte = async (onProgress) => {
 export const getCitiriPentruRaport = async (spatiuIds = [], dataStart = null, dataStop = null) => {
   // Citiri pentru lista de spații, filtrate pe perioadă
   const snap = await getDocs(collection(db, 'citiri'))
-  let citiri = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  let citiri = snap.docs.map(d => ({ ...d.data(), id: d.id }))
   if (spatiuIds.length > 0) citiri = citiri.filter(c => spatiuIds.includes(c.spatiuId))
   if (dataStart) citiri = citiri.filter(c => c.data >= dataStart)
   if (dataStop)  citiri = citiri.filter(c => c.data <= dataStop)
