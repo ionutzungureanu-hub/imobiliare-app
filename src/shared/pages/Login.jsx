@@ -35,24 +35,35 @@ export default function Login() {
 
         <form onSubmit={handleSubmit}>
           <div className="form-group" style={{ marginBottom: 14 }}>
-            <label>Email</label>
+            <label htmlFor="login-email">Email</label>
             <input
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
               placeholder="email@firma.ro"
               required
-              autoFocus
+              name="email"
+              id="login-email"
+              autoComplete="username"
+              inputMode="email"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              enterKeyHint="next"
             />
           </div>
           <div className="form-group" style={{ marginBottom: 20 }}>
-            <label>Parolă</label>
+            <label htmlFor="login-password">Parolă</label>
             <input
               type="password"
               value={password}
               onChange={e => setPassword(e.target.value)}
               placeholder="••••••••"
               required
+              name="password"
+              id="login-password"
+              autoComplete="current-password"
+              enterKeyHint="go"
             />
           </div>
           <button className="btn btn-primary" type="submit" disabled={loading} style={{ width: '100%', justifyContent: 'center' }}>

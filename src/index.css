@@ -461,3 +461,11 @@ input[type=checkbox], input[type=radio] { accent-color: var(--blue); }
 /* Slogan sub logo: încape pe 1–2 rânduri în meniul lateral */
 .sidebar-logo-sub { font-size: 9.5px; letter-spacing: .14em; line-height: 1.6; margin-top: 12px; }
 .login-logo img   { display: block; margin: 0 auto 6px; }
+
+/* Mobil / PWA: tastatura trebuie să apară la atingerea câmpurilor */
+input, select, textarea { -webkit-user-select: text; user-select: text; -webkit-appearance: none; appearance: none; touch-action: manipulation; }
+select { -webkit-appearance: menulist; appearance: auto; }
+input[type=checkbox], input[type=radio] { -webkit-appearance: auto; appearance: auto; }
+@media (max-width: 768px) { input, select, textarea { font-size: 16px; } }
+.login-wrap { min-height: 100vh; min-height: 100dvh; padding: 16px; box-sizing: border-box; }
+.login-card { position: relative; z-index: 1; }
