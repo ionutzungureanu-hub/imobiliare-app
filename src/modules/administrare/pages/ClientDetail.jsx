@@ -60,12 +60,17 @@ export default function ClientDetail() {
 
   const loadData = async () => {
     try {
-      const [c, sp, im, rc, rr, e, com, n] = await Promise.all([
+      // allSettled: cardul se deschide chiar dacă o parte din date (ex. note, registru) nu poate fi citită
+      const r = await Promise.allSettled([
         getClient(id), getSpatii(), getImobile(), getRegistru('comercial'), getRegistru('rezidential'),
-        getEmailuriClient(id), getComunicariClient(id).catch(() => []), getNoteClient(id),
+        getEmailuriClient(id), getComunicariClient(id), getNoteClient(id),
       ])
-      setClient(c); setSpatii(sp); setImobile(im); setRegistru([...rc, ...rr].filter(r => r.clientId === id))
-      setEmailuri([...e, ...com]); setNote(n)
+      const v = (i, gol = []) => r[i].status === 'fulfilled' ? r[i].value : gol
+      r.forEach((x, i) => { if (x.status === 'rejected') console.error('ClientDetail parte', i, x.reason) })
+      if (r[0].status === 'rejected') throw r[0].reason
+      const c = v(0, null)
+      setClient(c); setSpatii(v(1)); setImobile(v(2)); setRegistru([...v(3), ...v(4)].filter(x => x.clientId === id))
+      setEmailuri([...v(5), ...v(6)]); setNote(v(7))
       if (!c) setEroare('Clientul nu a fost găsit.')
     } catch (e) { console.error(e); setEroare(mesajEroare(e, 'Încărcarea a eșuat')) }
   }

@@ -45,10 +45,10 @@ export const getEmailuriClient = async (clientId) => {
   const q = query(
     collection(db, 'emailuri'),
     where('clientId', '==', clientId),
-    orderBy('trimisLa', 'desc')
   )
   const snap = await getDocs(q)
-  return snap.docs.map(d => ({ ...d.data(), id: d.id }))
+  // Sortare în aplicație: evită nevoia unui index compus în Firestore
+  return snap.docs.map(d => ({ ...d.data(), id: d.id })).sort((a, b) => (b.trimisLa?.seconds || 0) - (a.trimisLa?.seconds || 0))
 }
 
 export const saveEmail = async (emailData) => {
@@ -63,10 +63,10 @@ export const getNoteClient = async (clientId) => {
   const q = query(
     collection(db, 'note'),
     where('clientId', '==', clientId),
-    orderBy('creatLa', 'desc')
   )
   const snap = await getDocs(q)
-  return snap.docs.map(d => ({ ...d.data(), id: d.id }))
+  // Sortare în aplicație: evită nevoia unui index compus în Firestore
+  return snap.docs.map(d => ({ ...d.data(), id: d.id })).sort((a, b) => (b.creatLa?.seconds || 0) - (a.creatLa?.seconds || 0))
 }
 
 export const addNota = async (clientId, text, autor) => {
@@ -139,19 +139,19 @@ export const getCitiri = async (contorId) => {
   const q = query(
     collection(db, 'citiri'),
     where('contorId', '==', contorId),
-    orderBy('data', 'desc')
   )
   const snap = await getDocs(q)
-  return snap.docs.map(d => ({ ...d.data(), id: d.id }))
+  // Sortare în aplicație: evită nevoia unui index compus în Firestore
+  return snap.docs.map(d => ({ ...d.data(), id: d.id })).sort((a, b) => String(b.data || '').localeCompare(String(a.data || '')))
 }
 export const getCitiriSpatiu = async (spatiuId) => {
   const q = query(
     collection(db, 'citiri'),
     where('spatiuId', '==', spatiuId),
-    orderBy('data', 'desc')
   )
   const snap = await getDocs(q)
-  return snap.docs.map(d => ({ ...d.data(), id: d.id }))
+  // Sortare în aplicație: evită nevoia unui index compus în Firestore
+  return snap.docs.map(d => ({ ...d.data(), id: d.id })).sort((a, b) => String(b.data || '').localeCompare(String(a.data || '')))
 }
 export const addCitire = async (data) =>
   addDoc(collection(db, 'citiri'), stripUndefined({ ...data, creatLa: serverTimestamp() }))
