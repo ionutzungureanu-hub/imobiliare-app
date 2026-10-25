@@ -1,3 +1,4 @@
+import { mesajEroare } from '../../../shared/utils/eroare'
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { updateDoc, doc } from 'firebase/firestore/lite'
@@ -354,7 +355,7 @@ function ModalContorNou({ spatiu, imobil, contoareExistente, allSpatiiImobil, on
       toast('Contor adăugat!')
       onSave()
       onClose()
-    } catch { toast('Eroare.', 'error') }
+    } catch (e) { console.error(e); toast(mesajEroare(e), 'error') }
     finally { setSaving(false) }
   }
 

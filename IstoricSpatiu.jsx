@@ -1,3 +1,4 @@
+import { mesajEroare } from '../../../shared/utils/eroare'
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import Topbar from '../../../shared/components/Topbar'
@@ -70,7 +71,7 @@ export default function IstoricSpatiu() {
       else { await addIstoricEntry(data); toast('Înregistrare adăugată!') }
       setModalIst(false); setEditIstId(null)
       load()
-    } catch { toast('Eroare.', 'error') }
+    } catch (e) { console.error(e); toast(mesajEroare(e), 'error') }
     finally { setSaving(false) }
   }
 

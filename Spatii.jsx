@@ -1,3 +1,4 @@
+import { mesajEroare } from '../../../shared/utils/eroare'
 import { useEffect, useState } from 'react'
 import { whatsappLink } from '../../../shared/utils'
 import { useNavigate } from 'react-router-dom'
@@ -132,7 +133,7 @@ export default function Spatii() {
         }
       }
       setModalI(false); load()
-    } catch { toast('Eroare.', 'error') }
+    } catch (e) { console.error(e); toast(mesajEroare(e), 'error') }
     finally { setSaving(false) }
   }
 
@@ -182,7 +183,7 @@ export default function Spatii() {
       if (modalS === 'edit') { await updateSpatiu(editSId, data); toast('Spațiu actualizat!') }
       else { await addSpatiu(data); toast('Spațiu adăugat!') }
       setModalS(false); load()
-    } catch { toast('Eroare.', 'error') }
+    } catch (e) { console.error(e); toast(mesajEroare(e), 'error') }
     finally { setSaving(false) }
   }
 

@@ -1,3 +1,4 @@
+import { mesajEroare } from '../../../shared/utils/eroare'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Topbar from '../../../shared/components/Topbar'
@@ -30,7 +31,7 @@ function ToggleActiv({ client, onToggle }) {
       await toggleClientActiv(client.id, !client.activ, client.spatiuId || null)
       toast(client.activ ? 'Client dezactivat — spațiu eliberat.' : 'Client reactivat!')
       onToggle()
-    } catch { toast('Eroare.', 'error') }
+    } catch (e) { console.error(e); toast(mesajEroare(e), 'error') }
     finally { setLoading(false) }
   }
   return (

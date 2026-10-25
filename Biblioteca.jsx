@@ -1,3 +1,4 @@
+import { mesajEroare } from '../../../shared/utils/eroare'
 import { useEffect, useState, useRef } from 'react'
 import Topbar from '../../../shared/components/Topbar'
 import { useToast } from '../../../shared/components/Toast'
@@ -138,7 +139,7 @@ export default function Biblioteca() {
       toast('Redenumit!')
       setModalRen(null)
       loadAll()
-    } catch { toast('Eroare.', 'error') }
+    } catch (e) { console.error(e); toast(mesajEroare(e), 'error') }
     finally { setSaving(false) }
   }
 

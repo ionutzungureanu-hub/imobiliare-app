@@ -1,3 +1,4 @@
+import { mesajEroare } from '../../../shared/utils/eroare'
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import Topbar from '../../../shared/components/Topbar'
@@ -58,7 +59,7 @@ export default function PortalSetari() {
     try {
       await savePortal({ spatiuId, titlu, adresare, utilitatiActive: active, token, activ: true })
       toast('Portal salvat!')
-    } catch { toast('Eroare.', 'error') }
+    } catch (e) { console.error(e); toast(mesajEroare(e), 'error') }
     finally { setSaving(false) }
   }
 
