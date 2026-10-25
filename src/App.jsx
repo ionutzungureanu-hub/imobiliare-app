@@ -12,11 +12,9 @@ const Dashboard          = lazy(() => import('./modules/administrare/pages/Dashb
 const Clienti             = lazy(() => import('./modules/administrare/pages/Clienti'))
 const ClientDetail        = lazy(() => import('./modules/administrare/pages/ClientDetail'))
 const Spatii               = lazy(() => import('./modules/administrare/pages/Spatii'))
-const Utilitati             = lazy(() => import('./modules/administrare/pages/Utilitati'))
-const UtilitatiMobile        = lazy(() => import('./modules/administrare/pages/UtilitatiMobile'))
+const Citire = lazy(() => import('./modules/administrare/pages/Citire'))
 const NotaCalcul               = lazy(() => import('./modules/administrare/pages/NotaCalcul'))
 const NotaAdministratie          = lazy(() => import('./modules/administrare/pages/NotaAdministratie'))
-const ValidareIndexuri             = lazy(() => import('./modules/administrare/pages/ValidareIndexuri'))
 const PortalSetari                   = lazy(() => import('./modules/administrare/pages/PortalSetari'))
 const IstoricSpatiu                    = lazy(() => import('./modules/administrare/pages/IstoricSpatiu'))
 const Biblioteca                         = lazy(() => import('./modules/administrare/pages/Biblioteca'))
@@ -62,19 +60,20 @@ export default function App() {
               <Route path="clienti"          element={<Clienti />} />
               <Route path="clienti/:id"      element={<ClientDetail />} />
               <Route path="spatii"           element={<Spatii />} />
-              <Route path="utilitati"        element={<Utilitati />} />
+              <Route path="citire"           element={<Citire />} />
+              <Route path="utilitati"        element={<Navigate to="/citire" replace />} />
               <Route path="nota-calcul"      element={<NotaCalcul />} />
               <Route path="utilizatori"      element={<Utilizatori />} />
               <Route path="config"           element={<Config />} />
               <Route path="import-clienti"   element={<ImportClienti />} />
               <Route path="biblioteca"       element={<Biblioteca />} />
-              <Route path="utilitati-mobile" element={<UtilitatiMobile />} />
+              <Route path="utilitati-mobile" element={<Navigate to="/citire" replace />} />
               <Route path="spatii/:spatiuId/istoric" element={<IstoricSpatiu />} />
               <Route path="nota-administratie"       element={<NotaAdministratie />} />
               <Route path="contracte"                element={<Contracte />} />
               <Route path="rapoarte"                 element={<Rapoarte />} />
               <Route path="spatii/:spatiuId/portal"  element={<PortalSetari />} />
-              <Route path="validare-indexuri"        element={<ValidareIndexuri />} />
+              <Route path="validare-indexuri"        element={<Navigate to="/citire?tab=validare" replace />} />
 
               {/* ── Facturare ── */}
               <Route path="emite"            element={<EmiteFactura />} />

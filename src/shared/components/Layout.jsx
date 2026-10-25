@@ -2,42 +2,41 @@ import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { ToastProvider } from './Toast'
+import GlobalSearch from './GlobalSearch'
+import { getIndexuriPrimite } from '../firebase/firestore'
 
 const NAV_ALL = [
-  // ── MODUL ADMINISTRARE ──────────────────────────────────────
-  { to: '/dashboard',       icon: 'ti-layout-dashboard', label: 'Dashboard',        section: 'General',    modul: 'administrare', adminOnly: false },
-  { to: '/clienti',         icon: 'ti-users',            label: 'Clienți',          section: 'Clienți',    modul: 'administrare', adminOnly: false },
-  { to: '/spatii',          icon: 'ti-building',         label: 'Spații & Imobile', section: 'Imobile',    modul: 'administrare', adminOnly: false, desktopOnly: true },
-  { to: '/utilitati',       icon: 'ti-plug',             label: 'Utilități',        section: 'Imobile',    modul: 'administrare', adminOnly: false, desktopOnly: true },
-  { to: '/utilitati-mobile',icon: 'ti-bolt',            label: 'Citire rapidă',    section: 'Imobile',    modul: 'administrare', adminOnly: false },
-  { to: '/nota-calcul',       icon: 'ti-calculator',     label: 'Notă calcul',      section: 'Documente',  modul: 'administrare', adminOnly: false },
-  { to: '/nota-administratie', icon: 'ti-droplet',       label: 'Notă apă bloc',    section: 'Documente',  modul: 'administrare', adminOnly: false },
-  { to: '/validare-indexuri',  icon: 'ti-checks',        label: 'Validare indexuri', section: 'Documente',  modul: 'administrare', adminOnly: false },
-  { to: '/biblioteca',      icon: 'ti-books',            label: 'Bibliotecă',       section: 'Bibliotecă', modul: 'administrare', adminOnly: false },
-  { to: '/contracte',       icon: 'ti-file-text',        label: 'Contracte',        section: 'Bibliotecă', modul: 'administrare', adminOnly: false, desktopOnly: true },
-  { to: '/rapoarte',        icon: 'ti-chart-bar',        label: 'Rapoarte',         section: 'Rapoarte',   modul: 'administrare', adminOnly: false, desktopOnly: true },
-  { to: '/utilizatori',     icon: 'ti-user-cog',         label: 'Utilizatori',      section: 'Setări',     modul: 'administrare', adminOnly: true,  desktopOnly: true },
-  { to: '/config',          icon: 'ti-settings',         label: 'Configurare',      section: 'Setări',     modul: 'administrare', adminOnly: true,  desktopOnly: true },
+  { to: '/dashboard',          icon: 'ti-layout-dashboard', label: 'Dashboard',         section: 'Acasă' },
 
-  // ── MODUL FACTURARE ──────────────────────────────────────────
-  { to: '/emite',           icon: 'ti-file-plus',        label: 'Factură chirie',   section: 'Facturi',    modul: 'facturare', adminOnly: false, desktopOnly: true },
-  { to: '/emite-utilitati', icon: 'ti-receipt',          label: 'F. utilități',     section: 'Facturi',    modul: 'facturare', adminOnly: false, desktopOnly: true },
-  { to: '/emise',           icon: 'ti-files',            label: 'Facturi emise',    section: 'Facturi',    modul: 'facturare', adminOnly: false, desktopOnly: true },
-  { to: '/furnizori',       icon: 'ti-file-import',      label: 'Furnizori',        section: 'Facturi',    modul: 'facturare', adminOnly: true,  desktopOnly: true },
+  { to: '/clienti',            icon: 'ti-users',            label: 'Clienți',           section: 'Persoane și spații' },
+  { to: '/spatii',             icon: 'ti-building',         label: 'Spații & Imobile',  section: 'Persoane și spații', desktopOnly: true },
+  { to: '/contracte',          icon: 'ti-file-text',        label: 'Contracte',         section: 'Persoane și spații', desktopOnly: true },
+
+  { to: '/citire',             icon: 'ti-bolt',             label: 'Citire indexuri',   section: 'Ciclul lunar', badge: true },
+  { to: '/nota-calcul',        icon: 'ti-calculator',       label: 'Notă calcul',       section: 'Ciclul lunar' },
+  { to: '/nota-administratie', icon: 'ti-droplet',          label: 'Notă apă bloc',     section: 'Ciclul lunar' },
+  { to: '/emite',              icon: 'ti-file-plus',        label: 'Factură chirie',    section: 'Ciclul lunar', desktopOnly: true },
+  { to: '/emite-utilitati',    icon: 'ti-receipt',          label: 'Factură utilități', section: 'Ciclul lunar', desktopOnly: true },
+  { to: '/emise',              icon: 'ti-files',            label: 'Facturi emise',     section: 'Ciclul lunar', desktopOnly: true },
+  { to: '/furnizori',          icon: 'ti-file-import',      label: 'Furnizori',         section: 'Ciclul lunar', adminOnly: true, desktopOnly: true },
+
+  { to: '/biblioteca',         icon: 'ti-books',            label: 'Bibliotecă',        section: 'Documente și rapoarte' },
+  { to: '/rapoarte',           icon: 'ti-chart-bar',        label: 'Rapoarte',          section: 'Documente și rapoarte', desktopOnly: true },
+
+  { to: '/utilizatori',        icon: 'ti-user-cog',         label: 'Utilizatori',       section: 'Setări', adminOnly: true, desktopOnly: true },
+  { to: '/config',             icon: 'ti-settings',         label: 'Configurare',       section: 'Setări', adminOnly: true, desktopOnly: true },
 ]
-
-const MODUL_LABEL = {
-  administrare: 'Administrare',
-  facturare:    'Facturare',
-}
 
 const MOBILE_NAV = [
-  { to: '/dashboard',         icon: 'ti-layout-dashboard', label: 'Acasă'    },
-  { to: '/clienti',           icon: 'ti-users',            label: 'Clienți'  },
-  { to: '/nota-calcul',       icon: 'ti-calculator',       label: 'Notă'     },
-  { to: '/utilitati-mobile',  icon: 'ti-bolt',             label: 'Index'    },
-  { to: '/validare-indexuri', icon: 'ti-checks',           label: 'Validare' },
+  { to: '/dashboard',   icon: 'ti-layout-dashboard', label: 'Acasă'   },
+  { to: '/clienti',     icon: 'ti-users',            label: 'Clienți' },
+  { to: '/citire',      icon: 'ti-bolt',             label: 'Citire', badge: true },
+  { to: '/nota-calcul', icon: 'ti-calculator',       label: 'Notă'    },
 ]
+
+const Badge = ({ n }) => n > 0 ? (
+  <span style={{ marginLeft: 'auto', background: '#dc2626', color: '#fff', borderRadius: 10, fontSize: 11, fontWeight: 700, padding: '1px 7px' }}>{n}</span>
+) : null
 
 function AdminChirieLogo({ size = 32 }) {
   return (
@@ -64,12 +63,23 @@ export default function Layout() {
     window.addEventListener('resize', handler)
     return () => window.removeEventListener('resize', handler)
   }, [])
+  const [inAsteptare, setInAsteptare] = useState(0)
+  useEffect(() => {
+    getIndexuriPrimite('asteptare').then(l => setInAsteptare(l.length)).catch(() => {})
+  }, [location.pathname])
+  const [inchise, setInchise] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('nav_inchise') || '[]') } catch { return [] }
+  })
+  const toggleGrup = sec => setInchise(prev => {
+    const nou = prev.includes(sec) ? prev.filter(x => x !== sec) : [...prev, sec]
+    try { localStorage.setItem('nav_inchise', JSON.stringify(nou)) } catch {}
+    return nou
+  })
   const nav = NAV_ALL.filter(item =>
     (!item.adminOnly || isAdmin) &&
     (!item.desktopOnly || !isMobile)
   )
   let lastSection = ''
-  let lastModul   = ''
 
   return (
     <ToastProvider>
@@ -93,32 +103,28 @@ export default function Layout() {
 
           <nav className="sidebar-nav">
             {nav.map(item => {
-              const showModul   = item.modul !== lastModul
-              if (showModul) lastModul = item.modul
               const showSection = item.section !== lastSection
               if (showSection) lastSection = item.section
+              const activ = nav.some(n => n.section === item.section && location.pathname.startsWith(n.to))
+              const inchis = inchise.includes(item.section) && !activ
+              const singur = nav.filter(n => n.section === item.section).length === 1
               return (
                 <div key={item.to}>
-                  {showModul && (
-                    <div style={{
-                      margin: '18px 0 6px', padding: '6px 12px',
-                      display: 'flex', alignItems: 'center', gap: 8,
-                      fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.8px',
-                      color: item.modul === 'facturare' ? '#166534' : 'var(--blue)',
-                      background: item.modul === 'facturare' ? '#f0fdf4' : '#eff6ff',
-                      borderRadius: 6,
-                      borderLeft: `3px solid ${item.modul === 'facturare' ? '#16a34a' : 'var(--blue)'}`,
-                    }}>
-                      <i className={`ti ${item.modul === 'facturare' ? 'ti-receipt-2' : 'ti-building-community'}`} style={{ fontSize: 13 }} />
-                      {MODUL_LABEL[item.modul]}
+                  {showSection && (
+                    <div className="nav-section" onClick={() => !singur && toggleGrup(item.section)}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: singur ? 'default' : 'pointer', userSelect: 'none', marginTop: 8 }}>
+                      {item.section}
+                      {!singur && <i className={`ti ${inchis ? 'ti-chevron-right' : 'ti-chevron-down'}`} style={{ fontSize: 12 }} />}
                     </div>
                   )}
-                  {showSection && <div className="nav-section">{item.section}</div>}
-                  <NavLink to={item.to} className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
-                    onClick={() => setSidebarOpen(false)}>
-                    <i className={`ti ${item.icon}`} />
-                    {item.label}
-                  </NavLink>
+                  {!inchis && (
+                    <NavLink to={item.to} className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+                      onClick={() => setSidebarOpen(false)}>
+                      <i className={`ti ${item.icon}`} />
+                      {item.label}
+                      {item.badge && <Badge n={inAsteptare} />}
+                    </NavLink>
+                  )}
                 </div>
               )
             })}
@@ -147,6 +153,7 @@ export default function Layout() {
                 <h1>{getPageTitle(location.pathname)}</h1>
               </div>
             </div>
+            <GlobalSearch isAdmin={isAdmin} isMobile={isMobile} />
             <div className="topbar-right" id="topbar-actions" />
           </div>
           <Outlet />
@@ -159,6 +166,9 @@ export default function Layout() {
                 className={({ isActive }) => `mobile-nav-item${isActive ? ' active' : ''}`}>
                 <i className={`ti ${item.icon}`} />
                 {item.label}
+                {item.badge && inAsteptare > 0 && (
+                  <span style={{ position: 'absolute', top: 2, right: '22%', background: '#dc2626', color: '#fff', borderRadius: 10, fontSize: 10, fontWeight: 700, padding: '0 5px' }}>{inAsteptare}</span>
+                )}
               </NavLink>
             ))}
           </div>
@@ -172,7 +182,7 @@ function getPageTitle(path) {
   const map = {
     '/dashboard': 'Dashboard', '/clienti': 'Clienți',
     '/spatii': 'Spații & Imobile', '/utilitati': 'Utilități',
-    '/utilitati-mobile': 'Citire rapidă',
+    '/utilitati-mobile': 'Citire rapidă', '/citire': 'Citire indexuri',
     '/nota-calcul': 'Notă de calcul', '/nota-administratie': 'Notă apă bloc',
     '/validare-indexuri': 'Validare indexuri',
     '/biblioteca': 'Bibliotecă', '/contracte': 'Contracte', '/rapoarte': 'Rapoarte',

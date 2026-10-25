@@ -236,7 +236,7 @@ export default function NotaCalcul() {
               ) : linii.length === 0 ? (
                 <div style={{ color: 'var(--slate)', fontSize: 13 }}>
                   Niciun contor configurat.
-                  <button className="btn btn-ghost btn-sm" style={{ marginLeft: 10 }} onClick={() => navigate('/utilitati')}>
+                  <button className="btn btn-ghost btn-sm" style={{ marginLeft: 10 }} onClick={() => navigate('/citire')}>
                     Configurează utilități
                   </button>
                 </div>

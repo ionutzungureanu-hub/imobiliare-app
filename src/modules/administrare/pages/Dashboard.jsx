@@ -10,10 +10,9 @@ const GRUPURI = [
     culoare: '#1B4FD8',
     itemi: [
       { to: '/clienti',           icon: 'ti-users',    label: 'Clienți' },
-      { to: '/utilitati-mobile',  icon: 'ti-bolt',      label: 'Citire rapidă' },
-      { to: '/validare-indexuri', icon: 'ti-checks',   label: 'Validare indexuri' },
+      { to: '/citire',            icon: 'ti-bolt',      label: 'Citire indexuri' },
+      { to: '/citire?tab=validare', icon: 'ti-checks', label: 'Validare indexuri' },
       { to: '/spatii',            icon: 'ti-building', label: 'Spații & Imobile', desktopOnly: true },
-      { to: '/utilitati',         icon: 'ti-plug',     label: 'Utilități', desktopOnly: true },
     ],
   },
   {
