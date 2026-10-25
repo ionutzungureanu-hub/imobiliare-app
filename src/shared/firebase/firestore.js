@@ -627,3 +627,27 @@ export const getCitiriPentruRaport = async (spatiuIds = [], dataStart = null, da
   if (dataStop)  citiri = citiri.filter(c => c.data <= dataStop)
   return citiri.sort((a, b) => b.data?.localeCompare?.(a.data) || 0)
 }
+
+
+// ── COMUNICARE (email) ─────────────────────────────────────────
+const _lista = async (col) => (await getDocs(collection(db, col))).docs.map(d => ({ ...d.data(), id: d.id }))
+const _salveaza = async (col, data) => {
+  const { id, ...rest } = data
+  if (id) { await updateDoc(doc(db, col, id), stripUndefined({ ...rest, updatedAt: serverTimestamp() })); return id }
+  const ref = await addDoc(collection(db, col), stripUndefined({ ...rest, createdAt: serverTimestamp(), updatedAt: serverTimestamp() }))
+  return ref.id
+}
+export const getExpeditori = () => _lista('expeditori_email')
+export const saveExpeditor = (d) => _salveaza('expeditori_email', d)
+export const deleteExpeditor = (id) => deleteDoc(doc(db, 'expeditori_email', id))
+export const getTemplateEmail = () => _lista('template_email')
+export const saveTemplateEmail = (d) => _salveaza('template_email', d)
+export const deleteTemplateEmail = (id) => deleteDoc(doc(db, 'template_email', id))
+export const getComunicari = async () =>
+  (await _lista('comunicari')).sort((a, b) => (b.trimisLa?.seconds || 0) - (a.trimisLa?.seconds || 0))
+export const getComunicariClient = async (clientId) => {
+  const snap = await getDocs(query(collection(db, 'comunicari'), where('clientId', '==', clientId)))
+  return snap.docs.map(d => ({ ...d.data(), id: d.id }))
+}
+export const addComunicare = (d) =>
+  addDoc(collection(db, 'comunicari'), stripUndefined({ ...d, trimisLa: serverTimestamp() }))

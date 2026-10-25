@@ -11,6 +11,7 @@ const NAV_ALL = [
   { to: '/clienti',            icon: 'ti-users',            label: 'Clienți',           section: 'Persoane și spații' },
   { to: '/spatii',             icon: 'ti-building',         label: 'Spații & Imobile',  section: 'Persoane și spații', desktopOnly: true },
   { to: '/contracte',          icon: 'ti-file-text',        label: 'Contracte',         section: 'Persoane și spații', desktopOnly: true },
+  { to: '/comunicare',         icon: 'ti-mail',             label: 'Comunicare',        section: 'Persoane și spații', desktopOnly: true },
 
   { to: '/citire',             icon: 'ti-bolt',             label: 'Citire indexuri',   section: 'Ciclul lunar', badge: true },
   { to: '/nota-calcul',        icon: 'ti-calculator',       label: 'Notă calcul',       section: 'Ciclul lunar' },
@@ -182,7 +183,7 @@ function getPageTitle(path) {
   const map = {
     '/dashboard': 'Dashboard', '/clienti': 'Clienți',
     '/spatii': 'Spații & Imobile', '/utilitati': 'Utilități',
-    '/utilitati-mobile': 'Citire rapidă', '/citire': 'Citire indexuri',
+    '/utilitati-mobile': 'Citire rapidă', '/citire': 'Citire indexuri', '/comunicare': 'Comunicare',
     '/nota-calcul': 'Notă de calcul', '/nota-administratie': 'Notă apă bloc',
     '/validare-indexuri': 'Validare indexuri',
     '/biblioteca': 'Bibliotecă', '/contracte': 'Contracte', '/rapoarte': 'Rapoarte',

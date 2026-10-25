@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import Topbar from '../../../shared/components/Topbar'
 import { useToast } from '../../../shared/components/Toast'
 import { useAuth } from '../../../shared/context/AuthContext'
-import { getClient, getEmailuriClient, getNoteClient, addNota, saveEmail } from '../../../shared/firebase/firestore'
+import { getClient, getEmailuriClient, getComunicariClient, getNoteClient, addNota, saveEmail } from '../../../shared/firebase/firestore'
 import { trimiteMesaj } from '../../../shared/services/emailService'
 import { fmtDate, whatsappLink } from '../../../shared/utils'
 
@@ -22,13 +22,14 @@ export default function ClientDetail() {
   const [sending,  setSending]  = useState(false)
 
   const loadData = async () => {
-    const [c, e, n] = await Promise.all([
+    const [c, e, n, com] = await Promise.all([
       getClient(id),
       getEmailuriClient(id),
       getNoteClient(id),
+      getComunicariClient(id).catch(() => []),
     ])
     setClient(c)
-    setEmailuri(e)
+    setEmailuri([...e, ...com])
     setNote(n)
   }
 
@@ -91,6 +92,9 @@ export default function ClientDetail() {
       <Topbar title={client.nume} subtitle={client.spatiu}>
         <button className="btn btn-ghost btn-sm" onClick={() => navigate('/clienti')}>
           <i className="ti ti-arrow-left" aria-hidden="true" /> Înapoi
+        </button>
+        <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/comunicare?client=${id}`)}>
+          <i className="ti ti-mail" /> Scrie mesaj
         </button>
         <button className="btn btn-primary btn-sm" onClick={() => navigate(`/emite?clientId=${id}`)}>
           <i className="ti ti-file-plus" aria-hidden="true" /> Emite factură

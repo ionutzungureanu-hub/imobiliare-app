@@ -12,6 +12,7 @@ const Dashboard          = lazy(() => import('./modules/administrare/pages/Dashb
 const Clienti             = lazy(() => import('./modules/administrare/pages/Clienti'))
 const ClientDetail        = lazy(() => import('./modules/administrare/pages/ClientDetail'))
 const Spatii               = lazy(() => import('./modules/administrare/pages/Spatii'))
+const Comunicare = lazy(() => import('./modules/administrare/pages/Comunicare'))
 const Citire = lazy(() => import('./modules/administrare/pages/Citire'))
 const NotaCalcul               = lazy(() => import('./modules/administrare/pages/NotaCalcul'))
 const NotaAdministratie          = lazy(() => import('./modules/administrare/pages/NotaAdministratie'))
@@ -60,6 +61,7 @@ export default function App() {
               <Route path="clienti"          element={<Clienti />} />
               <Route path="clienti/:id"      element={<ClientDetail />} />
               <Route path="spatii"           element={<Spatii />} />
+              <Route path="comunicare"       element={<Comunicare />} />
               <Route path="citire"           element={<Citire />} />
               <Route path="utilitati"        element={<Navigate to="/citire" replace />} />
               <Route path="nota-calcul"      element={<NotaCalcul />} />
