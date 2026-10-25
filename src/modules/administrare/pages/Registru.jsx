@@ -42,6 +42,7 @@ export default function Registru({ tip, serii }) {
   const [loading, setLoading] = useState(true)
   const [filtru, setFiltru] = useState('active')
   const [cauta, setCauta] = useState('')
+  const [sortare, setSortare] = useState({ camp: 'dataFinal', dir: 'asc' })
   const [form, setForm] = useState(null)
   const [saving, setSaving] = useState(false)
   const [lookupMsg, setLookupMsg] = useState('')
@@ -165,8 +166,24 @@ export default function Registru({ tip, serii }) {
     return rows
       .filter(r => filtru === 'toate' || (filtru === 'active' ? esteActiv(r) : !esteActiv(r)))
       .filter(r => !t || [r.numar, r.identificator, r.nume, r.administrator, spatiuLabel(r.spatiuId)].some(v => String(v || '').toLowerCase().includes(t)))
-      .sort((a, b) => (a.dataFinal || '9999').localeCompare(b.dataFinal || '9999'))
-  }, [rows, filtru, cauta, spatii, imobile])
+      .sort((a, b) => {
+        const m = sortare.dir === 'asc' ? 1 : -1
+        if (sortare.camp === 'numar') {
+          // Rândurile fără număr rămân la final, indiferent de direcție
+          if (!a.numar && !b.numar) return 0
+          if (!a.numar) return 1
+          if (!b.numar) return -1
+          return m * String(a.numar).localeCompare(String(b.numar), 'ro', { numeric: true, sensitivity: 'base' })
+        }
+        if (!a.dataFinal && !b.dataFinal) return 0
+        if (!a.dataFinal) return 1
+        if (!b.dataFinal) return -1
+        return m * a.dataFinal.localeCompare(b.dataFinal)
+      })
+  }, [rows, filtru, cauta, spatii, imobile, sortare])
+
+  const sorteazaDupa = camp => setSortare(s => s.camp === camp ? { camp, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { camp, dir: 'asc' })
+  const sageata = camp => sortare.camp === camp ? (sortare.dir === 'asc' ? ' ▲' : ' ▼') : ''
 
   const nrActive = rows.filter(esteActiv).length
   return (
@@ -179,6 +196,12 @@ export default function Registru({ tip, serii }) {
           <i className="ti ti-refresh" /> Sincronizează cu spațiile
         </button>
         <input placeholder="Caută în registru…" value={cauta} onChange={e => setCauta(e.target.value)} style={{ maxWidth: 240 }} />
+        <select value={`${sortare.camp}:${sortare.dir}`} onChange={e => { const [camp, dir] = e.target.value.split(':'); setSortare({ camp, dir }) }} style={{ maxWidth: 230 }}>
+          <option value="dataFinal:asc">Expirare: cele mai apropiate întâi</option>
+          <option value="dataFinal:desc">Expirare: cele mai îndepărtate întâi</option>
+          <option value="numar:asc">Număr contract: crescător</option>
+          <option value="numar:desc">Număr contract: descrescător</option>
+        </select>
         <select value={filtru} onChange={e => setFiltru(e.target.value)} style={{ maxWidth: 170 }}>
           <option value="active">Active ({nrActive})</option>
           <option value="inactive">Inactive ({rows.length - nrActive})</option>
@@ -194,9 +217,9 @@ export default function Registru({ tip, serii }) {
         <div className="card" style={{ overflowX: 'auto' }}>
           <table>
             <thead><tr>
-              <th>Nr. contract</th><th>{idLabel}</th><th>{comercial ? 'Firmă' : 'Nume'}</th>
+              <th onClick={() => sorteazaDupa('numar')} style={{ cursor: 'pointer', userSelect: 'none' }} title="Sortează după număr">Nr. contract{sageata('numar')}</th><th>{idLabel}</th><th>{comercial ? 'Firmă' : 'Nume'}</th>
               {comercial && <th>Administrator</th>}
-              <th>Spațiu</th><th>Început</th><th>Final</th><th>Chirie</th><th>Stare</th><th></th>
+              <th>Spațiu</th><th>Început</th><th onClick={() => sorteazaDupa('dataFinal')} style={{ cursor: 'pointer', userSelect: 'none' }} title="Sortează după data expirării">Final{sageata('dataFinal')}</th><th>Chirie</th><th>Stare</th><th></th>
             </tr></thead>
             <tbody>
               {vizibile.map(r => {
