@@ -754,13 +754,7 @@ export const creeazaProfilPropriu = async (uid, email, nume) => {
   await setDoc(doc(db, 'users', uid), { nume: nume || email, email, rol: 'manager', activ: true, creatLa: serverTimestamp() })
 }
 
-// ── Prima configurare a administratorului (o singură dată) ─────
-export const bootstrapAdmin = async (uid, email, nume) => {
-  const flag = doc(db, 'config', 'bootstrap')
-  if ((await getDoc(flag)).exists()) throw new Error('Configurarea inițială a fost deja făcută. Cere accesul administratorului.')
-  await setDoc(doc(db, 'users', uid), { nume: nume || email, email, rol: 'admin', activ: true, creatLa: serverTimestamp() })
-  await setDoc(flag, { uid, la: serverTimestamp() })
-}
+// ── Profil administrator (doar la migrare, pentru contul care o rulează) ──
 export const asigurăProfilAdmin = async (uid, email) => {
   const r = doc(db, 'users', uid)
   if ((await getDoc(r)).exists()) return false

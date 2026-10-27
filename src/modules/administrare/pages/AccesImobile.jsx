@@ -3,13 +3,13 @@ import Topbar from '../../../shared/components/Topbar'
 import { useToast } from '../../../shared/components/Toast'
 import { useAuth } from '../../../shared/context/AuthContext'
 import { mesajEroare } from '../../../shared/utils/eroare'
-import { getImobile, getUsers, getAllAcces, setAcces, deleteUserProfile, NIVELURI } from '../../../shared/firebase/firestore'
+import { getImobile, getUsers, getAllAcces, setAcces, deleteUserProfile, updateUserProfile, NIVELURI } from '../../../shared/firebase/firestore'
 
 const esteUid = (id) => /^[A-Za-z0-9]{20,}$/.test(id || '')
 
 export default function AccesImobile() {
   const toast = useToast()
-  const { isAdmin } = useAuth()
+  const { isAdmin, user } = useAuth()
 
   const [imobile,  setImobile]  = useState([])
   const [persoane, setPersoane] = useState([])   // { uid, nume, email, rol, activ, imobile:{id:nivel} }
@@ -62,6 +62,16 @@ export default function AccesImobile() {
     if (!confirm(`Retragi tot accesul lui „${p.nume || p.email}”?`)) return
     for (const id of Object.keys(p.imobile || {})) await seteaza(p, id, 0)
     toast('Acces retras.')
+  }
+
+  const comutaActiv = async (p) => {
+    try { await updateUserProfile(p.uid, { activ: p.activ === false }); toast(p.activ === false ? 'Cont activat.' : 'Cont dezactivat.'); load() }
+    catch (e) { toast(mesajEroare(e), 'error') }
+  }
+  const faManager = async (p) => {
+    if (!confirm(`Retragi drepturile de administrator general lui „${p.nume || p.email}”?`)) return
+    try { await updateUserProfile(p.uid, { rol: 'manager' }); toast('Drepturi retrase.'); load() }
+    catch (e) { toast(mesajEroare(e), 'error') }
   }
 
   const stergeVechi = async (u) => {
@@ -135,9 +145,17 @@ export default function AccesImobile() {
                           </td>
                         )
                       })}
-                      <td style={{ textAlign: 'right' }}>
+                      <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                        {p.uid !== user?.uid && p.rol === 'admin' && (
+                          <button className="btn btn-ghost btn-sm" onClick={() => faManager(p)} title="Retrage drepturile de administrator"><i className="ti ti-shield-off" /></button>
+                        )}
                         {p.rol !== 'admin' && Object.keys(p.imobile).length > 0 && (
                           <button className="btn btn-ghost btn-sm" onClick={() => revocaTot(p)} title="Retrage tot accesul"><i className="ti ti-user-off" /></button>
+                        )}
+                        {p.uid !== user?.uid && (
+                          <button className="btn btn-ghost btn-sm" onClick={() => comutaActiv(p)} title={p.activ === false ? 'Activează contul' : 'Dezactivează contul'}>
+                            <i className={`ti ${p.activ === false ? 'ti-eye' : 'ti-eye-off'}`} />
+                          </button>
                         )}
                       </td>
                     </tr>

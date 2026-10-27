@@ -33,7 +33,10 @@ service cloud.firestore {
       // Un cont nou își poate crea doar profilul de „manager” (la acceptarea unei invitații)
       allow create: if isAdmin() || (signedIn() && request.auth.uid == userId
                        && request.resource.data.rol == 'manager' && request.resource.data.activ == true);
-      allow update, delete: if isAdmin();
+      // Oricine își poate schimba doar apelativul propriu
+      allow update: if isAdmin() || (signedIn() && request.auth.uid == userId
+                       && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['apelativ']));
+      allow delete: if isAdmin();
     }
 
     // ══ Acces pe imobil ══════════════════════════════════════

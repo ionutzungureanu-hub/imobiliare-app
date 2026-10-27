@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { ToastProvider } from './Toast'
+import { ToastProvider, useToast } from './Toast'
 import GlobalSearch from './GlobalSearch'
 import { getIndexuriPrimite } from '../firebase/firestore'
 
@@ -38,6 +38,23 @@ const Badge = ({ n }) => n > 0 ? (
   <span style={{ marginLeft: 'auto', background: '#9B2C2C', color: '#fff', borderRadius: 10, fontSize: 11, fontWeight: 700, padding: '1px 7px' }}>{n}</span>
 ) : null
 
+// Salut o singură dată pe sesiune, cu apelativul ales în Configurare
+function Salut() {
+  const toast = useToast()
+  const { profile } = useAuth()
+  useEffect(() => {
+    if (!profile?.apelativ) return
+    try {
+      if (sessionStorage.getItem('salut')) return
+      sessionStorage.setItem('salut', '1')
+    } catch {}
+    const h = new Date().getHours()
+    const m = h < 5 ? 'Noapte bună' : h < 12 ? 'Bună dimineața' : h < 18 ? 'Bună ziua' : 'Bună seara'
+    toast(`${m}, ${profile.apelativ}!`)
+  }, [profile?.apelativ])
+  return null
+}
+
 export default function Layout() {
   const { user, profile, isAdmin, esteDelegat, logout } = useAuth()
   const navigate  = useNavigate()
@@ -72,6 +89,7 @@ export default function Layout() {
 
   return (
     <ToastProvider>
+      <Salut />
       <div className="app">
         <div className={`sidebar-overlay${sidebarOpen ? ' open' : ''}`} onClick={() => setSidebarOpen(false)} />
 

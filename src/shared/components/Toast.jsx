@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useCallback } from 'react'
+import { adreseaza } from '../utils/apelativ'
 
 const ToastCtx = createContext(null)
 
@@ -7,7 +8,7 @@ export function ToastProvider({ children }) {
 
   const show = useCallback((msg, type = 'success') => {
     const id = Date.now()
-    setToasts(t => [...t, { id, msg, type }])
+    setToasts(t => [...t, { id, msg: type === 'error' ? adreseaza(msg) : msg, type }])
     setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), 3500)
   }, [])
 

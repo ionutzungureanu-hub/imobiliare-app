@@ -1,7 +1,15 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth'
 import { auth } from '../firebase/config'
-import { getUserProfile, getAccesUser, setScope, getBootstrapFlag, creeazaProfilPropriu } from '../firebase/firestore'
+import { getUserProfile, getAccesUser, setScope, getBootstrapFlag, creeazaProfilPropriu, updateUserProfile } from '../firebase/firestore'
+import { setApelativ, adreseaza } from '../utils/apelativ'
+
+// Confirmările din aplicație se adresează direct: „Ionuț, ștergi contractul?”
+if (typeof window !== 'undefined' && !window.__confirmApelativ) {
+  const _confirm = window.confirm.bind(window)
+  window.confirm = (m) => _confirm(adreseaza(String(m)))
+  window.__confirmApelativ = true
+}
 
 const AuthContext = createContext(null)
 
@@ -31,6 +39,7 @@ export function AuthProvider({ children }) {
     const admin  = !!prof && prof.rol === 'admin' && activ
     const ids    = activ && acc ? Object.keys(acc.imobile || {}).filter(k => (acc.imobile[k] || 0) >= 1) : []
     setScope({ admin, ids })           // înainte de orice încărcare de date
+    setApelativ(prof?.apelativ || '')
     setProfile(prof)
     setAcces(acc)
   }, [])
@@ -48,6 +57,12 @@ export function AuthProvider({ children }) {
   const register = (email, password) => createUserWithEmailAndPassword(auth, email, password)
   const logout   = () => signOut(auth)
   const reload   = () => incarca(auth.currentUser)
+  const salveazaApelativ = async (v) => {
+    const val = (v || '').trim()
+    await updateUserProfile(auth.currentUser.uid, { apelativ: val })
+    setApelativ(val)
+    setProfile(p => ({ ...(p || {}), apelativ: val }))
+  }
 
   const activ    = !profile || profile.activ !== false
   const isAdmin  = !!profile && profile.rol === 'admin' && activ
@@ -65,7 +80,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider value={{
-      user, profile, acces, loading, login, register, logout, reload,
+      user, profile, acces, loading, login, register, logout, reload, salveazaApelativ,
       isAdmin, accessIds, nivelPe, canView, canWrite, canAdmin,
       imobileAdministrate, esteDelegat, faraAcces,
     }}>

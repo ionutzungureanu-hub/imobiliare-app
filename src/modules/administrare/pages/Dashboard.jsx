@@ -52,7 +52,7 @@ export default function Dashboard() {
 
   return (
     <>
-      <Topbar title="Dashboard" subtitle={`Bun venit, ${profile?.nume || 'Utilizator'}!`}>
+      <Topbar title="Dashboard" subtitle={`Bun venit, ${profile?.apelativ || profile?.nume || 'Utilizator'}!`}>
         <button className="btn btn-primary btn-sm" onClick={() => navigate('/nota-calcul')}>
           <i className="ti ti-calculator" /> Notă de calcul
         </button>

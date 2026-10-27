@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import Topbar from '../../../shared/components/Topbar'
 import { useToast } from '../../../shared/components/Toast'
 import { useAuth } from '../../../shared/context/AuthContext'
+import { mesajEroare } from '../../../shared/utils/eroare'
 import { getConfig, saveConfig, getImobile, getSpatii, getPreturiImobil, savePreturiImobil, getContoareSpatiu, saveContor, deleteContor, getCitiriContor, migreazaContoare, repairDrafturiContracte, migreazaImobilId } from '../../../shared/firebase/firestore'
 import { FURNIZORI, testeazaConexiunea } from '../../../shared/services/facturareApi'
 
@@ -16,7 +17,9 @@ const emptyConfig = () => ({
 
 export default function Config() {
   const toast      = useToast()
-  const { isAdmin, user } = useAuth()
+  const { isAdmin, user, profile, salveazaApelativ } = useAuth()
+  const [apelativ, setApelativLocal] = useState(profile?.apelativ || '')
+  const [savingAp, setSavingAp] = useState(false)
   const [accStatus, setAccStatus] = useState(null)
   const [accLog,    setAccLog]    = useState([])
 
@@ -102,6 +105,7 @@ export default function Config() {
         {/* ── Tab-uri Config ──────────────────────────────────── */}
         <div style={{ display: 'flex', gap: 2, borderBottom: '1px solid var(--border)', marginBottom: 20 }}>
           {[
+            { key: 'profil',      label: 'Profilul meu',        icon: 'ti-user' },
             { key: 'contoare',    label: 'Contoare',            icon: 'ti-plug' },
             { key: 'preturi',     label: 'Prețuri utilități',   icon: 'ti-currency-leu' },
             { key: 'facturare',   label: 'Integrare facturare', icon: 'ti-plug' },
@@ -119,6 +123,33 @@ export default function Config() {
             </button>
           ))}
         </div>
+
+        {/* ── Profilul meu ─────────────────────────────────────────── */}
+        {tabConfig === 'profil' && (
+          <div className="card" style={{ marginBottom: 16 }}>
+            <div className="card-header">
+              <div>
+                <div className="card-title">Apelativ</div>
+                <div className="card-subtitle">Cum să te salute aplicația și cum să se adreseze în mesaje de eroare și confirmări (ex. „Ionuț, ești sigur?”).</div>
+              </div>
+            </div>
+            <div className="card-body">
+              <div className="form-group" style={{ maxWidth: 320, marginBottom: 14 }}>
+                <label htmlFor="apelativ">Apelativ / nickname</label>
+                <input id="apelativ" value={apelativ} maxLength={30} placeholder="ex. Ionuț"
+                  onChange={e => setApelativLocal(e.target.value)} autoComplete="nickname" />
+              </div>
+              <button className="btn btn-primary" disabled={savingAp} onClick={async () => {
+                setSavingAp(true)
+                try { await salveazaApelativ(apelativ); toast(apelativ.trim() ? `Salvat. Mă adresez de acum cu „${apelativ.trim()}”.` : 'Apelativ șters.') }
+                catch (e) { console.error(e); toast(mesajEroare(e, 'Nu s-a putut salva apelativul'), 'error') }
+                setSavingAp(false)
+              }}>
+                <i className="ti ti-device-floppy" /> {savingAp ? 'Se salvează…' : 'Salvează'}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* ── Contoare ─────────────────────────────────────────────── */}
         {tabConfig === 'contoare' && (
