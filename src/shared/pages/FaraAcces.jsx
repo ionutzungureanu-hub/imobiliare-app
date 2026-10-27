@@ -27,7 +27,7 @@ export default function FaraAcces() {
           Contul <strong>{user?.email}</strong> nu are acces la niciun imobil.
         </p>
         <p style={{ color: 'var(--slate)', fontSize: 13, marginBottom: 18 }}>
-          Cere administratorului imobilului un cod de invitație, apoi deschide linkul primit.
+          Contul este creat și așteaptă aprobarea. Administratorul îți poate acorda acces din Setări → Acces imobile; apoi reîncarcă pagina.
         </p>
         {msg && <div className="login-err">{msg}</div>}
         <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}

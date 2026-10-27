@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 export default function Login() {
-  const { login } = useAuth()
+  const { login, register } = useAuth()
+  const [nou, setNou] = useState(false)
+  const [password2, setPassword2] = useState('')
   const navigate  = useNavigate()
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
@@ -15,10 +17,19 @@ export default function Login() {
     setError('')
     setLoading(true)
     try {
-      await login(email, password)
+      if (nou) {
+        if (password.length < 8) { setError('Parola trebuie să aibă minim 8 caractere.'); setLoading(false); return }
+        if (password !== password2) { setError('Parolele nu coincid.'); setLoading(false); return }
+        await register(email.trim(), password)
+      } else {
+        await login(email, password)
+      }
       navigate('/dashboard')
-    } catch {
-      setError('Email sau parolă incorectă.')
+    } catch (err) {
+      const c = err?.code || ''
+      setError(nou
+        ? (c === 'auth/email-already-in-use' ? 'Există deja un cont cu acest email.' : c === 'auth/weak-password' ? 'Parola este prea slabă.' : 'Contul nu a putut fi creat.')
+        : 'Email sau parolă incorectă.')
     } finally {
       setLoading(false)
     }
@@ -62,12 +73,23 @@ export default function Login() {
               required
               name="password"
               id="login-password"
-              autoComplete="current-password"
+              autoComplete={nou ? 'new-password' : 'current-password'}
               enterKeyHint="go"
             />
           </div>
+          {nou && (
+            <div className="form-group" style={{ marginBottom: 20 }}>
+              <label htmlFor="login-password2">Repetă parola</label>
+              <input type="password" id="login-password2" name="password2" autoComplete="new-password"
+                value={password2} onChange={e => setPassword2(e.target.value)} required />
+            </div>
+          )}
           <button className="btn btn-primary" type="submit" disabled={loading} style={{ width: '100%', justifyContent: 'center' }}>
-            {loading ? 'Se autentifică…' : 'Intră în cont'}
+            {loading ? 'Se procesează…' : nou ? 'Creează cont' : 'Intră în cont'}
+          </button>
+          <button type="button" className="btn btn-ghost btn-sm" style={{ width: '100%', justifyContent: 'center', marginTop: 10 }}
+            onClick={() => { setNou(n => !n); setError('') }}>
+            {nou ? 'Am deja cont' : 'Cont nou (necesită aprobarea administratorului)'}
           </button>
         </form>
       </div>

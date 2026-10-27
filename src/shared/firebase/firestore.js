@@ -725,7 +725,7 @@ export const addComunicare = async (d) =>
 
 
 // ══ ACCES PE IMOBIL ════════════════════════════════════════════
-// acces/{uid} = { imobile: { imobilId: 1|2|3 }, adm: [imobilId cu nivel 3], nume, email, ultimulCod }
+// acces/{uid} = { imobile: { imobilId: 1|2|3 }, nume, email } — doar administratorul general îl modifică
 // 1 = Vizualizare, 2 = Operare, 3 = Administrare
 export const NIVELURI = { 0: 'Fără acces', 1: 'Vizualizare', 2: 'Operare', 3: 'Administrare' }
 
@@ -741,75 +741,17 @@ export const setAcces = async (uid, info, imobilId, nivel) => {
   const cur = snap.exists() ? snap.data() : { imobile: {}, adm: [] }
   const imobile = { ...(cur.imobile || {}) }
   if (nivel > 0) imobile[imobilId] = nivel; else delete imobile[imobilId]
-  // Lista „adm” (cine poate delega) o schimbă doar administratorul general
-  const adm = _scope.admin ? Object.keys(imobile).filter(k => imobile[k] === 3) : (cur.adm || [])
   await setDoc(ref, stripUndefined({
-    ...cur, imobile, adm,
+    ...cur, imobile, adm: [],
     nume: info?.nume ?? cur.nume, email: info?.email ?? cur.email,
     updatedAt: serverTimestamp(),
   }))
 }
 
-// ── Invitații ──────────────────────────────────────────────────
-const COD_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
-export const genCodInvitatie = () => {
-  const a = new Uint8Array(12); crypto.getRandomValues(a)
-  return Array.from(a, b => COD_CHARS[b % COD_CHARS.length]).join('')
-}
-export const formateazaCod = (c) => (c || '').replace(/(.{4})(?=.)/g, '$1-')
-export const curataCod = (c) => (c || '').toUpperCase().replace(/[^A-Z0-9]/g, '')
-
-export const creeazaInvitatie = async ({ imobilId, imobilNume, nivel, zile = 7, uid, nume }) => {
-  const cod = genCodInvitatie()
-  await setDoc(doc(db, 'invitatii', cod), {
-    imobilId, imobilNume: imobilNume || '', nivel,
-    folosit: false, creatDe: uid, creatDeNume: nume || '',
-    expiraLa: Timestamp.fromDate(new Date(Date.now() + zile * 86400000)),
-    creatLa: serverTimestamp(),
-  })
-  return cod
-}
-export const getInvitatie = async (cod) => {
-  const snap = await getDoc(doc(db, 'invitatii', cod))
-  return snap.exists() ? { ...snap.data(), id: snap.id } : null
-}
-// ids = imobilele pentru care utilizatorul are voie să vadă invitațiile (nivel 3); admin: toate
-export const getInvitatii = async (ids) => {
-  if (_scope.admin) return _map(await getDocs(collection(db, 'invitatii')))
-  const out = []
-  await Promise.all((ids || []).map(async id => {
-    try { out.push(...(_map(await getDocs(query(collection(db, 'invitatii'), where('imobilId', '==', id)))))) }
-    catch (e) { console.warn('invitatii', id, e) }
-  }))
-  return out
-}
-export const anuleazaInvitatie = async (cod) => deleteDoc(doc(db, 'invitatii', cod))
-
-// Folosește invitația: creează profilul (dacă lipsește), acordă accesul și marchează codul folosit — atomic
-export const folosesteInvitatie = async ({ cod, uid, nume, email }) => {
-  const inv = await getInvitatie(cod)
-  if (!inv) throw new Error('Cod invalid.')
-  if (inv.folosit) throw new Error('Codul a fost deja folosit.')
-  if (inv.expiraLa?.toDate && inv.expiraLa.toDate() < new Date()) throw new Error('Codul a expirat.')
-  const prof = await getDoc(doc(db, 'users', uid))
-  const acc = await getDoc(doc(db, 'acces', uid))
-  const cur = acc.exists() ? acc.data() : { imobile: {}, adm: [] }
-  const batch = writeBatch(db)
-  if (!prof.exists()) {
-    batch.set(doc(db, 'users', uid), { nume: nume || email, email, rol: 'manager', activ: true, creatLa: serverTimestamp() })
-  }
-  batch.set(doc(db, 'acces', uid), stripUndefined({
-    ...cur,
-    imobile: { ...(cur.imobile || {}), [inv.imobilId]: inv.nivel },
-    adm: cur.adm || [],
-    nume: nume || cur.nume || email, email,
-    ultimulCod: cod, updatedAt: serverTimestamp(),
-  }))
-  batch.update(doc(db, 'invitatii', cod), {
-    folosit: true, folositDe: uid, folositDeNume: nume || email, folositLa: serverTimestamp(),
-  })
-  await batch.commit()
-  return inv
+// ── Profil propriu (cont nou care așteaptă aprobarea administratorului) ──
+export const getBootstrapFlag = async () => (await getDoc(doc(db, 'config', 'bootstrap'))).exists()
+export const creeazaProfilPropriu = async (uid, email, nume) => {
+  await setDoc(doc(db, 'users', uid), { nume: nume || email, email, rol: 'manager', activ: true, creatLa: serverTimestamp() })
 }
 
 // ── Prima configurare a administratorului (o singură dată) ─────
@@ -892,7 +834,11 @@ export const migreazaImobilId = async (onProgress, { uid, email } = {}) => {
     rap.portale++
   }
 
-  if (uid) { rap.profilAdmin = await asigurăProfilAdmin(uid, email || '') }
+  if (uid) {
+    rap.profilAdmin = await asigurăProfilAdmin(uid, email || '')
+    const flag = doc(db, 'config', 'bootstrap')
+    if (!(await getDoc(flag)).exists()) await setDoc(flag, { uid, la: serverTimestamp() })
+  }
   onProgress?.({ pas: 'Gata' })
   return rap
 }

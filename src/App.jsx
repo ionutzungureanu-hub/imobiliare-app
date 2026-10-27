@@ -6,7 +6,6 @@ import Layout from './shared/components/Layout'
 // ── Shared (rute publice / pre-autentificare) ──────────────────
 import Login from './shared/pages/Login'
 import Portal from './shared/pages/Portal'
-import Invitatie from './shared/pages/Invitatie'
 import FaraAcces from './shared/pages/FaraAcces'
 
 // ── Modul Administrare (lazy-loaded) ───────────────────────────
@@ -69,7 +68,6 @@ export default function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/portal/:token" element={<Portal />} />
-            <Route path="/invitatie/:cod" element={<Invitatie />} />
             <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
               <Route index element={<Navigate to="/dashboard" replace />} />
 

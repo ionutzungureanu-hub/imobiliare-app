@@ -74,7 +74,7 @@ export default function Utilizatori() {
     <>
       <Topbar title="Utilizatori" subtitle="Gestionare accesuri și permisiuni">
         <button className="btn btn-primary btn-sm" onClick={() => navigate('/acces')}>
-          <i className="ti ti-key" /> Invită / acces pe imobile
+          <i className="ti ti-key" /> Acces pe imobile
         </button>
       </Topbar>
 
@@ -82,8 +82,8 @@ export default function Utilizatori() {
         <div className="alert alert-info" style={{ marginBottom: 16 }}>
           <i className="ti ti-info-circle" />
           <span>
-            Persoanele noi se adaugă prin <strong>cod de invitație</strong> din <strong>Setări → Acces imobile</strong>; ele își creează singure contul.
-            Aici gestionezi conturile existente (nume, rol, activ/inactiv). Accesul la imobile se setează doar în „Acces imobile”.
+            Persoanele își creează singure contul din ecranul de login, apoi le dai acces din <strong>Setări → Acces imobile</strong> (bifă pe imobil).
+            Aici gestionezi conturile (nume, rol, activ/inactiv).
           </span>
         </div>
 

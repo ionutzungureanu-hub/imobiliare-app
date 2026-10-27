@@ -37,58 +37,11 @@ service cloud.firestore {
     }
 
     // ══ Acces pe imobil ══════════════════════════════════════
-    function myAdm() { return hasAcc() ? acc().get('adm', []) : []; }
-
-    // Administratorul unui imobil poate modifica accesul doar pe imobilele lui (nu și lista „adm”)
-    function delegatPoate() {
-      return hasAcc() && myAdm().size() > 0 && resource != null
-        && request.resource.data.imobile.diff(resource.data.imobile).affectedKeys().hasOnly(myAdm())
-        && request.resource.data.get('adm', []) == resource.data.get('adm', []);
-    }
-    function invPath(cod) { return /databases/$(database)/documents/invitatii/$(cod); }
-    // Acceptarea unei invitații: persoana își acordă singură EXACT accesul din invitație
-    function acceptaInvitatia(userId) {
-      return signedIn() && request.auth.uid == userId
-        && request.resource.data.ultimulCod is string
-        && exists(invPath(request.resource.data.ultimulCod))
-        && get(invPath(request.resource.data.ultimulCod)).data.folosit == false
-        && get(invPath(request.resource.data.ultimulCod)).data.expiraLa > request.time
-        && getAfter(invPath(request.resource.data.ultimulCod)).data.folosit == true
-        && getAfter(invPath(request.resource.data.ultimulCod)).data.folositDe == userId
-        && request.resource.data.imobile[get(invPath(request.resource.data.ultimulCod)).data.imobilId]
-             == get(invPath(request.resource.data.ultimulCod)).data.nivel
-        && request.resource.data.get('adm', []) == (resource == null ? [] : resource.data.get('adm', []))
-        && (resource == null
-              ? request.resource.data.imobile.keys().hasOnly([get(invPath(request.resource.data.ultimulCod)).data.imobilId])
-              : request.resource.data.imobile.diff(resource.data.imobile).affectedKeys()
-                  .hasOnly([get(invPath(request.resource.data.ultimulCod)).data.imobilId]));
-    }
+    // Doar administratorul general acordă / retrage accesul (bifă pe imobil în aplicație).
     match /acces/{userId} {
-      allow get:    if signedIn() && (request.auth.uid == userId || isAdmin()
-                        || (hasAcc() && resource.data.get('imobile', {}).keys().hasAny(myAdm())));
+      allow get:    if signedIn() && (request.auth.uid == userId || isAdmin());
       allow list:   if isAdmin();
-      allow create: if isAdmin() || acceptaInvitatia(userId);
-      allow update: if isAdmin() || delegatPoate() || acceptaInvitatia(userId);
-      allow delete: if isAdmin();
-    }
-
-    // ══ Invitații ════════════════════════════════════════════
-    // Codul este secretul: se poate citi un document doar dacă îi știi ID-ul. Colecția nu poate fi listată de public.
-    match /invitatii/{cod} {
-      allow get:    if true;
-      allow list:   if isAdmin() || nivel(resource.data.imobilId) >= 3;
-      allow create: if (isAdmin() || nivel(request.resource.data.imobilId) >= 3)
-                      && request.resource.data.folosit == false
-                      && request.resource.data.creatDe == request.auth.uid
-                      && request.resource.data.nivel in [1, 2, 3]
-                      && (isAdmin() || request.resource.data.nivel <= 2);
-      allow update: if signedIn() && resource.data.folosit == false
-                      && request.resource.data.folosit == true
-                      && request.resource.data.folositDe == request.auth.uid
-                      && resource.data.expiraLa > request.time
-                      && request.resource.data.diff(resource.data).affectedKeys()
-                           .hasOnly(['folosit', 'folositDe', 'folositDeNume', 'folositLa']);
-      allow delete: if isAdmin() || nivel(resource.data.imobilId) >= 3;
+      allow write:  if isAdmin();
     }
 
     // ══ Imobile ══════════════════════════════════════════════
@@ -197,6 +150,8 @@ service cloud.firestore {
     }
 
     // ══ Configurări comune ═══════════════════════════════════
+    // Semnalul „configurarea inițială s-a făcut” — citibil de orice cont autentificat (ca să-și poată crea profilul)
+    match /config/bootstrap            { allow get: if signedIn(); allow write: if isAdmin(); }
     match /config/{docId}              { allow read: if canAny(); allow write: if isAdmin(); }
     match /serii_contracte/{docId}     { allow read, write: if canAny(); }
     match /templates_contracte/{docId} { allow read: if canAny(); allow write: if isAdmin(); }

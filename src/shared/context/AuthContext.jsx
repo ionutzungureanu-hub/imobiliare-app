@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth'
 import { auth } from '../firebase/config'
-import { getUserProfile, getAccesUser, setScope } from '../firebase/firestore'
+import { getUserProfile, getAccesUser, setScope, getBootstrapFlag, creeazaProfilPropriu } from '../firebase/firestore'
 
 const AuthContext = createContext(null)
 
@@ -20,6 +20,12 @@ export function AuthProvider({ children }) {
     if (!u) { setProfile(null); setAcces(null); setScope({ admin: false, ids: [] }); return }
     let prof = null, acc = null
     try { prof = await getUserProfile(u.uid) } catch (e) { console.warn('profil', e) }
+    // Cont nou fără profil: după configurarea inițială, creăm profilul ca să apară în „Acces imobile”
+    if (!prof) {
+      try {
+        if (await getBootstrapFlag()) { await creeazaProfilPropriu(u.uid, u.email, u.displayName); prof = await getUserProfile(u.uid) }
+      } catch (e) { console.warn('profil nou', e) }
+    }
     try { acc  = await getAccesUser(u.uid) }  catch (e) { console.warn('acces', e) }
     const activ  = !prof || prof.activ !== false
     const admin  = !!prof && prof.rol === 'admin' && activ
@@ -53,8 +59,8 @@ export function AuthProvider({ children }) {
   const canView   = (imobilId) => nivelPe(imobilId) >= 1
   const canWrite  = (imobilId) => nivelPe(imobilId) >= 2
   const canAdmin  = (imobilId) => nivelPe(imobilId) >= 3
-  const imobileAdministrate = isAdmin ? null : Object.keys(harta).filter(k => harta[k] >= 3)
-  const esteDelegat = !isAdmin && imobileAdministrate.length > 0
+  const imobileAdministrate = null
+  const esteDelegat = false
   const faraAcces = !!user && !isAdmin && accessIds.length === 0
 
   return (
