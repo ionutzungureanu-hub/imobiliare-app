@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { esteActiv } from '../services/registruUtils'
 import Topbar from '../../../shared/components/Topbar'
-import { getClienti, getRegistru, addClient, updateClient, deleteClient, toggleClientActiv, getSpatii } from '../../../shared/firebase/firestore'
+import { getClienti, getRegistru, addClient, updateClient, deleteClient, toggleClientActiv, getSpatii, getImobile } from '../../../shared/firebase/firestore'
 import { useToast } from '../../../shared/components/Toast'
 import { whatsappLink } from '../../../shared/utils'
 
@@ -76,6 +76,10 @@ export default function Clienti() {
   const [saving,   setSaving]   = useState(false)
   const [search,   setSearch]   = useState('')
   const [registru, setRegistru] = useState([])
+  const [imobile,  setImobile]  = useState([])
+  const [imobilNou, setImobilNou] = useState('')
+
+  useEffect(() => { getImobile().then(setImobile).catch(() => {}) }, [])
 
   const load = async () => {
     const [cl, sp] = await Promise.all([getClienti(), getSpatii()])
@@ -128,7 +132,11 @@ export default function Clienti() {
         activ:   form.activ !== false,
       }
       if (modal === 'edit') { await updateClient(editId, data); toast('Client actualizat!') }
-      else { await addClient(data); toast('Client adăugat!') }
+      else {
+        if (imobile.length > 1 && !imobilNou) { toast('Alege imobilul clientului.', 'error'); setSaving(false); return }
+        await addClient({ ...data, imobile: imobilNou ? [imobilNou] : (imobile.length === 1 ? [imobile[0].id] : []) })
+        toast('Client adăugat!')
+      }
       closeModal(); load()
     } catch { toast('Eroare la salvare.', 'error') }
     finally { setSaving(false) }
@@ -347,6 +355,17 @@ export default function Clienti() {
             </div>
 
             <div className="modal-body" style={{ maxHeight: '75vh', overflowY: 'auto' }}>
+
+              {modal === 'add' && imobile.length > 1 && (
+                <div className="form-group" style={{ marginBottom: 16 }}>
+                  <label>Imobil *</label>
+                  <select value={imobilNou} onChange={e => setImobilNou(e.target.value)}>
+                    <option value="">— alege imobilul —</option>
+                    {imobile.map(i => <option key={i.id} value={i.id}>{i.nume || i.denumire}</option>)}
+                  </select>
+                  <div style={{ fontSize: 11, color: 'var(--slate)', marginTop: 4 }}>Clientul va fi vizibil persoanelor cu acces la acest imobil.</div>
+                </div>
+              )}
 
               {/* FORMULAR PJ */}
               {tipModal === 'PJ' && (

@@ -79,18 +79,10 @@ export default function Spatii() {
   }
   useEffect(() => { load() }, [])
 
-  const imobileVizibile = isAdmin
-    ? allImobile
-    : allImobile.filter(im =>
-        im.managerId === user?.uid ||
-        allSpatii.some(s => s.imobilId === im.id && s.managerId === user?.uid)
-      )
+  // Datele sunt deja filtrate pe imobil în stratul de date (acces pe imobil)
+  const imobileVizibile = allImobile
 
-  const spatiiPentruImobil = (imobilId) => {
-    const all = allSpatii.filter(s => s.imobilId === imobilId)
-    if (isAdmin) return all
-    return all.filter(s => s.managerId === user?.uid || allImobile.find(im => im.id === imobilId)?.managerId === user?.uid)
-  }
+  const spatiiPentruImobil = (imobilId) => allSpatii.filter(s => s.imobilId === imobilId)
 
   const getUser    = (id) => users.find(u => u.id === id)
   const getClient  = (id) => clienti.find(c => c.id === id)

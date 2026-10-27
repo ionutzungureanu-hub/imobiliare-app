@@ -1,0 +1,32 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function signedIn()  { return request.auth != null; }
+    function isAdminS()  {
+      return signedIn()
+        && firestore.exists(/databases/(default)/documents/users/$(request.auth.uid))
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.get('rol', 'manager') == 'admin';
+    }
+    function hasAccS()   {
+      return signedIn() && firestore.exists(/databases/(default)/documents/acces/$(request.auth.uid));
+    }
+
+    // Portal chiriași: încărcare publică limitată (doar dacă linkul este activ), citire doar personalul imobilului
+    match /portal/{token}/{file} {
+      allow create: if request.resource.size < 10 * 1024 * 1024
+                    && request.resource.contentType.matches('(image/.*|application/pdf|application/msword|application/vnd.openxmlformats.*|text/plain)')
+                    && firestore.exists(/databases/(default)/documents/portale/$(token))
+                    && firestore.get(/databases/(default)/documents/portale/$(token)).data.get('activ', true) == true;
+      allow read, delete: if isAdminS()
+                    || (hasAccS()
+                        && (firestore.get(/databases/(default)/documents/portale/$(token)).data.imobilId
+                            in firestore.get(/databases/(default)/documents/acces/$(request.auth.uid)).data.get('imobile', {})));
+    }
+
+    // Restul fișierelor (documente, contracte, poze): personalul cu acces
+    match /{allPaths=**} {
+      allow read, write: if isAdminS() || hasAccS();
+    }
+  }
+}

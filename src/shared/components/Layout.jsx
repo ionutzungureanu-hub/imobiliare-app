@@ -12,6 +12,7 @@ const NAV_ALL = [
   { to: '/spatii',             icon: 'ti-building',         label: 'Spații & Imobile',  section: 'Persoane și spații', desktopOnly: true },
   { to: '/contracte',          icon: 'ti-file-text',        label: 'Contracte',         section: 'Persoane și spații', desktopOnly: true },
   { to: '/comunicare',         icon: 'ti-mail',             label: 'Comunicare',        section: 'Persoane și spații', desktopOnly: true },
+  { to: '/portal-chiriasi',    icon: 'ti-link',             label: 'Portal chiriași',   section: 'Persoane și spații' },
 
   { to: '/citire',             icon: 'ti-bolt',             label: '1 · Citire indexuri', section: 'Ciclul lunar', badge: true },
   { to: '/nota-administratie', icon: 'ti-droplet',          label: '2 · Notă apă bloc',   section: 'Ciclul lunar' },
@@ -20,6 +21,7 @@ const NAV_ALL = [
   { to: '/biblioteca',         icon: 'ti-books',            label: 'Bibliotecă',        section: 'Documente și rapoarte' },
   { to: '/rapoarte',           icon: 'ti-chart-bar',        label: 'Rapoarte',          section: 'Documente și rapoarte', desktopOnly: true },
 
+  { to: '/acces',              icon: 'ti-key',              label: 'Acces imobile',     section: 'Setări', delegatOk: true, desktopOnly: true },
   { to: '/utilizatori',        icon: 'ti-user-cog',         label: 'Utilizatori',       section: 'Setări', adminOnly: true, desktopOnly: true },
   { to: '/config',             icon: 'ti-settings',         label: 'Configurare',       section: 'Setări', adminOnly: true, desktopOnly: true },
   { to: '/furnizori',          icon: 'ti-file-import',      label: 'Furnizori',         section: 'Setări', adminOnly: true, desktopOnly: true },
@@ -37,7 +39,7 @@ const Badge = ({ n }) => n > 0 ? (
 ) : null
 
 export default function Layout() {
-  const { user, profile, isAdmin, logout } = useAuth()
+  const { user, profile, isAdmin, esteDelegat, logout } = useAuth()
   const navigate  = useNavigate()
   const location  = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -63,6 +65,7 @@ export default function Layout() {
   })
   const nav = NAV_ALL.filter(item =>
     (!item.adminOnly || isAdmin) &&
+    (!item.delegatOk || isAdmin || esteDelegat) &&
     (!item.desktopOnly || !isMobile)
   )
   let lastSection = ''

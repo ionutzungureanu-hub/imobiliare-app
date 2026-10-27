@@ -3,11 +3,9 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import Topbar from '../../../shared/components/Topbar'
 import { useToast } from '../../../shared/components/Toast'
-import { getSpatii, getContoareSpatiu, getPortalBySpatiu, savePortal } from '../../../shared/firebase/firestore'
+import { getSpatii, getContoareSpatiu, getPortalBySpatiu, savePortal, genTokenPortal } from '../../../shared/firebase/firestore'
 
-function genToken() {
-  return Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 10)
-}
+const genToken = genTokenPortal
 
 export default function PortalSetari() {
   const { spatiuId } = useParams()
@@ -57,7 +55,8 @@ export default function PortalSetari() {
   const handleSave = async () => {
     setSaving(true)
     try {
-      await savePortal({ spatiuId, titlu, adresare, utilitatiActive: active, token, activ: true })
+      await savePortal({ spatiuId, titlu, adresare, utilitatiActive: active, token, activ: portal ? portal.activ !== false : true })
+      setPortal(p => ({ ...(p || {}), token, activ: p ? p.activ !== false : true }))
       toast('Portal salvat!')
     } catch (e) { console.error(e); toast(mesajEroare(e), 'error') }
     finally { setSaving(false) }
@@ -114,7 +113,7 @@ export default function PortalSetari() {
               </button>
             </div>
             <div style={{ marginTop: 10, fontSize: 12, color: 'var(--slate)' }}>
-              <i className="ti ti-info-circle" style={{ fontSize: 12 }} /> Linkul rămâne permanent. Chiriașul îl poate folosi în fiecare lună.
+              <i className="ti ti-info-circle" style={{ fontSize: 12 }} /> Linkul rămâne valabil cât timp contractul este în vigoare. Dacă regenerezi tokenul, apasă „Salvează portal” — linkul vechi nu va mai funcționa.
             </div>
           </div>
         </div>

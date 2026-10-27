@@ -6,6 +6,8 @@ import Layout from './shared/components/Layout'
 // ── Shared (rute publice / pre-autentificare) ──────────────────
 import Login from './shared/pages/Login'
 import Portal from './shared/pages/Portal'
+import Invitatie from './shared/pages/Invitatie'
+import FaraAcces from './shared/pages/FaraAcces'
 
 // ── Modul Administrare (lazy-loaded) ───────────────────────────
 const Dashboard          = lazy(() => import('./modules/administrare/pages/Dashboard'))
@@ -24,6 +26,8 @@ const Rapoarte                               = lazy(() => import('./modules/admi
 const ImportClienti                            = lazy(() => import('./modules/administrare/pages/ImportClienti'))
 const Utilizatori                                = lazy(() => import('./modules/administrare/pages/Utilizatori'))
 const Config                                       = lazy(() => import('./modules/administrare/pages/Config'))
+const AccesImobile                                   = lazy(() => import('./modules/administrare/pages/AccesImobile'))
+const PortalChiriasi                                 = lazy(() => import('./modules/administrare/pages/PortalChiriasi'))
 
 // ── Modul Facturare (lazy-loaded) ──────────────────────────────
 const Facturi                = lazy(() => import('./modules/facturare/pages/Facturi'))
@@ -43,8 +47,9 @@ function RouteNota() {
 }
 
 function PrivateRoute({ children }) {
-  const { user } = useAuth()
-  return user ? children : <Navigate to="/login" replace />
+  const { user, faraAcces } = useAuth()
+  if (!user) return <Navigate to="/login" replace />
+  return faraAcces ? <FaraAcces /> : children
 }
 
 function PageLoading() {
@@ -64,6 +69,7 @@ export default function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/portal/:token" element={<Portal />} />
+            <Route path="/invitatie/:cod" element={<Invitatie />} />
             <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
               <Route index element={<Navigate to="/dashboard" replace />} />
 
@@ -77,6 +83,8 @@ export default function App() {
               <Route path="utilitati"        element={<Navigate to="/citire" replace />} />
               <Route path="nota-calcul"      element={<RouteNota />} />
               <Route path="utilizatori"      element={<Utilizatori />} />
+              <Route path="acces"            element={<AccesImobile />} />
+              <Route path="portal-chiriasi"  element={<PortalChiriasi />} />
               <Route path="config"           element={<Config />} />
               <Route path="import-clienti"   element={<ImportClienti />} />
               <Route path="biblioteca"       element={<Biblioteca />} />

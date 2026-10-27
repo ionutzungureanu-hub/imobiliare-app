@@ -1,9 +1,70 @@
 import {
   collection, doc, getDocs, getDoc,
-  addDoc, updateDoc, deleteDoc, deleteField,
-  query, where, orderBy, serverTimestamp
+  addDoc, updateDoc, deleteDoc, deleteField, setDoc,
+  query, where, orderBy, serverTimestamp, arrayUnion, writeBatch, Timestamp
 } from 'firebase/firestore/lite'
 import { db } from './config'
+
+// ══ SCOPE: accesul pe imobil ═══════════════════════════════════
+// AuthContext setează scope-ul la login. Administratorul vede tot;
+// ceilalți utilizatori văd doar documentele cu imobilId din lista lor.
+// Fiecare interogare a unui non-admin conține obligatoriu where('imobilId','==',X)
+// (cerință a regulilor Firestore: regulile nu sunt filtre).
+let _scope = { admin: false, ids: [] }
+export const setScope = (s) => { _scope = { admin: !!s.admin, ids: s.ids || [] } }
+export const getScope = () => _scope
+
+const _map = (snap) => snap.docs.map(d => ({ ...d.data(), id: d.id }))
+
+// Listează o colecție respectând scope-ul
+const scoped = async (coll, constraints = [], imobilId = null) => {
+  const q0 = (extra = []) => {
+    const all = [...extra, ...constraints]
+    return all.length ? query(collection(db, coll), ...all) : collection(db, coll)
+  }
+  if (_scope.admin) {
+    return _map(await getDocs(q0(imobilId ? [where('imobilId', '==', imobilId)] : [])))
+  }
+  const ids = imobilId ? _scope.ids.filter(i => i === imobilId) : _scope.ids
+  const out = new Map()
+  await Promise.all(ids.map(async id => {
+    const snap = await getDocs(q0([where('imobilId', '==', id)]))
+    snap.docs.forEach(d => out.set(d.id, { ...d.data(), id: d.id }))
+  }))
+  return [...out.values()]
+}
+
+// ── Rezolvare imobilId pentru documente noi ────────────────────
+const _spCache = new Map()
+const imobilDinSpatiu = async (spatiuId) => {
+  if (!spatiuId) return null
+  if (_spCache.has(spatiuId)) return _spCache.get(spatiuId)
+  const snap = await getDoc(doc(db, 'spatii', spatiuId))
+  const v = snap.exists() ? (snap.data().imobilId || null) : null
+  if (v) _spCache.set(spatiuId, v)
+  return v
+}
+const cuImobil = async (data) => {
+  if (data.imobilId) return data
+  let id = await imobilDinSpatiu(data.spatiuId)
+  if (!id && data.contorId) {
+    const c = await getDoc(doc(db, 'contoare', data.contorId))
+    id = c.exists() ? (c.data().imobilId || await imobilDinSpatiu(c.data().spatiuId)) : null
+  }
+  if (!id && data.clientId) {
+    const c = await getDoc(doc(db, 'clienti', data.clientId))
+    const arr = c.exists() ? (c.data().imobile || []) : []
+    if (arr.length === 1) id = arr[0]
+  }
+  if (!id && !_scope.admin && _scope.ids.length === 1) id = _scope.ids[0]
+  return id ? { ...data, imobilId: id } : data
+}
+// Leagă clientul de imobil (lista „imobile” de pe client) — doar adaugă, nu șterge (arhiva rămâne vizibilă)
+export const legaClientDeImobil = async (clientId, imobilId) => {
+  if (!clientId || !imobilId) return
+  try { await updateDoc(doc(db, 'clienti', clientId), { imobile: arrayUnion(imobilId) }) }
+  catch (e) { console.warn('legaClientDeImobil', e) }
+}
 
 // ── CLIENȚI ────────────────────────────────────────────────────
 // Elimină recursiv câmpurile undefined — Firestore refuză addDoc/updateDoc cu undefined
@@ -16,8 +77,10 @@ const stripUndefined = (obj) => {
 }
 
 export const getClienti = async () => {
-  const snap = await getDocs(collection(db, 'clienti'))
-  return snap.docs.map(d => ({ ...d.data(), id: d.id }))
+  const all = _map(await getDocs(collection(db, 'clienti')))
+  if (_scope.admin) return all
+  // Non-admin: doar clienții legați de imobilele lui (lista „imobile” de pe client)
+  return all.filter(c => (c.imobile || []).some(i => _scope.ids.includes(i)))
 }
 
 export const getClient = async (id) => {
@@ -26,8 +89,11 @@ export const getClient = async (id) => {
 }
 
 export const addClient = async (data) => {
+  let imobile = Array.isArray(data.imobile) ? data.imobile : []
+  if (imobile.length === 0 && !_scope.admin && _scope.ids.length === 1) imobile = [_scope.ids[0]]
   return await addDoc(collection(db, 'clienti'), {
     ...data,
+    imobile,
     createdAt: serverTimestamp()
   })
 }
@@ -42,36 +108,24 @@ export const deleteClient = async (id) => {
 
 // ── EMAILURI TRIMISE ───────────────────────────────────────────
 export const getEmailuriClient = async (clientId) => {
-  const q = query(
-    collection(db, 'emailuri'),
-    where('clientId', '==', clientId),
-  )
-  const snap = await getDocs(q)
-  // Sortare în aplicație: evită nevoia unui index compus în Firestore
-  return snap.docs.map(d => ({ ...d.data(), id: d.id })).sort((a, b) => (b.trimisLa?.seconds || 0) - (a.trimisLa?.seconds || 0))
+  return (await scoped('emailuri', [where('clientId', '==', clientId)])).sort((a, b) => (b.trimisLa?.seconds || 0) - (a.trimisLa?.seconds || 0))
 }
 
 export const saveEmail = async (emailData) => {
   return await addDoc(collection(db, 'emailuri'), {
-    ...emailData,
+    ...(await cuImobil(emailData)),
     trimisLa: serverTimestamp()
   })
 }
 
 // ── NOTE CONVERSAȚIE ───────────────────────────────────────────
 export const getNoteClient = async (clientId) => {
-  const q = query(
-    collection(db, 'note'),
-    where('clientId', '==', clientId),
-  )
-  const snap = await getDocs(q)
-  // Sortare în aplicație: evită nevoia unui index compus în Firestore
-  return snap.docs.map(d => ({ ...d.data(), id: d.id })).sort((a, b) => (b.creatLa?.seconds || 0) - (a.creatLa?.seconds || 0))
+  return (await scoped('note', [where('clientId', '==', clientId)])).sort((a, b) => (b.creatLa?.seconds || 0) - (a.creatLa?.seconds || 0))
 }
 
 export const addNota = async (clientId, text, autor) => {
   return await addDoc(collection(db, 'note'), {
-    clientId,
+    ...(await cuImobil({ clientId })),
     text,
     autor,
     creatLa: serverTimestamp()
@@ -87,15 +141,18 @@ export const getConfig = async () => {
 export const saveConfig = async (data) => {
   await updateDoc(doc(db, 'config', 'fgo'), data).catch(async () => {
     // doc doesn't exist yet — create it
-    const { setDoc } = await import("firebase/firestore")
     await setDoc(doc(db, 'config', 'fgo'), data)
   })
 }
 
 // ── IMOBILE ────────────────────────────────────────────────────
 export const getImobile = async () => {
-  const snap = await getDocs(collection(db, 'imobile'))
-  return snap.docs.map(d => ({ ...d.data(), id: d.id }))
+  if (_scope.admin) return _map(await getDocs(collection(db, 'imobile')))
+  const rez = await Promise.all(_scope.ids.map(async id => {
+    try { const s = await getDoc(doc(db, 'imobile', id)); return s.exists() ? { ...s.data(), id: s.id } : null }
+    catch { return null }
+  }))
+  return rez.filter(Boolean)
 }
 export const addImobil = async (data) => {
   const ref = await addDoc(collection(db, 'imobile'), stripUndefined({ ...data, creatLa: serverTimestamp() }))
@@ -107,13 +164,7 @@ export const deleteImobil = async (id) =>
   deleteDoc(doc(db, 'imobile', id))
 
 // ── SPAȚII ─────────────────────────────────────────────────────
-export const getSpatii = async (imobilId = null) => {
-  const q = imobilId
-    ? query(collection(db, 'spatii'), where('imobilId', '==', imobilId))
-    : collection(db, 'spatii')
-  const snap = await getDocs(q)
-  return snap.docs.map(d => ({ ...d.data(), id: d.id }))
-}
+export const getSpatii = async (imobilId = null) => scoped('spatii', [], imobilId)
 export const addSpatiu = async (data) =>
   addDoc(collection(db, 'spatii'), stripUndefined({ ...data, creatLa: serverTimestamp() }))
 export const updateSpatiu = async (id, data) =>
@@ -122,13 +173,9 @@ export const deleteSpatiu = async (id) =>
   deleteDoc(doc(db, 'spatii', id))
 
 // ── CONTOARE ───────────────────────────────────────────────────
-export const getContoare = async (spatiuId) => {
-  const q = query(collection(db, 'contoare'), where('spatiuId', '==', spatiuId))
-  const snap = await getDocs(q)
-  return snap.docs.map(d => ({ ...d.data(), id: d.id }))
-}
+export const getContoare = async (spatiuId) => scoped('contoare', [where('spatiuId', '==', spatiuId)])
 export const addContor = async (data) =>
-  addDoc(collection(db, 'contoare'), stripUndefined({ ...data, creatLa: serverTimestamp() }))
+  addDoc(collection(db, 'contoare'), stripUndefined({ ...(await cuImobil(data)), creatLa: serverTimestamp() }))
 export const updateContor = async (id, data) =>
   updateDoc(doc(db, 'contoare', id), stripUndefined(data))
 export const deleteContor = async (id) =>
@@ -136,25 +183,13 @@ export const deleteContor = async (id) =>
 
 // ── CITIRI ─────────────────────────────────────────────────────
 export const getCitiri = async (contorId) => {
-  const q = query(
-    collection(db, 'citiri'),
-    where('contorId', '==', contorId),
-  )
-  const snap = await getDocs(q)
-  // Sortare în aplicație: evită nevoia unui index compus în Firestore
-  return snap.docs.map(d => ({ ...d.data(), id: d.id })).sort((a, b) => String(b.data || '').localeCompare(String(a.data || '')))
+  return (await scoped('citiri', [where('contorId', '==', contorId)])).sort((a, b) => String(b.data || '').localeCompare(String(a.data || '')))
 }
 export const getCitiriSpatiu = async (spatiuId) => {
-  const q = query(
-    collection(db, 'citiri'),
-    where('spatiuId', '==', spatiuId),
-  )
-  const snap = await getDocs(q)
-  // Sortare în aplicație: evită nevoia unui index compus în Firestore
-  return snap.docs.map(d => ({ ...d.data(), id: d.id })).sort((a, b) => String(b.data || '').localeCompare(String(a.data || '')))
+  return (await scoped('citiri', [where('spatiuId', '==', spatiuId)])).sort((a, b) => String(b.data || '').localeCompare(String(a.data || '')))
 }
 export const addCitire = async (data) =>
-  addDoc(collection(db, 'citiri'), stripUndefined({ ...data, creatLa: serverTimestamp() }))
+  addDoc(collection(db, 'citiri'), stripUndefined({ ...(await cuImobil(data)), creatLa: serverTimestamp() }))
 export const deleteCitire = async (id) =>
   deleteDoc(doc(db, 'citiri', id))
 
@@ -165,12 +200,13 @@ export const getUserProfile = async (uid) => {
 }
 
 export const getUsers = async () => {
+  // Lista conturilor e vizibilă doar administratorului general
+  if (!_scope.admin) return []
   const snap = await getDocs(collection(db, 'users'))
   return snap.docs.map(d => ({ ...d.data(), id: d.id }))
 }
 
 export const saveUserProfile = async (uid, data) => {
-  const { setDoc } = await import('firebase/firestore')
   await setDoc(doc(db, 'users', uid), data, { merge: true })
 }
 
@@ -184,27 +220,24 @@ export const deleteUserProfile = async (uid) => {
 
 // ── DOCUMENTE BIBLIOTECĂ ───────────────────────────────────────
 export const getDocumente = async (entityType = null, entityId = null) => {
-  let q
-  if (entityType && entityId) {
-    q = query(
-      collection(db, 'documente'),
-      where('entityType', '==', entityType),
-      where('entityId',   '==', entityId)
-    )
-  } else if (entityType) {
-    q = query(collection(db, 'documente'), where('entityType', '==', entityType))
-  } else {
-    q = collection(db, 'documente')
-  }
-  const snap = await getDocs(q)
+  const c = []
+  if (entityType) c.push(where('entityType', '==', entityType))
+  if (entityType && entityId) c.push(where('entityId', '==', entityId))
   // Sort client-side to avoid Firestore compound index requirement
-  return snap.docs
-    .map(d => ({ ...d.data(), id: d.id }))
+  return (await scoped('documente', c))
     .sort((a, b) => (b.uploadatLa?.seconds || 0) - (a.uploadatLa?.seconds || 0))
 }
 
+const imobilDocument = async (data) => {
+  if (data.imobilId) return data
+  const t = data.entityType, id = data.entityId
+  if (t === 'imobil' && id) return { ...data, imobilId: id }
+  if (t === 'spatiu' && id) return cuImobil({ ...data, spatiuId: id })
+  if (t === 'client' && id) return cuImobil({ ...data, clientId: id })
+  return cuImobil(data)
+}
 export const addDocument = async (data) =>
-  addDoc(collection(db, 'documente'), stripUndefined({ ...data, uploadatLa: serverTimestamp() }))
+  addDoc(collection(db, 'documente'), stripUndefined({ ...(await imobilDocument(data)), uploadatLa: serverTimestamp() }))
 
 export const updateDocument = async (id, data) =>
   updateDoc(doc(db, 'documente', id), stripUndefined(data))
@@ -239,6 +272,7 @@ export const addClientToSpatiu = async (spatiuId, clientId, rol = 'Chiriaș prin
     clientId: clienti.find(c => c.rol === 'Chiriaș principal')?.clientId || clienti[0]?.clientId || '',
     status: 'Ocupat'
   })
+  await legaClientDeImobil(clientId, data.imobilId)
 }
 
 export const removeClientFromSpatiu = async (spatiuId, clientId) => {
@@ -279,13 +313,12 @@ export const updateContractClient = async (spatiuId, clientId, { dataStart, data
 
 // ── REGISTRU CONTRACTE (comercial / rezidential) ──────────────
 export const getRegistru = async (registru) => {
-  const snap = await getDocs(query(collection(db, 'registru_contracte'), where('registru', '==', registru)))
-  return snap.docs.map(d => ({ ...d.data(), id: d.id }))
+  return scoped('registru_contracte', [where('registru', '==', registru)])
 }
 
 // Salvează un rând și sincronizează datele contractului cu asocierea client–spațiu
-export const saveRegistruRand = async (data) => {
-  const { id, ...rest } = data
+export const saveRegistruRand = async (data0) => {
+  const { id, ...rest } = await cuImobil(data0)
   let rid = id
   if (id) {
     await updateDoc(doc(db, 'registru_contracte', id), stripUndefined({ ...rest, updatedAt: serverTimestamp() }))
@@ -317,8 +350,9 @@ export const setEntitateRegistru = async (ids, entitate) => {
 export const deleteRegistruRand = async (id) => deleteDoc(doc(db, 'registru_contracte', id))
 
 export const syncRegistruDinSpatiu = async (spatiuId, clientId, { dataStart, dataFinal }) => {
-  const snap = await getDocs(query(collection(db, 'registru_contracte'), where('spatiuId', '==', spatiuId)))
-  for (const d of snap.docs) {
+  const rows = await scoped('registru_contracte', [where('spatiuId', '==', spatiuId)])
+  for (const d0 of rows) {
+    const d = { id: d0.id, data: () => d0 }
     if (d.data().clientId !== clientId) continue
     await updateDoc(doc(db, 'registru_contracte', d.id), {
       dataStart: dataStart ?? d.data().dataStart ?? '', dataFinal: dataFinal ?? d.data().dataFinal ?? '',
@@ -329,9 +363,8 @@ export const syncRegistruDinSpatiu = async (spatiuId, clientId, { dataStart, dat
 
 // ── TEMPLATE NOTE DE CALCUL ────────────────────────────────────
 export const getTemplate = async (spatiuId) => {
-  const q = query(collection(db, 'templates_nota'), where('spatiuId', '==', spatiuId))
-  const snap = await getDocs(q)
-  return snap.empty ? null : { id: snap.docs[0].id, ...snap.docs[0].data() }
+  const rows = await scoped('templates_nota', [where('spatiuId', '==', spatiuId)])
+  return rows.length ? rows[0] : null
 }
 
 export const saveTemplate = async (spatiuId, data) => {
@@ -340,36 +373,28 @@ export const saveTemplate = async (spatiuId, data) => {
     await updateDoc(doc(db, 'templates_nota', existing.id), { ...data, updatedAt: serverTimestamp() })
     return existing.id
   } else {
-    const ref = await addDoc(collection(db, 'templates_nota'), stripUndefined({ ...data, spatiuId, createdAt: serverTimestamp() }))
+    const ref = await addDoc(collection(db, 'templates_nota'), stripUndefined({ ...(await cuImobil({ ...data, spatiuId })), createdAt: serverTimestamp() }))
     return ref.id
   }
 }
 
 // ── NOTA DE CALCUL EMISE ───────────────────────────────────────
 export const getNoteCalcul = async (spatiuId = null) => {
-  const q = spatiuId
-    ? query(collection(db, 'note_calcul'), where('spatiuId', '==', spatiuId))
-    : collection(db, 'note_calcul')
-  const snap = await getDocs(q)
-  return snap.docs
-    .map(d => ({ ...d.data(), id: d.id }))
+  return (await scoped('note_calcul', spatiuId ? [where('spatiuId', '==', spatiuId)] : []))
     .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0))
 }
 
 export const saveNotaCalcul = async (data) =>
-  addDoc(collection(db, 'note_calcul'), stripUndefined({ ...data, createdAt: serverTimestamp() }))
+  addDoc(collection(db, 'note_calcul'), stripUndefined({ ...(await cuImobil(data)), createdAt: serverTimestamp() }))
 
 // ── ISTORIC SPATIU ─────────────────────────────────────────────
 export const getIstoricSpatiu = async (spatiuId) => {
-  const q = query(collection(db, 'istoric_spatiu'), where('spatiuId', '==', spatiuId))
-  const snap = await getDocs(q)
-  return snap.docs
-    .map(d => ({ ...d.data(), id: d.id }))
+  return (await scoped('istoric_spatiu', [where('spatiuId', '==', spatiuId)]))
     .sort((a, b) => (b.dataStart?.seconds || 0) - (a.dataStart?.seconds || 0))
 }
 
 export const addIstoricEntry = async (data) =>
-  addDoc(collection(db, 'istoric_spatiu'), stripUndefined({ ...data, createdAt: serverTimestamp() }))
+  addDoc(collection(db, 'istoric_spatiu'), stripUndefined({ ...(await cuImobil(data)), createdAt: serverTimestamp() }))
 
 export const updateIstoricEntry = async (id, data) =>
   updateDoc(doc(db, 'istoric_spatiu', id), stripUndefined(data))
@@ -381,16 +406,13 @@ export const getPreturiImobil = async (imobilId) => {
 }
 
 export const savePreturiImobil = async (imobilId, preturi) => {
-  const { setDoc } = await import('firebase/firestore')
   await setDoc(doc(db, 'preturi_imobil', imobilId), preturi, { merge: true })
 }
 
 // ── CONTOARE REPROIECTATE ─────────────────────────────────────
 // mod: 'index' | 'fix' | 'bloc'
 export const getContoareSpatiu = async (spatiuId) => {
-  const q = query(collection(db, 'contoare'), where('spatiuId', '==', spatiuId))
-  const snap = await getDocs(q)
-  return snap.docs.map(d => ({ ...d.data(), id: d.id }))
+  return (await scoped('contoare', [where('spatiuId', '==', spatiuId)]))
     .sort((a, b) => (a.ordine || 0) - (b.ordine || 0))
 }
 
@@ -400,71 +422,128 @@ export const saveContor = async (data) => {
     await updateDoc(doc(db, 'contoare', id), stripUndefined(rest))
     return id
   }
-  const ref = await addDoc(collection(db, 'contoare'), stripUndefined({ ...data, creatLa: serverTimestamp() }))
+  const ref = await addDoc(collection(db, 'contoare'), stripUndefined({ ...(await cuImobil(data)), creatLa: serverTimestamp() }))
   return ref.id
 }
 
 // ── CITIRI REPROIECTATE ───────────────────────────────────────
 export const getCitiriContor = async (contorId) => {
-  const q = query(collection(db, 'citiri'), where('contorId', '==', contorId))
-  const snap = await getDocs(q)
-  return snap.docs
-    .map(d => ({ ...d.data(), id: d.id }))
+  return (await scoped('citiri', [where('contorId', '==', contorId)]))
     .sort((a, b) => b.data?.localeCompare?.(a.data) || 0)
 }
 
 export const getCitiriSpatiu2 = async (spatiuId) => {
-  const q = query(collection(db, 'citiri'), where('spatiuId', '==', spatiuId))
-  const snap = await getDocs(q)
-  return snap.docs
-    .map(d => ({ ...d.data(), id: d.id }))
+  return (await scoped('citiri', [where('spatiuId', '==', spatiuId)]))
     .sort((a, b) => b.data?.localeCompare?.(a.data) || 0)
 }
 
-export const saveCitire = async (data) =>
-  addDoc(collection(db, 'citiri'), stripUndefined({ ...data, creatLa: serverTimestamp() }))
+export const saveCitire = async (data) => {
+  const d = await cuImobil(data)
+  const ref = await addDoc(collection(db, 'citiri'), stripUndefined({ ...d, creatLa: serverTimestamp() }))
+  // Actualizează „instantaneul” din portalul chiriașului (best-effort, nu blochează salvarea)
+  if (d.spatiuId) refreshPortalSnapshot(d.spatiuId).catch(() => {})
+  return ref
+}
 
 export const deleteCitire2 = async (id) =>
   deleteDoc(doc(db, 'citiri', id))
 
 // ── PORTALE CHIRIAȘI ───────────────────────────────────────────
-export const getPortal = async (token) => {
-  const q = query(collection(db, 'portale'), where('token', '==', token))
-  const snap = await getDocs(q)
-  return snap.empty ? null : { id: snap.docs[0].id, ...snap.docs[0].data() }
+// Documentul portalului are ID-ul = token (lung, aleatoriu). Chiriașul citește DOAR acest
+// document (după ID), nu poate lista colecția și nu atinge contoare/citiri direct.
+export const getPortalPublic = async (token) => {
+  if (!token || token.includes('/')) return null
+  const snap = await getDoc(doc(db, 'portale', token))
+  return snap.exists() ? { ...snap.data(), id: snap.id } : null
 }
+export const getPortal = getPortalPublic
 
 export const getPortalBySpatiu = async (spatiuId) => {
-  const q = query(collection(db, 'portale'), where('spatiuId', '==', spatiuId))
-  const snap = await getDocs(q)
-  return snap.empty ? null : { id: snap.docs[0].id, ...snap.docs[0].data() }
+  const rows = await scoped('portale', [where('spatiuId', '==', spatiuId)])
+  return rows.length ? rows[0] : null
+}
+export const getPortale = async () => scoped('portale')
+
+export const genTokenPortal = () => {
+  const a = new Uint8Array(24)
+  crypto.getRandomValues(a)
+  return Array.from(a, b => b.toString(36).padStart(2, '0')).join('').slice(0, 32)
+}
+
+// Calculează valabilitatea linkului = finalul contractului (null = fără expirare)
+const valabilitatePortal = (spatiu) => {
+  const activi = (spatiu?.clienti || []).filter(c => c.activ !== false)
+  if (activi.length === 0) return null
+  let max = ''
+  for (const c of activi) {
+    if (!c.dataFinal) return null          // contract pe perioadă nedeterminată
+    if (c.dataFinal > max) max = c.dataFinal
+  }
+  const d = new Date(max + 'T23:59:59')
+  return isNaN(d.getTime()) ? null : { text: max, ts: d }
+}
+
+const snapshotPortal = async (spatiuId) => {
+  const [spSnap, ct, ci] = await Promise.all([
+    getDoc(doc(db, 'spatii', spatiuId)),
+    getContoareSpatiu(spatiuId),
+    getCitiriSpatiu2(spatiuId),
+  ])
+  const sp = spSnap.exists() ? { ...spSnap.data(), id: spSnap.id } : null
+  const contoare = ct.filter(c => c.mod === 'index').map(c => {
+    const ultima = ci.filter(x => x.contorId === c.id)[0]   // deja sortate descrescător după dată
+    return stripUndefined({
+      id: c.id, denumire: c.denumire || c.tip || '', tip: c.tip || '', um: c.um || '',
+      ultimIndex: ultima?.index ?? null, ultimaData: ultima?.data || null,
+    })
+  })
+  const v = valabilitatePortal(sp)
+  return {
+    imobilId: sp?.imobilId || '',
+    spatiuDenumire: sp?.denumire || '',
+    contoare,
+    valabilPana: v ? v.text : '',
+    valabilPanaTs: v ? v.ts : null,
+    snapshotLa: serverTimestamp(),
+  }
+}
+
+export const refreshPortalSnapshot = async (spatiuId) => {
+  const p = await getPortalBySpatiu(spatiuId)
+  if (!p) return
+  await updateDoc(doc(db, 'portale', p.id), await snapshotPortal(spatiuId))
 }
 
 export const savePortal = async (data) => {
-  const existing = await getPortalBySpatiu(data.spatiuId)
-  if (existing) {
-    await updateDoc(doc(db, 'portale', existing.id), data)
-    return existing.id
-  }
-  const ref = await addDoc(collection(db, 'portale'), stripUndefined({ ...data, createdAt: serverTimestamp() }))
-  return ref.id
+  const { id: _i, ...rest } = data
+  const snap = await snapshotPortal(rest.spatiuId)
+  const existing = await getPortalBySpatiu(rest.spatiuId)
+  const token = rest.token
+  const payload = stripUndefined({ ...(existing || {}), ...rest, ...snap, token, id: undefined })
+  await setDoc(doc(db, 'portale', token), { ...payload, createdAt: existing?.createdAt || serverTimestamp() })
+  // Token regenerat → ștergem documentul vechi (linkul vechi nu mai funcționează)
+  if (existing && existing.id !== token) await deleteDoc(doc(db, 'portale', existing.id))
+  return token
 }
+export const setPortalActiv = async (token, activ) => updateDoc(doc(db, 'portale', token), { activ })
+
+// ── CERERI PORTAL (sesizări, informări, documente trimise de chiriaș) ──
+export const saveCererePortal = async (data) =>
+  addDoc(collection(db, 'cereri_portal'), stripUndefined({ ...data, status: 'nou', dataTrimis: serverTimestamp() }))
+export const getCereriPortal = async (status = null) =>
+  (await scoped('cereri_portal', status ? [where('status', '==', status)] : []))
+    .sort((a, b) => (b.dataTrimis?.seconds || 0) - (a.dataTrimis?.seconds || 0))
+export const updateCererePortal = async (id, data) => updateDoc(doc(db, 'cereri_portal', id), stripUndefined(data))
+export const deleteCererePortal = async (id) => deleteDoc(doc(db, 'cereri_portal', id))
 
 // ── INDEXURI PRIMITE ───────────────────────────────────────────
 export const getIndexuriPrimite = async (status = null) => {
-  const q = status
-    ? query(collection(db, 'indexuri_primite'), where('status', '==', status))
-    : collection(db, 'indexuri_primite')
-  const snap = await getDocs(q)
-  return snap.docs
-    .map(d => ({ ...d.data(), id: d.id }))
+  return (await scoped('indexuri_primite', status ? [where('status', '==', status)] : []))
     .sort((a, b) => (b.dataTrimis?.seconds || 0) - (a.dataTrimis?.seconds || 0))
 }
 
 export const getIndexuriPentruSpatiu = async (spatiuId) => {
-  const q = query(collection(db, 'indexuri_primite'), where('spatiuId', '==', spatiuId))
-  const snap = await getDocs(q)
-  return snap.docs.map(d => ({ ...d.data(), id: d.id }))
+  return scoped('indexuri_primite', [where('spatiuId', '==', spatiuId)])
 }
 
 export const saveIndexPrimit = async (data) =>
@@ -482,12 +561,7 @@ export const updateSpatiuMod = async (spatiuId, mod) =>
 
 // ── EXPORT DATE CONTOARE ───────────────────────────────────────
 export const getAllContoareCuCitiri = async () => {
-  const [contoare, citiri] = await Promise.all([
-    getDocs(collection(db, 'contoare')),
-    getDocs(collection(db, 'citiri'))
-  ])
-  const ct = contoare.docs.map(d => ({ ...d.data(), id: d.id }))
-  const ci = citiri.docs.map(d => ({ ...d.data(), id: d.id }))
+  const [ct, ci] = await Promise.all([scoped('contoare'), scoped('citiri')])
   return ct.map(c => ({
     ...c,
     citiri: ci
@@ -534,8 +608,7 @@ export const deleteTemplateContract = async (id) =>
 
 // ── DRAFTURI CONTRACTE ─────────────────────────────────────────
 export const getDrafturiContracte = async () => {
-  const snap = await getDocs(collection(db, 'contracte_drafturi'))
-  return snap.docs.map(d => ({ ...d.data(), id: d.id })).sort((a, b) => (b.updatedAt?.seconds || b.createdAt?.seconds || 0) - (a.updatedAt?.seconds || a.createdAt?.seconds || 0))
+  return (await scoped('contracte_drafturi')).sort((a, b) => (b.updatedAt?.seconds || b.createdAt?.seconds || 0) - (a.updatedAt?.seconds || a.createdAt?.seconds || 0))
 }
 
 export const getDraftContract = async (id) => {
@@ -544,7 +617,7 @@ export const getDraftContract = async (id) => {
 }
 
 export const saveDraftContract = async (data) => {
-  const { id, ...rest } = data
+  const { id, ...rest } = await cuImobil(data)
   if (id) {
     await updateDoc(doc(db, 'contracte_drafturi', id), stripUndefined({ ...rest, updatedAt: serverTimestamp() }))
     return id
@@ -620,8 +693,7 @@ export const repairDrafturiContracte = async (onProgress) => {
 // ── RAPOARTE ───────────────────────────────────────────────────
 export const getCitiriPentruRaport = async (spatiuIds = [], dataStart = null, dataStop = null) => {
   // Citiri pentru lista de spații, filtrate pe perioadă
-  const snap = await getDocs(collection(db, 'citiri'))
-  let citiri = snap.docs.map(d => ({ ...d.data(), id: d.id }))
+  let citiri = await scoped('citiri')
   if (spatiuIds.length > 0) citiri = citiri.filter(c => spatiuIds.includes(c.spatiuId))
   if (dataStart) citiri = citiri.filter(c => c.data >= dataStart)
   if (dataStop)  citiri = citiri.filter(c => c.data <= dataStop)
@@ -644,10 +716,183 @@ export const getTemplateEmail = () => _lista('template_email')
 export const saveTemplateEmail = (d) => _salveaza('template_email', d)
 export const deleteTemplateEmail = (id) => deleteDoc(doc(db, 'template_email', id))
 export const getComunicari = async () =>
-  (await _lista('comunicari')).sort((a, b) => (b.trimisLa?.seconds || 0) - (a.trimisLa?.seconds || 0))
+  (await scoped('comunicari')).sort((a, b) => (b.trimisLa?.seconds || 0) - (a.trimisLa?.seconds || 0))
 export const getComunicariClient = async (clientId) => {
-  const snap = await getDocs(query(collection(db, 'comunicari'), where('clientId', '==', clientId)))
-  return snap.docs.map(d => ({ ...d.data(), id: d.id }))
+  return scoped('comunicari', [where('clientId', '==', clientId)])
 }
-export const addComunicare = (d) =>
-  addDoc(collection(db, 'comunicari'), stripUndefined({ ...d, trimisLa: serverTimestamp() }))
+export const addComunicare = async (d) =>
+  addDoc(collection(db, 'comunicari'), stripUndefined({ ...(await cuImobil(d)), trimisLa: serverTimestamp() }))
+
+
+// ══ ACCES PE IMOBIL ════════════════════════════════════════════
+// acces/{uid} = { imobile: { imobilId: 1|2|3 }, adm: [imobilId cu nivel 3], nume, email, ultimulCod }
+// 1 = Vizualizare, 2 = Operare, 3 = Administrare
+export const NIVELURI = { 0: 'Fără acces', 1: 'Vizualizare', 2: 'Operare', 3: 'Administrare' }
+
+export const getAccesUser = async (uid) => {
+  const snap = await getDoc(doc(db, 'acces', uid))
+  return snap.exists() ? { ...snap.data(), id: snap.id } : null
+}
+export const getAllAcces = async () => _map(await getDocs(collection(db, 'acces')))
+
+export const setAcces = async (uid, info, imobilId, nivel) => {
+  const ref = doc(db, 'acces', uid)
+  const snap = await getDoc(ref)
+  const cur = snap.exists() ? snap.data() : { imobile: {}, adm: [] }
+  const imobile = { ...(cur.imobile || {}) }
+  if (nivel > 0) imobile[imobilId] = nivel; else delete imobile[imobilId]
+  // Lista „adm” (cine poate delega) o schimbă doar administratorul general
+  const adm = _scope.admin ? Object.keys(imobile).filter(k => imobile[k] === 3) : (cur.adm || [])
+  await setDoc(ref, stripUndefined({
+    ...cur, imobile, adm,
+    nume: info?.nume ?? cur.nume, email: info?.email ?? cur.email,
+    updatedAt: serverTimestamp(),
+  }))
+}
+
+// ── Invitații ──────────────────────────────────────────────────
+const COD_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
+export const genCodInvitatie = () => {
+  const a = new Uint8Array(12); crypto.getRandomValues(a)
+  return Array.from(a, b => COD_CHARS[b % COD_CHARS.length]).join('')
+}
+export const formateazaCod = (c) => (c || '').replace(/(.{4})(?=.)/g, '$1-')
+export const curataCod = (c) => (c || '').toUpperCase().replace(/[^A-Z0-9]/g, '')
+
+export const creeazaInvitatie = async ({ imobilId, imobilNume, nivel, zile = 7, uid, nume }) => {
+  const cod = genCodInvitatie()
+  await setDoc(doc(db, 'invitatii', cod), {
+    imobilId, imobilNume: imobilNume || '', nivel,
+    folosit: false, creatDe: uid, creatDeNume: nume || '',
+    expiraLa: Timestamp.fromDate(new Date(Date.now() + zile * 86400000)),
+    creatLa: serverTimestamp(),
+  })
+  return cod
+}
+export const getInvitatie = async (cod) => {
+  const snap = await getDoc(doc(db, 'invitatii', cod))
+  return snap.exists() ? { ...snap.data(), id: snap.id } : null
+}
+// ids = imobilele pentru care utilizatorul are voie să vadă invitațiile (nivel 3); admin: toate
+export const getInvitatii = async (ids) => {
+  if (_scope.admin) return _map(await getDocs(collection(db, 'invitatii')))
+  const out = []
+  await Promise.all((ids || []).map(async id => {
+    try { out.push(...(_map(await getDocs(query(collection(db, 'invitatii'), where('imobilId', '==', id)))))) }
+    catch (e) { console.warn('invitatii', id, e) }
+  }))
+  return out
+}
+export const anuleazaInvitatie = async (cod) => deleteDoc(doc(db, 'invitatii', cod))
+
+// Folosește invitația: creează profilul (dacă lipsește), acordă accesul și marchează codul folosit — atomic
+export const folosesteInvitatie = async ({ cod, uid, nume, email }) => {
+  const inv = await getInvitatie(cod)
+  if (!inv) throw new Error('Cod invalid.')
+  if (inv.folosit) throw new Error('Codul a fost deja folosit.')
+  if (inv.expiraLa?.toDate && inv.expiraLa.toDate() < new Date()) throw new Error('Codul a expirat.')
+  const prof = await getDoc(doc(db, 'users', uid))
+  const acc = await getDoc(doc(db, 'acces', uid))
+  const cur = acc.exists() ? acc.data() : { imobile: {}, adm: [] }
+  const batch = writeBatch(db)
+  if (!prof.exists()) {
+    batch.set(doc(db, 'users', uid), { nume: nume || email, email, rol: 'manager', activ: true, creatLa: serverTimestamp() })
+  }
+  batch.set(doc(db, 'acces', uid), stripUndefined({
+    ...cur,
+    imobile: { ...(cur.imobile || {}), [inv.imobilId]: inv.nivel },
+    adm: cur.adm || [],
+    nume: nume || cur.nume || email, email,
+    ultimulCod: cod, updatedAt: serverTimestamp(),
+  }))
+  batch.update(doc(db, 'invitatii', cod), {
+    folosit: true, folositDe: uid, folositDeNume: nume || email, folositLa: serverTimestamp(),
+  })
+  await batch.commit()
+  return inv
+}
+
+// ── Prima configurare a administratorului (o singură dată) ─────
+export const bootstrapAdmin = async (uid, email, nume) => {
+  const flag = doc(db, 'config', 'bootstrap')
+  if ((await getDoc(flag)).exists()) throw new Error('Configurarea inițială a fost deja făcută. Cere accesul administratorului.')
+  await setDoc(doc(db, 'users', uid), { nume: nume || email, email, rol: 'admin', activ: true, creatLa: serverTimestamp() })
+  await setDoc(flag, { uid, la: serverTimestamp() })
+}
+export const asigurăProfilAdmin = async (uid, email) => {
+  const r = doc(db, 'users', uid)
+  if ((await getDoc(r)).exists()) return false
+  await setDoc(r, { nume: email, email, rol: 'admin', activ: true, creatLa: serverTimestamp() })
+  return true
+}
+
+// ══ MIGRARE: imobilId pe toate datele (idempotentă) ════════════
+export const migreazaImobilId = async (onProgress, { uid, email } = {}) => {
+  if (!_scope.admin) throw new Error('Doar administratorul poate rula migrarea.')
+  const all = async (c) => _map(await getDocs(collection(db, c)))
+  const rap = { actualizate: 0, clientiLegati: 0, nealocate: {}, portale: 0, profilAdmin: false }
+  const nea = (c) => { rap.nealocate[c] = (rap.nealocate[c] || 0) + 1 }
+
+  onProgress?.({ pas: 'Citesc spațiile și clienții…' })
+  const spatii = await all('spatii')
+  const spImobil = new Map(spatii.map(sp => [sp.id, sp.imobilId || '']))
+  const contoare = await all('contoare')
+  const ctImobil = new Map(contoare.map(c => [c.id, c.imobilId || spImobil.get(c.spatiuId) || '']))
+
+  // client → imobile (din spații, registru, istoric)
+  const clImob = new Map()
+  const leaga = (cid, iid) => { if (!cid || !iid) return; if (!clImob.has(cid)) clImob.set(cid, new Set()); clImob.get(cid).add(iid) }
+  for (const sp of spatii) {
+    for (const c of (sp.clienti || [])) leaga(c.clientId, sp.imobilId)
+    leaga(sp.clientId, sp.imobilId)
+  }
+  const registru = await all('registru_contracte')
+  for (const r of registru) leaga(r.clientId, r.imobilId || spImobil.get(r.spatiuId))
+  const istoric = await all('istoric_spatiu')
+  for (const r of istoric) leaga(r.clientId, r.imobilId || spImobil.get(r.spatiuId))
+  const clienti = await all('clienti')
+  for (const c of clienti) for (const i of (c.imobile || [])) leaga(c.id, i)
+  const unicClient = (cid) => { const st = clImob.get(cid); return st && st.size === 1 ? [...st][0] : '' }
+
+  onProgress?.({ pas: 'Leg clienții de imobile…' })
+  for (const c of clienti) {
+    const nou = [...(clImob.get(c.id) || [])]
+    const vechi = c.imobile || []
+    if (nou.length !== vechi.length || nou.some(i => !vechi.includes(i))) {
+      await updateDoc(doc(db, 'clienti', c.id), { imobile: nou }); rap.clientiLegati++
+    }
+  }
+
+  const deLa = (d) => d.imobilId || spImobil.get(d.spatiuId) || ctImobil.get(d.contorId) || unicClient(d.clientId) || ''
+  const colectii = ['contoare', 'citiri', 'note_calcul', 'templates_nota', 'istoric_spatiu', 'indexuri_primite',
+    'registru_contracte', 'contracte_drafturi', 'note', 'emailuri', 'comunicari']
+  for (const coll of colectii) {
+    onProgress?.({ pas: `Completez ${coll}…` })
+    const rows = coll === 'contoare' ? contoare : coll === 'registru_contracte' ? registru : coll === 'istoric_spatiu' ? istoric : await all(coll)
+    for (const d of rows) {
+      if (d.imobilId) continue
+      const id = deLa(d)
+      if (id) { await updateDoc(doc(db, coll, d.id), { imobilId: id }); rap.actualizate++ } else nea(coll)
+    }
+  }
+  onProgress?.({ pas: 'Completez documentele…' })
+  for (const d of await all('documente')) {
+    if (d.imobilId) continue
+    const id = d.entityType === 'imobil' ? d.entityId : d.entityType === 'client' ? unicClient(d.entityId) : ''
+    if (id) { await updateDoc(doc(db, 'documente', d.id), { imobilId: id }); rap.actualizate++ } else nea('documente')
+  }
+
+  onProgress?.({ pas: 'Actualizez portalurile chiriașilor…' })
+  for (const p of await all('portale')) {
+    if (!p.token || !p.spatiuId) { nea('portale'); continue }
+    const snap = await snapshotPortal(p.spatiuId)
+    const { id, ...rest } = p
+    await setDoc(doc(db, 'portale', p.token), stripUndefined({ ...rest, ...snap, activ: p.activ !== false }))
+    if (id !== p.token) await deleteDoc(doc(db, 'portale', id))
+    rap.portale++
+  }
+
+  if (uid) { rap.profilAdmin = await asigurăProfilAdmin(uid, email || '') }
+  onProgress?.({ pas: 'Gata' })
+  return rap
+}

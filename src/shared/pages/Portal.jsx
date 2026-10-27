@@ -1,6 +1,8 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams } from 'react-router-dom'
-import { getPortal, getContoareSpatiu, getCitiriContor, saveIndexPrimit, getIndexuriPentruSpatiu } from '../firebase/firestore'
+import { ref as stRef, uploadBytes } from 'firebase/storage'
+import { storage } from '../firebase/config'
+import { getPortalPublic, saveIndexPrimit, saveCererePortal } from '../firebase/firestore'
 import { extractIndexFromImage, fileToBase64 } from '../../modules/administrare/services/ocrService'
 
 export default function Portal() {
@@ -16,21 +18,63 @@ export default function Portal() {
   const [error,       setError]       = useState('')
   const cameraRefs    = useRef({})
 
+  // ── Documente + sesizări ─────────────────────────────────────
+  const [tipMsg,   setTipMsg]   = useState('sesizare')
+  const [textMsg,  setTextMsg]  = useState('')
+  const [numeMsg,  setNumeMsg]  = useState('')
+  const [contactMsg, setContactMsg] = useState('')
+  const [fisiere,  setFisiere]  = useState([])
+  const [sendingMsg, setSendingMsg] = useState(false)
+  const [msgTrimis, setMsgTrimis]   = useState(false)
+  const [errMsg,   setErrMsg]   = useState('')
+  const MAX_FIS = 5, MAX_MB = 10
+  const TIPURI_OK = /^(image\/|application\/pdf|application\/msword|application\/vnd\.openxmlformats|text\/plain)/
+
+  const adaugaFisiere = (lista) => {
+    const noi = []
+    for (const f of Array.from(lista || [])) {
+      if (!TIPURI_OK.test(f.type)) { setErrMsg(`„${f.name}”: tip de fișier neacceptat (poze, PDF, Word).`); continue }
+      if (f.size > MAX_MB * 1024 * 1024) { setErrMsg(`„${f.name}” depășește ${MAX_MB} MB.`); continue }
+      noi.push(f)
+    }
+    setFisiere(prev => [...prev, ...noi].slice(0, MAX_FIS))
+  }
+
+  const handleTrimiteMsg = async () => {
+    if (!textMsg.trim() && fisiere.length === 0) { setErrMsg('Scrieți un mesaj sau atașați un document.'); return }
+    setSendingMsg(true); setErrMsg('')
+    try {
+      const urcate = []
+      for (const f of fisiere) {
+        const safe = f.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+        const path = `portal/${token}/${Date.now()}_${safe}`
+        await uploadBytes(stRef(storage, path), f, { contentType: f.type })
+        urcate.push({ nume: f.name, path, tip: f.type, marime: f.size })
+      }
+      await saveCererePortal({
+        token, spatiuId: portal.spatiuId, imobilId: portal.imobilId,
+        tip: urcate.length > 0 && !textMsg.trim() ? 'document' : tipMsg,
+        text: textMsg.trim(), fisiere: urcate,
+        chiriasNume: numeMsg.trim(), contact: contactMsg.trim(),
+      })
+      setMsgTrimis(true); setTextMsg(''); setFisiere([])
+    } catch (e) { console.error(e); setErrMsg('Eroare la trimitere. Încercați din nou.') }
+    finally { setSendingMsg(false) }
+  }
+
   useEffect(() => {
     if (!token) { setError('Link invalid.'); setLoading(false); return }
-    getPortal(token).then(async p => {
-      if (!p || !p.activ) { setError('Acest link nu este valid sau a expirat.'); setLoading(false); return }
-      setPortal(p)
-      // Încarcă contoarele active
-      const ct = await getContoareSpatiu(p.spatiuId)
-      const active = ct.filter(c => c.mod === 'index' && (p.utilitatiActive?.includes(c.denumire || c.tip) ?? true))
-      setContoare(active)
-      // Încarcă ultima citire per contor
-      const map = {}
-      for (const c of active) {
-        const citiri = await getCitiriContor(c.id)
-        if (citiri.length > 0) map[c.id] = citiri[0]
+    getPortalPublic(token).then(async p => {
+      if (!p || p.activ === false) { setError('Acest link nu este valid sau a fost dezactivat.'); setLoading(false); return }
+      if (p.valabilPanaTs?.seconds && p.valabilPanaTs.seconds * 1000 < Date.now()) {
+        setError('Acest link nu mai este valabil (contractul a expirat). Contactați administratorul.'); setLoading(false); return
       }
+      setPortal(p)
+      // Contoarele și ultimele indexuri vin din „instantaneul” salvat în portal (nu citim direct din baza de date)
+      const active = (p.contoare || []).filter(c => (p.utilitatiActive?.includes(c.denumire || c.tip) ?? true))
+      setContoare(active)
+      const map = {}
+      for (const c of active) if (c.ultimIndex != null) map[c.id] = { index: c.ultimIndex, data: c.ultimaData }
       setUltimeCitiri(map)
       setLoading(false)
     }).catch(() => { setError('Eroare la încărcarea portalului.'); setLoading(false) })
@@ -251,6 +295,60 @@ export default function Portal() {
         <p style={{ textAlign: 'center', color: '#9A978C', fontSize: 12, marginTop: 12 }}>
           Puteți retrimite oricând dacă ați greșit.
         </p>
+
+        {/* Documente, sesizări, informări */}
+        <div style={{ ...styles.card, marginTop: 28 }}>
+          <div style={styles.cardHeader}>
+            <span style={{ fontSize: 24 }}>✉️</span>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 16, color: '#1B1B1F' }}>Mesaj sau documente</div>
+              <div style={{ fontSize: 13, color: '#6B6B70' }}>Sesizări, informări, documente pentru administrator</div>
+            </div>
+          </div>
+
+          {msgTrimis ? (
+            <div style={{ textAlign: 'center', padding: '8px 0 4px' }}>
+              <div style={{ fontSize: 40 }}>✅</div>
+              <p style={{ color: '#14213D', fontWeight: 600, margin: '8px 0 4px' }}>Mesajul a fost trimis.</p>
+              <button style={styles.btnSecondary} onClick={() => setMsgTrimis(false)}>Trimite altul</button>
+            </div>
+          ) : (
+            <>
+              <label style={styles.label}>Tip</label>
+              <select value={tipMsg} onChange={e => setTipMsg(e.target.value)}
+                style={{ ...styles.inputText, marginBottom: 14 }}>
+                <option value="sesizare">Sesizare / problemă</option>
+                <option value="informare">Informare</option>
+                <option value="document">Document</option>
+              </select>
+
+              <label style={styles.label}>Mesaj</label>
+              <textarea value={textMsg} onChange={e => setTextMsg(e.target.value)} rows={4} maxLength={3000}
+                placeholder="Descrieți pe scurt…" style={{ ...styles.inputText, resize: 'vertical', marginBottom: 14 }} />
+
+              <label style={styles.label}>Documente / poze <span style={{ color: '#9A978C' }}>(opțional, max {MAX_FIS} fișiere, {MAX_MB} MB)</span></label>
+              <input type="file" multiple accept="image/*,application/pdf,.doc,.docx,.txt"
+                onChange={e => { setErrMsg(''); adaugaFisiere(e.target.files); e.target.value = '' }}
+                style={{ marginBottom: 8, fontSize: 14 }} />
+              {fisiere.map((f, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, marginBottom: 4 }}>
+                  <span>📎 {f.name}</span>
+                  <button style={{ ...styles.removePoza, padding: '2px 8px' }} onClick={() => setFisiere(l => l.filter((_, j) => j !== i))}>✕</button>
+                </div>
+              ))}
+
+              <div style={{ display: 'flex', gap: 10, margin: '12px 0 14px' }}>
+                <input value={numeMsg} onChange={e => setNumeMsg(e.target.value)} placeholder="Numele dvs. (opțional)" style={{ ...styles.inputText, flex: 1 }} />
+                <input value={contactMsg} onChange={e => setContactMsg(e.target.value)} placeholder="Telefon (opțional)" inputMode="tel" style={{ ...styles.inputText, flex: 1 }} />
+              </div>
+
+              {errMsg && <div style={styles.errorBox}>{errMsg}</div>}
+              <button style={{ ...styles.btnPrimary, fontSize: 16, opacity: sendingMsg ? 0.7 : 1 }} onClick={handleTrimiteMsg} disabled={sendingMsg}>
+                {sendingMsg ? '⏳ Se trimite...' : '📤 Trimite mesajul'}
+              </button>
+            </>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -294,6 +392,12 @@ const styles = {
     display: 'flex', alignItems: 'center', gap: 12,
     marginBottom: 16, paddingBottom: 14,
     borderBottom: '1px solid #F3F0E8',
+  },
+  inputText: {
+    width: '100%', padding: '12px 14px', fontSize: 16,
+    border: '2px solid #E8E3D8', borderRadius: 10,
+    boxSizing: 'border-box', outline: 'none', fontFamily: 'inherit',
+    background: 'white', color: '#1B1B1F',
   },
   label: {
     display: 'block', fontSize: 13, fontWeight: 600,

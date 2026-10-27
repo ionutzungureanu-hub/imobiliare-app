@@ -106,7 +106,8 @@ export default function Registru({ tip, serii }) {
             contacte: [{ nume: form.administrator || '', functie: 'Administrator', telefon: '', whatsapp: '', trimiteMesaj: false }], emailuri: [] }
         : { tip: 'PF', activ: true, nume: form.nume.trim(), cnp: form.identificator.trim(), adresa: '',
             telefon: '', email: '', whatsapp: '', spatiu: '', spatiuId: '', contacte: [], emailuri: [] }
-      const ref = await addClient(base)
+      const spSel = spatii.find(x => x.id === form.spatiuId)
+      const ref = await addClient(spSel?.imobilId ? { ...base, imobile: [spSel.imobilId] } : base)
       setClienti(l => [...l, { ...base, id: ref.id }])
       set('clientId', ref.id)
       setLookupMsg('Client creat și legat de contract.')

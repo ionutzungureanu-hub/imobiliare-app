@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import Topbar from '../../../shared/components/Topbar'
 import { useToast } from '../../../shared/components/Toast'
 import { useAuth } from '../../../shared/context/AuthContext'
-import { getConfig, saveConfig, getImobile, getSpatii, getPreturiImobil, savePreturiImobil, getContoareSpatiu, saveContor, deleteContor, getCitiriContor, migreazaContoare, repairDrafturiContracte } from '../../../shared/firebase/firestore'
+import { getConfig, saveConfig, getImobile, getSpatii, getPreturiImobil, savePreturiImobil, getContoareSpatiu, saveContor, deleteContor, getCitiriContor, migreazaContoare, repairDrafturiContracte, migreazaImobilId } from '../../../shared/firebase/firestore'
 import { FURNIZORI, testeazaConexiunea } from '../../../shared/services/facturareApi'
 
 const emptyConfig = () => ({
@@ -16,7 +16,9 @@ const emptyConfig = () => ({
 
 export default function Config() {
   const toast      = useToast()
-  const { isAdmin } = useAuth()
+  const { isAdmin, user } = useAuth()
+  const [accStatus, setAccStatus] = useState(null)
+  const [accLog,    setAccLog]    = useState([])
 
   const [cfg,      setCfg]      = useState(emptyConfig())
   const [saving,   setSaving]   = useState(false)
@@ -617,6 +619,53 @@ service cloud.firestore {
         {/* ── Mentenanță ────────────────────────────────────────── */}
         {tabConfig === 'mentenanta' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+            {/* Migrare acces pe imobil */}
+            <div className="card" style={{ borderTop: '2px solid var(--gold)' }}>
+              <div className="card-header">
+                <div>
+                  <div className="card-title">Pasul 1 · Pregătire acces pe imobil</div>
+                  <div className="card-subtitle">
+                    Scrie <code>imobilId</code> pe toate datele (contoare, citiri, contracte, documente, comunicări…), leagă clienții de imobile,
+                    actualizează portalurile chiriașilor și îți creează profilul de administrator. Sigur și repetabil.
+                    <strong> Rulează-l ÎNAINTE de a publica noile reguli Firestore.</strong>
+                  </div>
+                </div>
+              </div>
+              <div className="card-body">
+                <button className="btn btn-primary" disabled={accStatus === 'running'} onClick={async () => {
+                  const t = () => new Date().toLocaleTimeString('ro-RO')
+                  setAccStatus('running'); setAccLog([{ timp: t(), msg: 'Pornesc migrarea…', tip: 'info' }])
+                  try {
+                    const r = await migreazaImobilId(
+                      (p) => p.pas && setAccLog(l => [...l, { timp: t(), msg: p.pas, tip: 'info' }]),
+                      { uid: user?.uid, email: user?.email }
+                    )
+                    const nea = Object.entries(r.nealocate).map(([k, v]) => `${k}: ${v}`).join(', ')
+                    setAccLog(l => [...l,
+                      { timp: t(), msg: `✓ ${r.actualizate} documente completate · ${r.clientiLegati} clienți legați · ${r.portale} portaluri actualizate${r.profilAdmin ? ' · profil administrator creat' : ''}`, tip: 'success' },
+                      ...(nea ? [{ timp: t(), msg: `⚠ Fără imobil (vizibile doar administratorului): ${nea}`, tip: 'info' }] : []),
+                    ])
+                    setAccStatus('done')
+                  } catch (err) {
+                    console.error(err)
+                    setAccLog(l => [...l, { timp: t(), msg: '❌ Eroare: ' + (err.message || err), tip: 'error' }]); setAccStatus('error')
+                  }
+                }}>
+                  <i className={`ti ${accStatus === 'running' ? 'ti-refresh' : 'ti-shield-check'}`} />
+                  {accStatus === 'running' ? 'Se rulează…' : 'Rulează pregătirea accesului'}
+                </button>
+                {accLog.length > 0 && (
+                  <div style={{ marginTop: 16, background: '#1B1B1F', borderRadius: 8, padding: 14, fontFamily: 'monospace', fontSize: 12 }}>
+                    {accLog.map((e, i) => (
+                      <div key={i} style={{ marginBottom: 4, color: e.tip === 'error' ? '#B24A4A' : e.tip === 'success' ? '#7FB896' : '#9A978C' }}>
+                        <span style={{ color: '#4A4A50' }}>[{e.timp}]</span> {e.msg}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
 
             {/* Migrare contoare */}
             <div className="card">

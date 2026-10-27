@@ -2,13 +2,16 @@ import { useEffect, useState } from 'react'
 import Topbar from '../../../shared/components/Topbar'
 import { useToast } from '../../../shared/components/Toast'
 import { useAuth } from '../../../shared/context/AuthContext'
-import { getUsers, saveUserProfile, updateUserProfile, deleteUserProfile } from '../../../shared/firebase/firestore'
+import { useNavigate } from 'react-router-dom'
+import { getUsers, getAllAcces, updateUserProfile, deleteUserProfile, NIVELURI } from '../../../shared/firebase/firestore'
 import { useImobile } from '../../../shared/hooks/useImobile'
 
 const emptyForm = () => ({ nume: '', email: '', rol: 'manager', imobileAccess: [], activ: true })
 
 export default function Utilizatori() {
   const toast          = useToast()
+  const navigate       = useNavigate()
+  const [accese, setAccese] = useState({})
   const { user, isAdmin } = useAuth()
   const { imobile }    = useImobile()
 
@@ -18,7 +21,10 @@ export default function Utilizatori() {
   const [form,    setForm]    = useState(emptyForm())
   const [saving,  setSaving]  = useState(false)
 
-  const load = () => getUsers().then(setUsers)
+  const load = async () => {
+    setUsers(await getUsers())
+    try { const a = await getAllAcces(); setAccese(Object.fromEntries(a.map(x => [x.id, x.imobile || {}]))) } catch (e) { console.warn(e) }
+  }
   useEffect(() => { load() }, [])
 
   if (!isAdmin) return (
@@ -28,7 +34,6 @@ export default function Utilizatori() {
     </div>
   )
 
-  const openAdd = () => { setForm(emptyForm()); setEditId(null); setModal(true) }
   const openEdit = (u) => {
     setForm({ nume: u.nume || '', email: u.email || '', rol: u.rol || 'manager', imobileAccess: u.imobileAccess || [], activ: u.activ !== false })
     setEditId(u.id); setModal(true)
@@ -45,18 +50,8 @@ export default function Utilizatori() {
     if (!form.email) { toast('Completează emailul.', 'error'); return }
     setSaving(true)
     try {
-      const data = {
-        ...form,
-        imobileAccess: form.rol === 'admin' ? [] : form.imobileAccess,
-      }
-      if (editId) {
-        await updateUserProfile(editId, data)
-        toast('Utilizator actualizat!')
-      } else {
-        // Creăm profilul — userul trebuie creat manual în Firebase Auth
-        await saveUserProfile(form.email.replace(/[^a-zA-Z0-9]/g, '_'), data)
-        toast('Profil creat! Adaugă userul și în Firebase Authentication.')
-      }
+      await updateUserProfile(editId, { nume: form.nume, rol: form.rol, activ: form.activ })
+      toast('Utilizator actualizat!')
       setModal(false); load()
     } catch { toast('Eroare la salvare.', 'error') }
     finally { setSaving(false) }
@@ -78,8 +73,8 @@ export default function Utilizatori() {
   return (
     <>
       <Topbar title="Utilizatori" subtitle="Gestionare accesuri și permisiuni">
-        <button className="btn btn-primary btn-sm" onClick={openAdd}>
-          <i className="ti ti-plus" /> Utilizator nou
+        <button className="btn btn-primary btn-sm" onClick={() => navigate('/acces')}>
+          <i className="ti ti-key" /> Invită / acces pe imobile
         </button>
       </Topbar>
 
@@ -87,8 +82,8 @@ export default function Utilizatori() {
         <div className="alert alert-info" style={{ marginBottom: 16 }}>
           <i className="ti ti-info-circle" />
           <span>
-            Utilizatorii trebuie creați mai întâi în <strong>Firebase Console → Authentication</strong> cu email și parolă.
-            Apoi adaugă-i aici pentru a seta rolul și imobilele permise.
+            Persoanele noi se adaugă prin <strong>cod de invitație</strong> din <strong>Setări → Acces imobile</strong>; ele își creează singure contul.
+            Aici gestionezi conturile existente (nume, rol, activ/inactiv). Accesul la imobile se setează doar în „Acces imobile”.
           </span>
         </div>
 
@@ -116,8 +111,8 @@ export default function Utilizatori() {
                   <td style={{ fontSize: 12, color: 'var(--slate)' }}>
                     {u.rol === 'admin'
                       ? <span className="badge badge-green">Toate imobilele</span>
-                      : u.imobileAccess?.length > 0
-                        ? u.imobileAccess.map(id => imobile.find(im => im.id === id)?.nume || id).join(', ')
+                      : Object.keys(accese[u.id] || {}).length > 0
+                        ? Object.entries(accese[u.id]).map(([id, n]) => `${imobile.find(im => im.id === id)?.nume || id} (${NIVELURI[n]})`).join(', ')
                         : <span style={{ color: 'var(--amber)' }}>Niciun imobil alocat</span>
                     }
                   </td>
@@ -162,7 +157,7 @@ export default function Utilizatori() {
                 </div>
                 <div className="form-group">
                   <label>Email *</label>
-                  <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="ion@firma.ro" disabled={!!editId} />
+                  <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="ion@firma.ro" disabled />
                 </div>
                 <div className="form-group full">
                   <label>Rol</label>
@@ -174,30 +169,9 @@ export default function Utilizatori() {
               </div>
 
               {form.rol === 'manager' && (
-                <div style={{ marginTop: 16 }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--slate)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '.5px' }}>
-                    Imobile accesibile
-                  </div>
-                  {imobile.length === 0 ? (
-                    <div style={{ color: 'var(--slate)', fontSize: 13 }}>Niciun imobil creat încă.</div>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {imobile.map(im => (
-                        <label key={im.id} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13 }}>
-                          <input
-                            type="checkbox"
-                            checked={form.imobileAccess.includes(im.id)}
-                            onChange={() => toggleImobil(im.id)}
-                            style={{ width: 16, height: 16 }}
-                          />
-                          <div>
-                            <div style={{ fontWeight: 500 }}>{im.nume}</div>
-                            {im.adresa && <div style={{ fontSize: 11, color: 'var(--slate)' }}>{im.adresa}</div>}
-                          </div>
-                        </label>
-                      ))}
-                    </div>
-                  )}
+                <div className="alert alert-info" style={{ marginTop: 16 }}>
+                  <i className="ti ti-info-circle" />
+                  <span>Imobilele și nivelul de acces se setează în <strong>Setări → Acces imobile</strong>.</span>
                 </div>
               )}
 

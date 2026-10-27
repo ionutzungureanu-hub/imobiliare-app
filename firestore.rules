@@ -1,0 +1,211 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ══ Funcții ajutătoare ═══════════════════════════════════
+    function signedIn()  { return request.auth != null; }
+    function profPath()  { return /databases/$(database)/documents/users/$(request.auth.uid); }
+    function accPath()   { return /databases/$(database)/documents/acces/$(request.auth.uid); }
+
+    // Cont activ = există profil users/{uid} și nu e dezactivat
+    function isActive()  { return signedIn() && exists(profPath()) && get(profPath()).data.get('activ', true) != false; }
+    // Administrator general = users/{uid}.rol == 'admin'
+    function isAdmin()   { return isActive() && get(profPath()).data.get('rol', 'manager') == 'admin'; }
+    // Are acces pe cel puțin un imobil (document acces/{uid})
+    function hasAcc()    { return isActive() && exists(accPath()); }
+    function acc()       { return get(accPath()).data; }
+    function canAny()    { return isAdmin() || hasAcc(); }
+
+    // Nivelul pe un imobil: 0 fără acces · 1 vizualizare · 2 operare · 3 administrare
+    function nivel(imobilId) {
+      return (hasAcc() && imobilId is string && (imobilId in acc().get('imobile', {})))
+        ? acc().imobile[imobilId] : 0;
+    }
+
+    // Documente care poartă câmpul imobilId
+    function rd(min) { return isAdmin() || nivel(resource.data.imobilId) >= min; }
+    function wr(min) { return isAdmin() || nivel(request.resource.data.imobilId) >= min; }
+
+    // ══ Utilizatori ══════════════════════════════════════════
+    match /users/{userId} {
+      allow get:    if signedIn() && (request.auth.uid == userId || isAdmin());
+      allow list:   if isAdmin();
+      // Un cont nou își poate crea doar profilul de „manager” (la acceptarea unei invitații)
+      allow create: if isAdmin() || (signedIn() && request.auth.uid == userId
+                       && request.resource.data.rol == 'manager' && request.resource.data.activ == true);
+      allow update, delete: if isAdmin();
+    }
+
+    // ══ Acces pe imobil ══════════════════════════════════════
+    function myAdm() { return hasAcc() ? acc().get('adm', []) : []; }
+
+    // Administratorul unui imobil poate modifica accesul doar pe imobilele lui (nu și lista „adm”)
+    function delegatPoate() {
+      return hasAcc() && myAdm().size() > 0 && resource != null
+        && request.resource.data.imobile.diff(resource.data.imobile).affectedKeys().hasOnly(myAdm())
+        && request.resource.data.get('adm', []) == resource.data.get('adm', []);
+    }
+    function invPath(cod) { return /databases/$(database)/documents/invitatii/$(cod); }
+    // Acceptarea unei invitații: persoana își acordă singură EXACT accesul din invitație
+    function acceptaInvitatia(userId) {
+      return signedIn() && request.auth.uid == userId
+        && request.resource.data.ultimulCod is string
+        && exists(invPath(request.resource.data.ultimulCod))
+        && get(invPath(request.resource.data.ultimulCod)).data.folosit == false
+        && get(invPath(request.resource.data.ultimulCod)).data.expiraLa > request.time
+        && getAfter(invPath(request.resource.data.ultimulCod)).data.folosit == true
+        && getAfter(invPath(request.resource.data.ultimulCod)).data.folositDe == userId
+        && request.resource.data.imobile[get(invPath(request.resource.data.ultimulCod)).data.imobilId]
+             == get(invPath(request.resource.data.ultimulCod)).data.nivel
+        && request.resource.data.get('adm', []) == (resource == null ? [] : resource.data.get('adm', []))
+        && (resource == null
+              ? request.resource.data.imobile.keys().hasOnly([get(invPath(request.resource.data.ultimulCod)).data.imobilId])
+              : request.resource.data.imobile.diff(resource.data.imobile).affectedKeys()
+                  .hasOnly([get(invPath(request.resource.data.ultimulCod)).data.imobilId]));
+    }
+    match /acces/{userId} {
+      allow get:    if signedIn() && (request.auth.uid == userId || isAdmin()
+                        || (hasAcc() && resource.data.get('imobile', {}).keys().hasAny(myAdm())));
+      allow list:   if isAdmin();
+      allow create: if isAdmin() || acceptaInvitatia(userId);
+      allow update: if isAdmin() || delegatPoate() || acceptaInvitatia(userId);
+      allow delete: if isAdmin();
+    }
+
+    // ══ Invitații ════════════════════════════════════════════
+    // Codul este secretul: se poate citi un document doar dacă îi știi ID-ul. Colecția nu poate fi listată de public.
+    match /invitatii/{cod} {
+      allow get:    if true;
+      allow list:   if isAdmin() || nivel(resource.data.imobilId) >= 3;
+      allow create: if (isAdmin() || nivel(request.resource.data.imobilId) >= 3)
+                      && request.resource.data.folosit == false
+                      && request.resource.data.creatDe == request.auth.uid
+                      && request.resource.data.nivel in [1, 2, 3]
+                      && (isAdmin() || request.resource.data.nivel <= 2);
+      allow update: if signedIn() && resource.data.folosit == false
+                      && request.resource.data.folosit == true
+                      && request.resource.data.folositDe == request.auth.uid
+                      && resource.data.expiraLa > request.time
+                      && request.resource.data.diff(resource.data).affectedKeys()
+                           .hasOnly(['folosit', 'folositDe', 'folositDeNume', 'folositLa']);
+      allow delete: if isAdmin() || nivel(resource.data.imobilId) >= 3;
+    }
+
+    // ══ Imobile ══════════════════════════════════════════════
+    match /imobile/{imobilId} {
+      allow get:    if isAdmin() || nivel(imobilId) >= 1;
+      allow list:   if isAdmin();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || nivel(imobilId) >= 3;
+    }
+    match /preturi_imobil/{imobilId} {
+      allow get:    if isAdmin() || nivel(imobilId) >= 1;
+      allow write:  if isAdmin() || nivel(imobilId) >= 3;
+    }
+
+    // ══ Date legate de imobil (câmpul imobilId pe fiecare document) ══
+    match /spatii/{id} {
+      allow read:   if rd(1);
+      allow create: if wr(3);
+      allow update: if rd(2) && wr(2);
+      allow delete: if rd(3);
+    }
+    match /contoare/{id} {
+      allow read:   if rd(1);
+      allow create: if wr(2);
+      allow update: if rd(2) && wr(2);
+      allow delete: if rd(2);
+    }
+    match /citiri/{id} {
+      allow read:   if rd(1);
+      allow create: if wr(2);
+      allow update: if rd(2) && wr(2);
+      allow delete: if rd(2);
+    }
+    match /registru_contracte/{id} {
+      allow read:   if rd(1);
+      allow create: if wr(2);
+      allow update: if rd(2) && wr(2);
+      allow delete: if rd(3);
+    }
+    match /note_calcul/{id}       { allow read: if rd(1); allow create: if wr(2); allow update: if rd(2) && wr(2); allow delete: if rd(2); }
+    match /templates_nota/{id}    { allow read: if rd(1); allow create: if wr(2); allow update: if rd(2) && wr(2); allow delete: if rd(2); }
+    match /istoric_spatiu/{id}    { allow read: if rd(1); allow create: if wr(2); allow update: if rd(2) && wr(2); allow delete: if rd(2); }
+    match /contracte_drafturi/{id}{ allow read: if rd(1); allow create: if wr(2); allow update: if rd(2) && wr(2); allow delete: if rd(2); }
+    match /documente/{id}         { allow read: if rd(1); allow create: if wr(2); allow update: if rd(2) && wr(2); allow delete: if rd(2); }
+    match /note/{id}              { allow read: if rd(1); allow create: if wr(2); allow update: if rd(2) && wr(2); allow delete: if rd(2); }
+    match /emailuri/{id}          { allow read: if rd(1); allow create: if wr(2); allow update: if rd(2) && wr(2); allow delete: if rd(2); }
+    match /comunicari/{id}        { allow read: if rd(1); allow create: if wr(2); allow update: if rd(2) && wr(2); allow delete: if rd(2); }
+
+    // ══ Clienți ══════════════════════════════════════════════
+    // Clientul poartă lista „imobile”. NOTĂ: Firestore nu poate filtra o listare după o listă dinamică,
+    // așa că listarea e permisă oricărui utilizator cu acces; aplicația afișează doar clienții imobilelor lui.
+    // Citirea unui client individual, scrierea și ștergerea sunt strict pe imobil.
+    match /clienti/{id} {
+      allow get:    if isAdmin() || (hasAcc() && resource.data.get('imobile', []).hasAny(acc().get('imobile', {}).keys()));
+      allow list:   if isAdmin() || hasAcc();
+      allow create: if isAdmin() || (hasAcc() && request.resource.data.imobile.size() > 0
+                        && nivel(request.resource.data.imobile[0]) >= 2);
+      allow update: if isAdmin() || (hasAcc() && (
+                          (resource.data.get('imobile', []).size() > 0 && nivel(resource.data.imobile[0]) >= 2)
+                       || (resource.data.get('imobile', []).size() > 0 && nivel(resource.data.imobile[resource.data.imobile.size() - 1]) >= 2)
+                       || (request.resource.data.imobile.size() > 0
+                           && nivel(request.resource.data.imobile[request.resource.data.imobile.size() - 1]) >= 2)));
+      allow delete: if isAdmin() || (hasAcc() && resource.data.get('imobile', []).size() > 0
+                        && nivel(resource.data.imobile[0]) >= 3);
+    }
+
+    // ══ Portal chiriași (acces public prin token) ════════════
+    // Documentul portalului are ID = token. Chiriașul îl poate citi doar dacă știe tokenul; colecția nu se listează public.
+    function portalPath(d) { return /databases/$(database)/documents/portale/$(d.token); }
+    function portalOk(d) {
+      return d.token is string && exists(portalPath(d))
+        && get(portalPath(d)).data.get('activ', true) == true
+        && (get(portalPath(d)).data.get('valabilPanaTs', null) == null
+            || request.time < get(portalPath(d)).data.valabilPanaTs)
+        && d.spatiuId == get(portalPath(d)).data.spatiuId
+        && d.imobilId == get(portalPath(d)).data.imobilId;
+    }
+    match /portale/{token} {
+      allow get:    if true;
+      allow list:   if rd(1);
+      allow create: if wr(2);
+      allow update: if rd(2) && wr(2);
+      allow delete: if rd(2);
+    }
+    match /indexuri_primite/{id} {
+      allow create: if portalOk(request.resource.data)
+                      && request.resource.data.status == 'asteptare'
+                      && request.resource.data.indexNou is number
+                      && request.resource.data.keys().hasOnly(['token', 'spatiuId', 'imobilId', 'contorId', 'tip', 'um',
+                           'indexNou', 'indexPrecedent', 'consum', 'status', 'avePoza', 'dataTrimis']);
+      allow read:   if rd(1);
+      allow update: if rd(2) && wr(2);
+      allow delete: if rd(2);
+    }
+    match /cereri_portal/{id} {
+      allow create: if portalOk(request.resource.data)
+                      && request.resource.data.status == 'nou'
+                      && request.resource.data.tip in ['sesizare', 'informare', 'document']
+                      && request.resource.data.text is string && request.resource.data.text.size() <= 3000
+                      && request.resource.data.fisiere is list && request.resource.data.fisiere.size() <= 5
+                      && request.resource.data.keys().hasOnly(['token', 'spatiuId', 'imobilId', 'tip', 'text', 'fisiere',
+                           'chiriasNume', 'contact', 'status', 'dataTrimis']);
+      allow read:   if rd(1);
+      allow update: if rd(2) && wr(2);
+      allow delete: if rd(3);
+    }
+
+    // ══ Configurări comune ═══════════════════════════════════
+    match /config/{docId}              { allow read: if canAny(); allow write: if isAdmin(); }
+    match /serii_contracte/{docId}     { allow read, write: if canAny(); }
+    match /templates_contracte/{docId} { allow read: if canAny(); allow write: if isAdmin(); }
+    match /expeditori_email/{docId}    { allow read, write: if canAny(); }
+    match /template_email/{docId}      { allow read, write: if canAny(); }
+
+    // ── Orice altă colecție — blocată ──
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
