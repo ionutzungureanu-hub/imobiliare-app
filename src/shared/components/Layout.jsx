@@ -4,35 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { ToastProvider, useToast } from './Toast'
 import GlobalSearch from './GlobalSearch'
 import { getIndexuriPrimite } from '../firebase/firestore'
-
-const NAV_ALL = [
-  { to: '/dashboard',          icon: 'ti-layout-dashboard', label: 'Dashboard',         section: 'Acasă' },
-
-  { to: '/clienti',            icon: 'ti-users',            label: 'Clienți',           section: 'Persoane și spații' },
-  { to: '/spatii',             icon: 'ti-building',         label: 'Spații & Imobile',  section: 'Persoane și spații', desktopOnly: true },
-  { to: '/contracte',          icon: 'ti-file-text',        label: 'Contracte',         section: 'Persoane și spații', desktopOnly: true },
-  { to: '/comunicare',         icon: 'ti-mail',             label: 'Comunicare',        section: 'Persoane și spații', desktopOnly: true },
-  { to: '/portal-chiriasi',    icon: 'ti-link',             label: 'Portal chiriași',   section: 'Persoane și spații' },
-
-  { to: '/citire',             icon: 'ti-bolt',             label: '1 · Citire indexuri', section: 'Ciclul lunar', badge: true },
-  { to: '/nota-administratie', icon: 'ti-droplet',          label: '2 · Notă apă bloc',   section: 'Ciclul lunar' },
-  { to: '/facturi',            icon: 'ti-receipt',          label: '3 · Facturi',         section: 'Ciclul lunar', desktopOnly: true },
-
-  { to: '/biblioteca',         icon: 'ti-books',            label: 'Bibliotecă',        section: 'Documente și rapoarte' },
-  { to: '/rapoarte',           icon: 'ti-chart-bar',        label: 'Rapoarte',          section: 'Documente și rapoarte', desktopOnly: true },
-
-  { to: '/acces',              icon: 'ti-key',              label: 'Acces imobile',     section: 'Setări', delegatOk: true, desktopOnly: true },
-  { to: '/utilizatori',        icon: 'ti-user-cog',         label: 'Utilizatori',       section: 'Setări', adminOnly: true, desktopOnly: true },
-  { to: '/config',             icon: 'ti-settings',         label: 'Configurare',       section: 'Setări', adminOnly: true, desktopOnly: true },
-  { to: '/furnizori',          icon: 'ti-file-import',      label: 'Furnizori',         section: 'Setări', adminOnly: true, desktopOnly: true },
-]
-
-const MOBILE_NAV = [
-  { to: '/dashboard',   icon: 'ti-layout-dashboard', label: 'Acasă'   },
-  { to: '/clienti',     icon: 'ti-users',            label: 'Clienți' },
-  { to: '/citire',      icon: 'ti-bolt',             label: 'Citire', badge: true },
-  { to: '/nota-calcul', icon: 'ti-calculator',       label: 'Notă'    },
-]
+import { useMeniu } from '../context/MeniuContext'
 
 const Badge = ({ n }) => n > 0 ? (
   <span style={{ marginLeft: 'auto', background: '#9B2C2C', color: '#fff', borderRadius: 10, fontSize: 11, fontWeight: 700, padding: '1px 7px' }}>{n}</span>
@@ -56,7 +28,7 @@ function Salut() {
 }
 
 export default function Layout() {
-  const { user, profile, isAdmin, esteDelegat, logout } = useAuth()
+  const { user, profile, isAdmin, logout } = useAuth()
   const navigate  = useNavigate()
   const location  = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -80,11 +52,10 @@ export default function Layout() {
     try { localStorage.setItem('nav_inchise', JSON.stringify(nou)) } catch {}
     return nou
   })
-  const nav = NAV_ALL.filter(item =>
-    (!item.adminOnly || isAdmin) &&
-    (!item.delegatOk || isAdmin || esteDelegat) &&
-    (!item.desktopOnly || !isMobile)
-  )
+  const { moduleMeniu, bara } = useMeniu()
+  // Meniul decide ce se vede (Setări → Administrare meniu)
+  const nav = moduleMeniu().map(m => ({ to: m.to, icon: m.icon, label: m.label, section: m.section, badge: m.badge }))
+  const MOBILE_NAV = bara().map(m => ({ to: m.to, icon: m.icon, label: m.scurt || m.label, badge: m.badge }))
   let lastSection = ''
 
   return (
@@ -193,6 +164,7 @@ function getPageTitle(path) {
     '/emite': 'Factură chirie',
     '/emite-utilitati': 'Factură utilități', '/emise': 'Facturi emise',
     '/furnizori': 'Furnizori', '/utilizatori': 'Utilizatori', '/config': 'Configurare',
+    '/acces': 'Acces imobile', '/meniu': 'Administrare meniu', '/portal-chiriasi': 'Portal chiriași',
   }
   return map[path] || map[path.split('/').slice(0, 2).join('/')] || 'Rentis'
 }

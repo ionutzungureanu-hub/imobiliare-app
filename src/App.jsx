@@ -1,6 +1,8 @@
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './shared/context/AuthContext'
+import { MeniuProvider, useMeniu } from './shared/context/MeniuContext'
+import Garda from './shared/components/Garda'
 import Layout from './shared/components/Layout'
 
 // ── Shared (rute publice / pre-autentificare) ──────────────────
@@ -25,6 +27,7 @@ const Rapoarte                               = lazy(() => import('./modules/admi
 const ImportClienti                            = lazy(() => import('./modules/administrare/pages/ImportClienti'))
 const Utilizatori                                = lazy(() => import('./modules/administrare/pages/Utilizatori'))
 const Config                                       = lazy(() => import('./modules/administrare/pages/Config'))
+const AdministrareMeniu                              = lazy(() => import('./modules/administrare/pages/AdministrareMeniu'))
 const AccesImobile                                   = lazy(() => import('./modules/administrare/pages/AccesImobile'))
 const PortalChiriasi                                 = lazy(() => import('./modules/administrare/pages/PortalChiriasi'))
 
@@ -42,7 +45,9 @@ function RedirectFacturi({ tab }) {
 
 // Pe desktop nota de calcul face parte din Facturi; pe telefon rămâne pagina separată (din bara de jos)
 function RouteNota() {
-  return window.innerWidth > 768 ? <RedirectFacturi tab="nota" /> : <NotaCalcul />
+  return window.innerWidth > 768
+    ? <Garda k="facturi"><RedirectFacturi tab="nota" /></Garda>
+    : <Garda k="nota_calcul"><NotaCalcul /></Garda>
 }
 
 function PrivateRoute({ children }) {
@@ -63,6 +68,7 @@ function PageLoading() {
 export default function App() {
   return (
     <AuthProvider>
+      <MeniuProvider>
       <BrowserRouter>
         <Suspense fallback={<PageLoading />}>
           <Routes>
@@ -73,37 +79,39 @@ export default function App() {
 
               {/* ── Administrare ── */}
               <Route path="dashboard"        element={<Dashboard />} />
-              <Route path="clienti"          element={<Clienti />} />
-              <Route path="clienti/:id"      element={<ClientDetail />} />
-              <Route path="spatii"           element={<Spatii />} />
-              <Route path="comunicare"       element={<Comunicare />} />
-              <Route path="citire"           element={<Citire />} />
+              <Route path="clienti"          element={<Garda k="clienti"><Clienti /></Garda>} />
+              <Route path="clienti/:id"      element={<Garda k="clienti"><ClientDetail /></Garda>} />
+              <Route path="spatii"           element={<Garda k="spatii"><Spatii /></Garda>} />
+              <Route path="comunicare"       element={<Garda k="comunicare"><Comunicare /></Garda>} />
+              <Route path="citire"           element={<Garda k="citire"><Citire /></Garda>} />
               <Route path="utilitati"        element={<Navigate to="/citire" replace />} />
               <Route path="nota-calcul"      element={<RouteNota />} />
-              <Route path="utilizatori"      element={<Utilizatori />} />
-              <Route path="acces"            element={<AccesImobile />} />
-              <Route path="portal-chiriasi"  element={<PortalChiriasi />} />
-              <Route path="config"           element={<Config />} />
-              <Route path="import-clienti"   element={<ImportClienti />} />
-              <Route path="biblioteca"       element={<Biblioteca />} />
+              <Route path="utilizatori"      element={<Garda k="utilizatori"><Utilizatori /></Garda>} />
+              <Route path="acces"            element={<Garda k="acces"><AccesImobile /></Garda>} />
+              <Route path="meniu"            element={<Garda k="meniu"><AdministrareMeniu /></Garda>} />
+              <Route path="portal-chiriasi"  element={<Garda k="portal"><PortalChiriasi /></Garda>} />
+              <Route path="config"           element={<Garda k="config"><Config /></Garda>} />
+              <Route path="import-clienti"   element={<Garda k="clienti"><ImportClienti /></Garda>} />
+              <Route path="biblioteca"       element={<Garda k="biblioteca"><Biblioteca /></Garda>} />
               <Route path="utilitati-mobile" element={<Navigate to="/citire" replace />} />
-              <Route path="spatii/:spatiuId/istoric" element={<IstoricSpatiu />} />
-              <Route path="nota-administratie"       element={<NotaAdministratie />} />
-              <Route path="contracte"                element={<Contracte />} />
-              <Route path="rapoarte"                 element={<Rapoarte />} />
-              <Route path="spatii/:spatiuId/portal"  element={<PortalSetari />} />
+              <Route path="spatii/:spatiuId/istoric" element={<Garda k="spatii"><IstoricSpatiu /></Garda>} />
+              <Route path="nota-administratie"       element={<Garda k="nota"><NotaAdministratie /></Garda>} />
+              <Route path="contracte"                element={<Garda k="contracte"><Contracte /></Garda>} />
+              <Route path="rapoarte"                 element={<Garda k="rapoarte"><Rapoarte /></Garda>} />
+              <Route path="spatii/:spatiuId/portal"  element={<Garda k="spatii"><PortalSetari /></Garda>} />
               <Route path="validare-indexuri"        element={<Navigate to="/citire?tab=validare" replace />} />
 
               {/* ── Facturare ── */}
-              <Route path="facturi"          element={<Facturi />} />
-              <Route path="emite"            element={<RedirectFacturi tab="chirie" />} />
-              <Route path="emite-utilitati"  element={<RedirectFacturi tab="utilitati" />} />
-              <Route path="emise"            element={<RedirectFacturi tab="istoric" />} />
-              <Route path="furnizori"        element={<FurnizoriFacturi />} />
+              <Route path="facturi"          element={<Garda k="facturi"><Facturi /></Garda>} />
+              <Route path="emite"            element={<Garda k="facturi"><RedirectFacturi tab="chirie" /></Garda>} />
+              <Route path="emite-utilitati"  element={<Garda k="facturi"><RedirectFacturi tab="utilitati" /></Garda>} />
+              <Route path="emise"            element={<Garda k="facturi"><RedirectFacturi tab="istoric" /></Garda>} />
+              <Route path="furnizori"        element={<Garda k="furnizori"><FurnizoriFacturi /></Garda>} />
             </Route>
           </Routes>
         </Suspense>
       </BrowserRouter>
+      </MeniuProvider>
     </AuthProvider>
   )
 }

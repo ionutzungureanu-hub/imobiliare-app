@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useMeniu } from '../context/MeniuContext'
 import { getClienti, getImobile, getSpatii, getDrafturiContracte } from '../firebase/firestore'
 
 const norm = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
@@ -7,6 +8,7 @@ const norm = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '
 // Căutare globală: clienți, imobile, spații, contracte. Datele se încarcă o singură dată, la prima folosire.
 export default function GlobalSearch({ isAdmin, isMobile }) {
   const navigate = useNavigate()
+  const { vizibilCale } = useMeniu()
   const [q, setQ]           = useState('')
   const [open, setOpen]     = useState(false)
   const [expand, setExpand] = useState(false)
@@ -66,8 +68,8 @@ export default function GlobalSearch({ isAdmin, isMobile }) {
       if (norm(titlu).includes(t) || norm(d.serie).includes(t) || norm(d.numar).includes(t))
         out.push({ k: 'd' + d.id, grup: 'Contracte', icon: 'ti-file-text', titlu: titlu || 'Contract', sub: [d.serie, d.numar].filter(Boolean).join(' '), to: '/contracte' })
     })
-    return out.slice(0, 30)
-  }, [q, data, isMobile])
+    return out.filter(r => vizibilCale(r.to)).slice(0, 30)
+  }, [q, data, isMobile, vizibilCale])
 
   const go = r => { setOpen(false); setExpand(false); setQ(''); navigate(r.to) }
 

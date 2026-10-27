@@ -1,6 +1,8 @@
 import { useNavigate } from 'react-router-dom'
 import Topbar from '../../../shared/components/Topbar'
 import { useAuth } from '../../../shared/context/AuthContext'
+import { useMeniu } from '../../../shared/context/MeniuContext'
+import { moduleDinCale } from '../../../shared/config/moduleCatalog'
 
 // Butoane de navigare rapidă, grupate logic — fără duplicare de date din alte pagini.
 // Rutele și iconițele sunt aliniate cu meniul din Layout.jsx pentru consistență.
@@ -48,22 +50,29 @@ const GRUPURI = [
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const { profile, isAdmin } = useAuth()
+  const { profile } = useAuth()
+  const { vizibil } = useMeniu()
+  // Cartonaș vizibil = modulul e vizibil pe acest dispozitiv ȘI e bifat pentru Acasă
+  const arata = (cale) => { const m = moduleDinCale(cale); return !m || (vizibil(m.key) && vizibil(m.key, 'h')) }
 
   return (
     <>
       <Topbar title="Dashboard" subtitle={`Bun venit, ${profile?.apelativ || profile?.nume || 'Utilizator'}!`}>
-        <button className="btn btn-primary btn-sm" onClick={() => navigate('/nota-calcul')}>
-          <i className="ti ti-calculator" /> Notă de calcul
-        </button>
-        <button className="btn btn-ghost btn-sm" onClick={() => navigate('/facturi')}>
-          <i className="ti ti-file-plus" /> Factură nouă
-        </button>
+        {vizibil('nota_calcul') && (
+          <button className="btn btn-primary btn-sm" onClick={() => navigate('/nota-calcul')}>
+            <i className="ti ti-calculator" /> Notă de calcul
+          </button>
+        )}
+        {vizibil('facturi') && (
+          <button className="btn btn-ghost btn-sm" onClick={() => navigate('/facturi')}>
+            <i className="ti ti-file-plus" /> Factură nouă
+          </button>
+        )}
       </Topbar>
 
       <div className="content">
         {GRUPURI.map(grup => {
-          const itemiVizibili = grup.itemi.filter(item => !item.adminOnly || isAdmin)
+          const itemiVizibili = grup.itemi.filter(item => arata(item.to))
           if (itemiVizibili.length === 0) return null
 
           return (
@@ -85,7 +94,7 @@ export default function Dashboard() {
                   <button
                     key={item.to}
                     onClick={() => navigate(item.to)}
-                    className={item.desktopOnly ? 'dashboard-btn dashboard-btn-desktop' : 'dashboard-btn'}
+                    className="dashboard-btn"
                     style={{
                       display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 10,
                       padding: '18px 16px', background: 'white', border: '1px solid var(--border)',

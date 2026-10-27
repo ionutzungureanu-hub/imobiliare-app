@@ -836,3 +836,15 @@ export const migreazaImobilId = async (onProgress, { uid, email } = {}) => {
   onProgress?.({ pas: 'Gata' })
   return rap
 }
+
+
+// ══ ADMINISTRARE MENIU ═════════════════════════════════════════
+// config/meniu = { standard: {cheie:{d,m,h}}, ordine:[...], bara:[...], persoane:{uid:{cheie:{d,m,h}}} }
+export const getMeniuConfig = async () => {
+  const snap = await getDoc(doc(db, 'config', 'meniu'))
+  return snap.exists() ? snap.data() : {}
+}
+export const saveMeniuConfig = async (cfg) => {
+  const { updatedAt: _u, ...curat } = JSON.parse(JSON.stringify(cfg))
+  await setDoc(doc(db, 'config', 'meniu'), { ...curat, updatedAt: serverTimestamp() })
+}
