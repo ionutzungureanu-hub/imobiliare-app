@@ -1,13 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { usernameLaEmail } from '../services/utilizatoriApi'
 
 export default function Login() {
-  const { login, register } = useAuth()
-  const [nou, setNou] = useState(false)
-  const [password2, setPassword2] = useState('')
+  const { login } = useAuth()
   const navigate  = useNavigate()
-  const [email, setEmail]       = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError]       = useState('')
   const [loading, setLoading]   = useState(false)
@@ -17,19 +16,24 @@ export default function Login() {
     setError('')
     setLoading(true)
     try {
-      if (nou) {
-        if (password.length < 8) { setError('Parola trebuie să aibă minim 8 caractere.'); setLoading(false); return }
-        if (password !== password2) { setError('Parolele nu coincid.'); setLoading(false); return }
-        await register(email.trim(), password)
-      } else {
-        await login(email, password)
-      }
+      await login(usernameLaEmail(username), password)
       navigate('/dashboard')
     } catch (err) {
       const c = err?.code || ''
-      setError(nou
-        ? (c === 'auth/email-already-in-use' ? 'Există deja un cont cu acest email.' : c === 'auth/weak-password' ? 'Parola este prea slabă.' : 'Contul nu a putut fi creat.')
-        : 'Email sau parolă incorectă.')
+      console.error('auth', c, err)
+      const MSG = {
+        'auth/invalid-credential': 'Username sau parolă incorectă.',
+        'auth/wrong-password': 'Username sau parolă incorectă.',
+        'auth/user-not-found': 'Username sau parolă incorectă.',
+        'auth/invalid-email': 'Username invalid.',
+        'auth/user-disabled': 'Contul este dezactivat. Contactează administratorul.',
+        'auth/network-request-failed': 'Fără conexiune la internet. Încearcă din nou.',
+        'auth/too-many-requests': 'Prea multe încercări. Așteaptă câteva minute.',
+        'auth/operation-not-allowed': 'Autentificarea cu email și parolă nu este activată în Firebase (Authentication → Sign-in method).',
+        'auth/invalid-api-key': 'Configurarea Firebase a aplicației este incorectă (cheie API).',
+        'auth/unauthorized-domain': 'Acest domeniu nu este autorizat în Firebase (Authentication → Settings → Authorized domains).',
+      }
+      setError(MSG[c] || `Autentificarea a eșuat (${c || err?.message || 'eroare necunoscută'}).`)
     } finally {
       setLoading(false)
     }
@@ -46,17 +50,16 @@ export default function Login() {
 
         <form onSubmit={handleSubmit}>
           <div className="form-group" style={{ marginBottom: 14 }}>
-            <label htmlFor="login-email">Email</label>
+            <label htmlFor="login-user">Username</label>
             <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="email@firma.ro"
+              type="text"
+              value={username}
+              onChange={e => setUsername(e.target.value)}
+              placeholder="username"
               required
-              name="email"
-              id="login-email"
+              name="username"
+              id="login-user"
               autoComplete="username"
-              inputMode="email"
               autoCapitalize="none"
               autoCorrect="off"
               spellCheck={false}
@@ -73,23 +76,12 @@ export default function Login() {
               required
               name="password"
               id="login-password"
-              autoComplete={nou ? 'new-password' : 'current-password'}
+              autoComplete="current-password"
               enterKeyHint="go"
             />
           </div>
-          {nou && (
-            <div className="form-group" style={{ marginBottom: 20 }}>
-              <label htmlFor="login-password2">Repetă parola</label>
-              <input type="password" id="login-password2" name="password2" autoComplete="new-password"
-                value={password2} onChange={e => setPassword2(e.target.value)} required />
-            </div>
-          )}
           <button className="btn btn-primary" type="submit" disabled={loading} style={{ width: '100%', justifyContent: 'center' }}>
-            {loading ? 'Se procesează…' : nou ? 'Creează cont' : 'Intră în cont'}
-          </button>
-          <button type="button" className="btn btn-ghost btn-sm" style={{ width: '100%', justifyContent: 'center', marginTop: 10 }}
-            onClick={() => { setNou(n => !n); setError('') }}>
-            {nou ? 'Am deja cont' : 'Cont nou (necesită aprobarea administratorului)'}
+            {loading ? 'Se procesează…' : 'Intră în cont'}
           </button>
         </form>
       </div>

@@ -9,14 +9,14 @@ export default function FaraAcces() {
     <div className="login-wrap">
       <div className="login-card" style={{ textAlign: 'center' }}>
         <div className="login-logo"><img src="/logo-rentis.png" alt="Rentis" style={{ width: 240, maxWidth: '100%', height: 'auto' }} /></div>
-        <h2 style={{ fontFamily: 'var(--serif)', color: 'var(--blue)', marginBottom: 8 }}>Cont în așteptare</h2>
+        <h2 style={{ fontFamily: 'var(--serif)', color: 'var(--blue)', marginBottom: 8 }}>Fără acces</h2>
         <p style={{ color: 'var(--slate)', fontSize: 14, marginBottom: 6 }}>
-          Contul <strong>{user?.email}</strong> nu are încă acces la niciun imobil.
+          Contul <strong>{profile?.username || user?.email}</strong> nu are acces la niciun imobil.
         </p>
         <p style={{ color: 'var(--slate)', fontSize: 13, marginBottom: 18 }}>
           {profile?.activ === false
             ? 'Contul este dezactivat. Contactează administratorul.'
-            : 'Administratorul îți poate acorda acces din Setări → Acces imobile. După aceea reîncarcă pagina.'}
+            : 'Cere administratorului să îți acorde acces. După aceea reîncarcă pagina.'}
         </p>
         <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}
           onClick={async () => { await logout(); navigate('/login') }}>Ieși din cont</button>

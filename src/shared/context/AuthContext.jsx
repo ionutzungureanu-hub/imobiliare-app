@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth'
+import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth'
 import { auth } from '../firebase/config'
-import { getUserProfile, getAccesUser, setScope, getBootstrapFlag, creeazaProfilPropriu, updateUserProfile } from '../firebase/firestore'
+import { getUserProfile, getAccesUser, setScope, updateUserProfile } from '../firebase/firestore'
 import { setApelativ, adreseaza } from '../utils/apelativ'
 
 // Confirmările din aplicație se adresează direct: „Ionuț, ștergi contractul?”
@@ -28,12 +28,6 @@ export function AuthProvider({ children }) {
     if (!u) { setProfile(null); setAcces(null); setScope({ admin: false, ids: [] }); return }
     let prof = null, acc = null
     try { prof = await getUserProfile(u.uid) } catch (e) { console.warn('profil', e) }
-    // Cont nou fără profil: după configurarea inițială, creăm profilul ca să apară în „Acces imobile”
-    if (!prof) {
-      try {
-        if (await getBootstrapFlag()) { await creeazaProfilPropriu(u.uid, u.email, u.displayName); prof = await getUserProfile(u.uid) }
-      } catch (e) { console.warn('profil nou', e) }
-    }
     try { acc  = await getAccesUser(u.uid) }  catch (e) { console.warn('acces', e) }
     const activ  = !prof || prof.activ !== false
     const admin  = !!prof && prof.rol === 'admin' && activ
@@ -54,7 +48,6 @@ export function AuthProvider({ children }) {
   }, [incarca])
 
   const login    = (email, password) => signInWithEmailAndPassword(auth, email, password)
-  const register = (email, password) => createUserWithEmailAndPassword(auth, email, password)
   const logout   = () => signOut(auth)
   const reload   = () => incarca(auth.currentUser)
   const salveazaApelativ = async (v) => {
@@ -80,7 +73,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider value={{
-      user, profile, acces, loading, login, register, logout, reload, salveazaApelativ,
+      user, profile, acces, loading, login, logout, reload, salveazaApelativ,
       isAdmin, accessIds, nivelPe, canView, canWrite, canAdmin,
       imobileAdministrate, esteDelegat, faraAcces,
     }}>

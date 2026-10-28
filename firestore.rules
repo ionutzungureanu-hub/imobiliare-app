@@ -30,9 +30,8 @@ service cloud.firestore {
     match /users/{userId} {
       allow get:    if signedIn() && (request.auth.uid == userId || isAdmin());
       allow list:   if isAdmin();
-      // Un cont nou își poate crea doar profilul de „manager” (la acceptarea unei invitații)
-      allow create: if isAdmin() || (signedIn() && request.auth.uid == userId
-                       && request.resource.data.rol == 'manager' && request.resource.data.activ == true);
+      // Conturile se creează doar de administrator (funcția Netlify, prin Admin SDK)
+      allow create: if isAdmin();
       // Oricine își poate schimba doar apelativul propriu
       allow update: if isAdmin() || (signedIn() && request.auth.uid == userId
                        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['apelativ']));
@@ -154,7 +153,6 @@ service cloud.firestore {
 
     // ══ Configurări comune ═══════════════════════════════════
     // Semnalul „configurarea inițială s-a făcut” — citibil de orice cont autentificat (ca să-și poată crea profilul)
-    match /config/bootstrap            { allow get: if signedIn(); allow write: if isAdmin(); }
     match /config/{docId}              { allow read: if canAny(); allow write: if isAdmin(); }
     match /serii_contracte/{docId}     { allow read, write: if canAny(); }
     match /templates_contracte/{docId} { allow read: if canAny(); allow write: if isAdmin(); }

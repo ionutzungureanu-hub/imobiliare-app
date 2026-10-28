@@ -89,7 +89,7 @@ export default function AccesImobile() {
         <div className="alert alert-info" style={{ marginBottom: 16 }}>
           <i className="ti ti-info-circle" />
           <span>
-            Persoana își creează contul din ecranul de login („Cont nou”) și apare aici. <strong>Bifezi imobilul</strong> și ea vede imediat tot ce ține de el
+            Conturile le creezi din <strong>Utilizatori</strong> (username + parolă). <strong>Bifezi imobilul</strong> și ea vede imediat tot ce ține de el
             (clienți, arhivă, indexuri, contracte, expirări). <strong>Debifezi</strong> când vrei să retragi accesul.
             Nivelul: <strong>Vizualizare</strong> (doar citește) · <strong>Operare</strong> (editează, citește indexuri, facturează) · <strong>Administrare</strong> (și șterge, gestionează spațiile).
           </span>
@@ -107,7 +107,7 @@ export default function AccesImobile() {
             {loading ? (
               <div className="empty"><p>Se încarcă…</p></div>
             ) : persoane.length === 0 ? (
-              <div className="empty"><i className="ti ti-users" /><p>Nicio persoană încă. Cere-le să-și creeze cont din ecranul de login.</p></div>
+              <div className="empty"><i className="ti ti-users" /><p>Nicio persoană încă. Creează conturi din Utilizatori.</p></div>
             ) : imobile.length === 0 ? (
               <div className="empty"><i className="ti ti-building" /><p>Nu există imobile. Creează-le din Spații & Imobile.</p></div>
             ) : (
@@ -170,7 +170,7 @@ export default function AccesImobile() {
           <div className="card" style={{ marginTop: 16 }}>
             <div className="card-header">
               <div className="card-title">Profile vechi</div>
-              <div className="card-subtitle">Create de versiunea anterioară, nelegate de un cont. Pot fi șterse; persoana își creează cont nou din login.</div>
+              <div className="card-subtitle">Create de versiunea anterioară, nelegate de un cont. Pot fi șterse; creează un cont nou din Utilizatori.</div>
             </div>
             <div className="card-body">
               {vechi.map(u => (
