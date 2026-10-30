@@ -361,6 +361,36 @@ export const syncRegistruDinSpatiu = async (spatiuId, clientId, { dataStart, dat
   }
 }
 
+// ── ENTITĂȚI EMITENTE (firmele care facturează) ───────────────
+// Doar administratorul le gestionează. Legătura cu contractul: câmpul „entitate” (numele) din registru.
+export const getEntitatiEmitente = async () =>
+  _map(await getDocs(collection(db, 'entitati_emitente'))).sort((a, b) => String(a.nume).localeCompare(String(b.nume)))
+
+export const saveEntitateEmitenta = async (data) => {
+  const { id, ...rest } = data
+  if (id) { await updateDoc(doc(db, 'entitati_emitente', id), stripUndefined({ ...rest, updatedAt: serverTimestamp() })); return id }
+  const ref = await addDoc(collection(db, 'entitati_emitente'), stripUndefined({ ...rest, creatLa: serverTimestamp() }))
+  return ref.id
+}
+export const deleteEntitateEmitenta = async (id) => deleteDoc(doc(db, 'entitati_emitente', id))
+
+// ── FACTURARE LUNARĂ (evidența chiriilor facturate) ───────────
+// ID determinist contract+lună → o chirie nu poate fi marcată de două ori
+export const getFacturariLuna = async (luna) => scoped('facturari_lunare', [where('luna', '==', luna)])
+
+export const saveFacturareLuna = async (data) => {
+  const id = `${data.contractId}_${data.luna}`
+  await setDoc(doc(db, 'facturari_lunare', id), stripUndefined({ ...data, updatedAt: serverTimestamp(), creatLa: serverTimestamp() }), { merge: true })
+  return id
+}
+export const updateFacturareLuna = async (id, data) =>
+  updateDoc(doc(db, 'facturari_lunare', id), stripUndefined({ ...data, updatedAt: serverTimestamp() }))
+export const deleteFacturareLuna = async (id) => deleteDoc(doc(db, 'facturari_lunare', id))
+
+// Actualizează câmpuri ale unui contract din registru (facturare, indexare)
+export const updateRegistruCampuri = async (id, data) =>
+  updateDoc(doc(db, 'registru_contracte', id), stripUndefined({ ...data, updatedAt: serverTimestamp() }))
+
 // ── TEMPLATE NOTE DE CALCUL ────────────────────────────────────
 export const getTemplate = async (spatiuId) => {
   const rows = await scoped('templates_nota', [where('spatiuId', '==', spatiuId)])

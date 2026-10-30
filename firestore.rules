@@ -83,6 +83,10 @@ service cloud.firestore {
       allow update: if rd(2) && wr(2);
       allow delete: if rd(3);
     }
+    // Firmele care facturează: citite de orice cont cu acces, scrise doar de administrator (nu conțin chei secrete)
+    match /entitati_emitente/{id} { allow read: if canAny(); allow write: if isAdmin(); }
+    // Evidența chiriilor facturate lunar (câte un document pe contract și lună)
+    match /facturari_lunare/{id}  { allow read: if rd(1); allow create: if wr(2); allow update: if rd(2) && wr(2); allow delete: if rd(2); }
     match /note_calcul/{id}       { allow read: if rd(1); allow create: if wr(2); allow update: if rd(2) && wr(2); allow delete: if rd(2); }
     match /templates_nota/{id}    { allow read: if rd(1); allow create: if wr(2); allow update: if rd(2) && wr(2); allow delete: if rd(2); }
     match /istoric_spatiu/{id}    { allow read: if rd(1); allow create: if wr(2); allow update: if rd(2) && wr(2); allow delete: if rd(2); }

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useToast } from '../../../shared/components/Toast'
 import {
   getRegistru, saveRegistruRand, deleteRegistruRand, getNextNumarSerie,
-  getClienti, getSpatii, getImobile, addClient, setEntitateRegistru,
+  getClienti, getSpatii, getImobile, addClient, setEntitateRegistru, getEntitatiEmitente,
 } from '../../../shared/firebase/firestore'
 import { mesajEroare } from '../../../shared/utils/eroare'
 import { azi, esteActiv, listaEntitati, ENTITATI_IMPLICITE } from '../services/registruUtils'
@@ -16,6 +16,7 @@ const gol = tip => ({
   registru: tip, serieId: '', numar: '', identificator: '', clientId: '', nume: '', administrator: '',
   spatiuId: '', entitate: '', dataStart: '', dataFinal: '', activManual: null,
   chirie: '', moneda: 'EUR', garantie: '', indexare: '', observatii: '',
+  factActiv: false, tva: '', tipScadenta: '', valScadenta: '', indexabil: true, textFactura: '',
 })
 
 // Definit în afara componentei, altfel inputurile pierd focusul la fiecare tastă
@@ -32,6 +33,7 @@ export default function Registru({ tip, serii }) {
   const [clienti, setClienti] = useState([])
   const [spatii, setSpatii] = useState([])
   const [imobile, setImobile] = useState([])
+  const [entDoc, setEntDoc] = useState([])
   const [loading, setLoading] = useState(true)
   const [filtru, setFiltru] = useState('active')
   const [cauta, setCauta] = useState('')
@@ -45,6 +47,7 @@ export default function Registru({ tip, serii }) {
     try {
       const [r, c, s, i] = await Promise.all([getRegistru(tip), getClienti(), getSpatii(), getImobile()])
       setRows(r); setClienti(c); setSpatii(s); setImobile(i)
+      try { setEntDoc(await getEntitatiEmitente()) } catch (e) { console.warn('entități', e) }
     } catch (e) { console.error(e); toast(mesajEroare(e, 'Încărcarea registrului a eșuat'), 'error') }
     setLoading(false)
   }, [tip])
@@ -163,7 +166,8 @@ export default function Registru({ tip, serii }) {
     catch (e) { console.error(e); toast(mesajEroare(e, 'Setarea entității a eșuat'), 'error') }
   }
 
-  const entitati = useMemo(() => listaEntitati(rows), [rows])
+  const entitati = useMemo(() => [...new Set([...listaEntitati(rows), ...entDoc.map(e => e.nume)])], [rows, entDoc])
+  const entForm = entDoc.find(e => e.nume === form?.entitate)
   const alegeEntitate = v => {
     if (v !== '__nou') { set('entitate', v); return }
     const nume = prompt('Numele entității care facturează/încasează:')
@@ -347,6 +351,34 @@ export default function Registru({ tip, serii }) {
                 <Camp label="Garanție"><input type="number" value={form.garantie} onChange={e => set('garantie', e.target.value)} /></Camp>
                 <Camp label="Indexare"><input value={form.indexare} onChange={e => set('indexare', e.target.value)} placeholder="ex. IPC anual, 5% / an" /></Camp>
                 <Camp label="Observații" full><textarea rows={2} value={form.observatii} onChange={e => set('observatii', e.target.value)} /></Camp>
+
+                <div className="form-group full" style={{ borderTop: '1px solid var(--border)', paddingTop: 12, marginTop: 4 }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700 }}>
+                    <input type="checkbox" checked={!!form.factActiv} onChange={e => set('factActiv', e.target.checked)} style={{ width: 18, height: 18 }} />
+                    Facturare lunară automată (apare în „De emis luna asta”)
+                  </label>
+                  <div style={{ fontSize: 12, color: 'var(--slate)', marginTop: 4 }}>
+                    Chiria de mai sus se consideră <strong>fără TVA</strong>. {form.entitate && !entForm && <span style={{ color: 'var(--amber)' }}>Entitatea „{form.entitate}” nu este configurată în Setări → Entități emitente.</span>}
+                  </div>
+                </div>
+                {form.factActiv && <>
+                  <Camp label={`TVA % (gol = ${entForm?.tva ?? 21}% din entitate)`}>
+                    <input type="number" step="0.01" value={form.tva} onChange={e => set('tva', e.target.value)} placeholder={String(entForm?.tva ?? 21)} /></Camp>
+                  <Camp label="Scadență">
+                    <select value={form.tipScadenta} onChange={e => set('tipScadenta', e.target.value)}>
+                      <option value="">Implicit entitate{entForm ? (entForm.tipScadenta === 'data' ? ` (ziua ${entForm.valScadenta})` : ` (${entForm.valScadenta} zile)`) : ''}</option>
+                      <option value="zile">N zile de la emitere</option>
+                      <option value="data">Ziua N din lună</option>
+                    </select></Camp>
+                  {form.tipScadenta && <Camp label={form.tipScadenta === 'data' ? 'Ziua din lună' : 'Număr de zile'}>
+                    <input type="number" min="1" value={form.valScadenta} onChange={e => set('valScadenta', e.target.value)} /></Camp>}
+                  <Camp label="Indexare anuală în ianuarie">
+                    <select value={form.indexabil === false ? 'nu' : 'da'} onChange={e => set('indexabil', e.target.value === 'da')}>
+                      <option value="da">Da, se indexează</option><option value="nu">Nu se indexează</option>
+                    </select></Camp>
+                  <Camp label="Text pe factură (gol = din entitate)" full>
+                    <input value={form.textFactura} onChange={e => set('textFactura', e.target.value)} placeholder="Chirie {luna} {anul} – contract nr. {contract}" /></Camp>
+                </>}
               </div>
             </div>
             <div className="modal-footer">
