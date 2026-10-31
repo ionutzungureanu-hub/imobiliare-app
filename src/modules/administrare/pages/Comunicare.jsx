@@ -7,18 +7,19 @@ import {
   getClienti, getSpatii, getImobile, getRegistru,
   getExpeditori, saveExpeditor, deleteExpeditor,
   getTemplateEmail, saveTemplateEmail, deleteTemplateEmail,
-  getComunicari, addComunicare,
+  getComunicari, addComunicare, getPortale,
 } from '../../../shared/firebase/firestore'
 import { mesajEroare } from '../../../shared/utils/eroare'
 import { esteActiv } from '../services/registruUtils'
 import { SceletTabel } from '../../../shared/components/Schelet'
 import {
-  statusServerEmail, trimiteEmailServer, aplicaVariabile, textLaHtml, VARIABILE, SABLOANE_EXEMPLU,
+  statusServerEmail, trimiteEmailServer, aplicaVariabile, htmlProfesional, textProfesional, VARIABILE, SABLOANE_EXEMPLU,
 } from '../../../shared/services/comunicareService'
 
 const EMAIL_RE = /^[^\s@<>",;]+@[^\s@<>",;]+\.[^\s@<>",;]+$/
 const fmtData = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('ro-RO', { day: '2-digit', month: '2-digit', year: 'numeric' }) : ''
 const fmtTs = t => t?.seconds ? new Date(t.seconds * 1000).toLocaleString('ro-RO', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'
+const LUNI = ['ianuarie', 'februarie', 'martie', 'aprilie', 'mai', 'iunie', 'iulie', 'august', 'septembrie', 'octombrie', 'noiembrie', 'decembrie']
 const azi = () => new Date().toISOString().slice(0, 10)
 const zileLa = d => d ? Math.ceil((new Date(d + 'T00:00:00') - new Date(azi() + 'T00:00:00')) / 86400000) : null
 
@@ -49,6 +50,7 @@ export default function Comunicare() {
   const [expeditori, setExpeditori] = useState([])
   const [sabloane, setSabloane] = useState([])
   const [istoric, setIstoric] = useState([])
+  const [portale, setPortale] = useState([])
   const [server, setServer] = useState(null) // {cheie, domeniu, test} | {eroare}
 
   const load = useCallback(async () => {
@@ -58,6 +60,7 @@ export default function Comunicare() {
         getClienti(), getSpatii(), getImobile(), getRegistru('comercial'), getRegistru('rezidential'),
         getExpeditori(), getTemplateEmail(), getComunicari(),
       ])
+      try { setPortale(await getPortale()) } catch (e) { console.warn('portale', e) }
       setClienti(c); setSpatii(s); setImobile(i); setRegistru([...rc, ...rr]); setExpeditori(e); setSabloane(t); setIstoric(h)
     } catch (err) { console.error(err); toast(mesajEroare(err, 'Încărcarea a eșuat'), 'error') }
     setLoading(false)
@@ -82,10 +85,10 @@ export default function Comunicare() {
     }}><i className={`ti ${icon}`} /> {children}</button>
   )
 
-  const bannerServer = server && (server.eroare || !server.cheie || (!server.domeniu && !server.test)) && (
+  const bannerServer = server && (server.eroare || !server.cheie || (server.provider !== 'smtp' && !server.domeniu && !server.test)) && (
     <div style={{ background: '#F8F1DF', border: '1px solid #E3C77D', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13 }}>
       ⚠ Trimiterea de email nu este încă configurată pe server
-      {server.eroare ? ` (${server.eroare})` : ' (lipsește cheia API sau domeniul)'}. Poți pregăti șabloane și expeditori, dar mesajele nu pot fi trimise până nu urmezi pașii din ghidul de configurare.
+      {server.eroare ? ` (${server.eroare})` : ' (lipsesc SMTP_USER și SMTP_PASS, sau cheia Resend și domeniul)'}. Poți pregăti șabloane și expeditori, dar mesajele nu pot fi trimise până nu urmezi pașii din ghidul de configurare.
     </div>
   )
 
@@ -102,7 +105,7 @@ export default function Comunicare() {
         {bannerServer}
         {loading ? <SceletTabel /> : (
           <>
-            {tab === 'compune' && <Compune {...{ clienti, registru, expeditori, sabloane, spatiuLabel, user, server, toast, reload: load, clientInitial: params.get('client') }} />}
+            {tab === 'compune' && <Compune {...{ clienti, registru, portale, expeditori, sabloane, spatiuLabel, user, server, toast, reload: load, clientInitial: params.get('client') }} />}
             {tab === 'istoric' && <Istoric {...{ istoric, clienti, clientInitial: params.get('client') || '' }} />}
             {tab === 'sabloane' && <Sabloane {...{ sabloane, toast, reload: load }} />}
             {tab === 'expeditori' && <Expeditori {...{ expeditori, server, toast, reload: load }} />}
@@ -114,12 +117,15 @@ export default function Comunicare() {
 }
 
 // ───────────────────────── COMPUNE ─────────────────────────
-function Compune({ clienti, registru, expeditori, sabloane, spatiuLabel, user, server, toast, reload, clientInitial }) {
+function Compune({ clienti, registru, portale, expeditori, sabloane, spatiuLabel, user, server, toast, reload, clientInitial }) {
   const active = expeditori.filter(e => e.activ !== false)
   const [expId, setExpId] = useState(active[0]?.id || '')
   const [sablonId, setSablonId] = useState('')
   const [subiect, setSubiect] = useState('')
   const [corp, setCorp] = useState('')
+  const [titlu, setTitlu] = useState('')
+  const [butonText, setButonText] = useState('')
+  const [butonUrl, setButonUrl] = useState('')
   const [sel, setSel] = useState(() => new Set(clientInitial ? [clientInitial] : []))
   const [manual, setManual] = useState('')
   const [cauta, setCauta] = useState('')
@@ -151,7 +157,7 @@ function Compune({ clienti, registru, expeditori, sabloane, spatiuLabel, user, s
   const alegeSablon = id => {
     setSablonId(id)
     const s = sabloane.find(x => x.id === id)
-    if (s) { setSubiect(s.subiect || ''); setCorp(s.corp || '') }
+    if (s) { setSubiect(s.subiect || ''); setCorp(s.corp || ''); setTitlu(s.titlu || ''); setButonText(s.butonText || ''); setButonUrl(s.butonUrl || '') }
   }
 
   const variabile = (c) => {
@@ -162,15 +168,23 @@ function Compune({ clienti, registru, expeditori, sabloane, spatiuLabel, user, s
       numar_contract: k?.numar || '', data_start: fmtData(k?.dataStart), data_final: fmtData(k?.dataFinal),
       chirie: k?.chirie ? `${k.chirie} ${k.moneda || ''}`.trim() : '', spatiu: k ? spatiuLabel(k.spatiuId) : '',
       entitate: k?.entitate || '', expeditor: exp?.nume || '',
+      link_utilitati: linkPortal(k?.spatiuId), luna: LUNI[new Date().getMonth()], an: String(new Date().getFullYear()),
     }
+  }
+  // Link personal către portalul spațiului (doar dacă linkul e activ și nu a expirat)
+  const linkPortal = (spatiuId) => {
+    const p = (portale || []).find(x => x.spatiuId === spatiuId && x.activ !== false && !(x.valabilPanaTs?.seconds && x.valabilPanaTs.seconds * 1000 < Date.now()))
+    return p ? `${window.location.origin}/portal/${p.token}` : ''
   }
 
   const compuneMesaj = (c) => {
     const v = variabile(c)
     const subj = aplicaVariabile(subiect, v)
-    let text = aplicaVariabile(corp, v)
-    if (exp?.semnatura) text += `\n\n-- \n${exp.semnatura}`
-    return { subj, text, html: textLaHtml(text) }
+    const parti = {
+      titlu: aplicaVariabile(titlu, v), text: aplicaVariabile(corp, v),
+      butonText: aplicaVariabile(butonText, v), butonUrl: aplicaVariabile(butonUrl, v), semnatura: exp?.semnatura || '',
+    }
+    return { subj, text: textProfesional(parti), html: htmlProfesional({ brand: exp?.nume || '', ...parti }), fara_link: /link_utilitati/.test(`${corp} ${butonUrl}`) && !v.link_utilitati }
   }
 
   // Destinatari: clienții selectați + adrese manuale
@@ -191,13 +205,21 @@ function Compune({ clienti, registru, expeditori, sabloane, spatiuLabel, user, s
     if (!exp) { toast('Alege expeditorul.', 'error'); return }
     if (!subiect.trim() || !corp.trim()) { toast('Completează subiectul și mesajul.', 'error'); return }
     if (!dePtTrimis.length) { toast('Niciun destinatar cu adresă de email.', 'error'); return }
-    if (!confirm(`Trimiți mesajul către ${dePtTrimis.length} ${dePtTrimis.length === 1 ? 'destinatar' : 'destinatari'}, de pe ${exp.email}?`)) return
+    if (/\[[^\]\n]{2,}\]/.test(`${subiect} ${titlu} ${corp}`) && !confirm('Mesajul conține încă text între [paranteze drepte], care trebuie completat. Trimiți oricum?')) return
+    const fl = dePtTrimis.filter(d => compuneMesaj(d.client).fara_link)
+    let lista = dePtTrimis
+    if (fl.length) {
+      if (fl.length === dePtTrimis.length) { toast('Niciun destinatar nu are link activ de portal pentru spațiul lui. Creează linkurile din Portal chiriași.', 'error'); return }
+      if (!confirm(`${fl.length} ${fl.length === 1 ? 'destinatar nu are' : 'destinatari nu au'} link de portal activ (${fl.map(d => d.client?.nume || d.adrese[0]).join(', ')}) și vor fi omiși. Continui cu ceilalți?`)) return
+      lista = dePtTrimis.filter(d => !fl.includes(d))
+    }
+    if (!confirm(`Trimiți mesajul către ${lista.length} ${lista.length === 1 ? 'destinatar' : 'destinatari'}, de pe ${exp.email}?`)) return
     setSending(true)
     const lotId = `lot_${Date.now()}`
     let ok = 0, esuate = []
-    for (let i = 0; i < dePtTrimis.length; i++) {
-      const d = dePtTrimis[i]
-      setProgres(`${i + 1} / ${dePtTrimis.length}`)
+    for (let i = 0; i < lista.length; i++) {
+      const d = lista[i]
+      setProgres(`${i + 1} / ${lista.length}`)
       const m = compuneMesaj(d.client)
       let stare = 'trimis', eroare = ''
       try {
@@ -281,7 +303,10 @@ function Compune({ clienti, registru, expeditori, sabloane, spatiuLabel, user, s
               </select>
             </Camp>
             <Camp label="Subiect" full><input value={subiect} onChange={e => setSubiect(e.target.value)} /></Camp>
+            <Camp label="Titlu în mesaj (opțional)" full><input value={titlu} onChange={e => setTitlu(e.target.value)} placeholder="ex. Sărbători fericite!" /></Camp>
             <Camp label="Mesaj" full><textarea rows={9} value={corp} onChange={e => setCorp(e.target.value)} /></Camp>
+            <Camp label="Text buton (opțional)"><input value={butonText} onChange={e => setButonText(e.target.value)} placeholder="ex. Transmite indexurile" /></Camp>
+            <Camp label="Link buton"><input value={butonUrl} onChange={e => setButonUrl(e.target.value)} placeholder="https://… sau {{link_utilitati}}" /></Camp>
           </div>
           <div style={{ fontSize: 11, color: 'var(--slate)', marginTop: 6 }}>
             Variabile: {VARIABILE.map(([k]) => `{{${k}}}`).join('  ')}
@@ -290,7 +315,8 @@ function Compune({ clienti, registru, expeditori, sabloane, spatiuLabel, user, s
             <div style={{ marginTop: 14, border: '1px dashed var(--border)', borderRadius: 8, padding: 12, background: '#F7F5F0' }}>
               <div style={{ fontSize: 11, color: 'var(--slate)', marginBottom: 6 }}>Previzualizare pentru: {primul.client?.nume || primul.adrese[0]}</div>
               <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 6 }}>{prev.subj || '(fără subiect)'}</div>
-              <div dangerouslySetInnerHTML={{ __html: prev.html }} />
+              {prev.fara_link && <div style={{ fontSize: 12, color: '#8A5A12', marginBottom: 6 }}>⚠ Acest client nu are link de portal activ pentru spațiul lui, deci va fi omis la trimitere.</div>}
+              <iframe title="Previzualizare email" sandbox="" srcDoc={prev.html} style={{ width: '100%', height: 560, border: '1px solid var(--border)', borderRadius: 6, background: '#fff' }} />
             </div>
           )}
           <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -368,14 +394,19 @@ function Sabloane({ sabloane, toast, reload }) {
     try { await deleteTemplateEmail(s.id); reload() } catch (e) { console.error(e); toast(mesajEroare(e, 'Ștergerea a eșuat'), 'error') }
   }
   const adaugaExemple = async () => {
-    try { for (const s of SABLOANE_EXEMPLU) await saveTemplateEmail(s); toast('Șabloane exemplu adăugate.'); reload() }
+    try {
+      const existente = new Set(sabloane.map(x => x.nume))
+      const noi = SABLOANE_EXEMPLU.filter(x => !existente.has(x.nume))
+      for (const s of noi) await saveTemplateEmail(s)
+      toast(noi.length ? `${noi.length} șabloane recomandate adăugate.` : 'Ai deja toate șabloanele recomandate.'); reload()
+    }
     catch (e) { console.error(e); toast(mesajEroare(e, 'Adăugarea a eșuat'), 'error') }
   }
   return (
     <>
       <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
-        <button className="btn btn-primary btn-sm" onClick={() => setForm({ nume: '', categorie: '', subiect: '', corp: '' })}><i className="ti ti-plus" /> Șablon nou</button>
-        {sabloane.length === 0 && <button className="btn btn-ghost btn-sm" onClick={adaugaExemple}>Adaugă șabloane exemplu</button>}
+        <button className="btn btn-primary btn-sm" onClick={() => setForm({ nume: '', categorie: '', subiect: '', titlu: '', corp: '', butonText: '', butonUrl: '' })}><i className="ti ti-plus" /> Șablon nou</button>
+        <button className="btn btn-ghost btn-sm" onClick={adaugaExemple}><i className="ti ti-sparkles" /> Adaugă șabloanele recomandate</button>
       </div>
       {sabloane.length === 0 ? <div className="card"><div className="empty"><i className="ti ti-template" /><p>Niciun șablon.</p></div></div> : (
         <div className="card"><table>
@@ -397,7 +428,10 @@ function Sabloane({ sabloane, toast, reload }) {
               <Camp label="Nume șablon"><input value={form.nume} onChange={e => set('nume', e.target.value)} autoFocus /></Camp>
               <Camp label="Categorie"><input value={form.categorie || ''} onChange={e => set('categorie', e.target.value)} placeholder="ex. Contracte" /></Camp>
               <Camp label="Subiect" full><input value={form.subiect} onChange={e => set('subiect', e.target.value)} /></Camp>
+              <Camp label="Titlu în mesaj (opțional)" full><input value={form.titlu || ''} onChange={e => set('titlu', e.target.value)} /></Camp>
               <Camp label="Mesaj" full><textarea rows={10} value={form.corp} onChange={e => set('corp', e.target.value)} /></Camp>
+              <Camp label="Text buton (opțional)"><input value={form.butonText || ''} onChange={e => set('butonText', e.target.value)} /></Camp>
+              <Camp label="Link buton"><input value={form.butonUrl || ''} onChange={e => set('butonUrl', e.target.value)} placeholder="{{link_utilitati}}" /></Camp>
             </div>
             <div style={{ fontSize: 12, color: 'var(--slate)', marginTop: 8 }}>
               {VARIABILE.map(([k, d]) => <div key={k}><code>{`{{${k}}}`}</code> — {d}</div>)}
@@ -424,6 +458,7 @@ function Expeditori({ expeditori, server, toast, reload }) {
     try { await deleteExpeditor(x.id); reload() } catch (e) { console.error(e); toast(mesajEroare(e, 'Ștergerea a eșuat'), 'error') }
   }
   const potrivit = email => !server || server.eroare || !server.cheie ? null
+    : server.provider === 'smtp' ? email === server.adresa
     : (server.domeniu && email.split('@')[1] === server.domeniu) || (server.test && email === 'onboarding@resend.dev')
   return (
     <>
@@ -431,7 +466,7 @@ function Expeditori({ expeditori, server, toast, reload }) {
         <button className="btn btn-primary btn-sm" onClick={() => setForm({ nume: '', email: '', replyTo: '', registru: 'ambele', semnatura: '', activ: true })}><i className="ti ti-plus" /> Expeditor nou</button>
         {server && !server.eroare && (
           <span style={{ fontSize: 12, color: 'var(--slate)' }}>
-            Server: cheie {server.cheie ? '✓' : '✗'} · domeniu {server.domeniu || '✗'}{server.test ? ' · mod test' : ''}
+            {server.provider === 'smtp' ? `Trimitere prin SMTP: ${server.adresa} ✓` : `Server: cheie ${server.cheie ? '✓' : '✗'} · domeniu ${server.domeniu || '✗'}${server.test ? ' · mod test' : ''}`}
           </span>
         )}
       </div>
@@ -461,7 +496,7 @@ function Expeditori({ expeditori, server, toast, reload }) {
             <div className="modal-head"><h3>{form.id ? 'Editează expeditor' : 'Expeditor nou'}</h3><button className="modal-close" onClick={() => setForm(null)}><i className="ti ti-x" /></button></div>
             <div className="modal-body"><div className="form-grid">
               <Camp label="Nume afișat (apare la destinatar)"><input value={form.nume} onChange={e => set('nume', e.target.value)} autoFocus /></Camp>
-              <Camp label="Adresa de email (pe domeniul propriu)"><input value={form.email} onChange={e => set('email', e.target.value)} placeholder="contact@domeniu.ro" /></Camp>
+              <Camp label="Adresa de email (aceeași cu contul de trimitere)"><input value={form.email} onChange={e => set('email', e.target.value)} placeholder="contact@domeniu.ro" /></Camp>
               <Camp label="Adresă pentru răspunsuri (opțional)"><input value={form.replyTo || ''} onChange={e => set('replyTo', e.target.value)} placeholder="implicit: aceeași adresă" /></Camp>
               <Camp label="Folosit pentru">
                 <select value={form.registru} onChange={e => set('registru', e.target.value)}>

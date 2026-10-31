@@ -4,11 +4,12 @@
 //
 // Programat zilnic (vezi `config`). Apelabil și de administrator din aplicație (previzualizare / test către sine).
 // Variabile de mediu: FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY,
-//   RESEND_API_KEY, EMAIL_DOMAIN, opțional MEMENTO_FROM (implicit notificari@EMAIL_DOMAIN), MEMENTO_FROM_NAME (implicit „Rentis”)
+//   fie SMTP_USER + SMTP_PASS (ex. Yahoo, vezi trimite-email.mjs), fie RESEND_API_KEY + EMAIL_DOMAIN; opțional MEMENTO_FROM (implicit notificari@EMAIL_DOMAIN), MEMENTO_FROM_NAME (implicit „Rentis”)
 
 import { initializeApp, cert, getApps } from 'firebase-admin/app'
 import { getAuth } from 'firebase-admin/auth'
 import { getFirestore, FieldValue } from 'firebase-admin/firestore'
+import nodemailer from 'nodemailer'
 
 export const config = { schedule: '0 5 * * *' } // 05:00 UTC = 07:00/08:00 ora României
 
@@ -80,9 +81,16 @@ const compune = (lista, numeImobil, azi, test) => {
 }
 
 async function trimite(to, { subject, html, text }) {
+  const smtpUser = (process.env.SMTP_USER || '').trim()
+  if (smtpUser && process.env.SMTP_PASS) {
+    const port = Number(process.env.SMTP_PORT) || 465
+    const t = nodemailer.createTransport({ host: process.env.SMTP_HOST || 'smtp.mail.yahoo.com', port, secure: port === 465, auth: { user: smtpUser, pass: process.env.SMTP_PASS } })
+    await t.sendMail({ from: { name: (process.env.MEMENTO_FROM_NAME || 'Rentis').replace(/[\r\n<>"]/g, ''), address: smtpUser }, to, subject, html, text })
+    return
+  }
   const apiKey = process.env.RESEND_API_KEY
   const domeniu = (process.env.EMAIL_DOMAIN || '').toLowerCase()
-  if (!apiKey || (!domeniu && !process.env.MEMENTO_FROM)) throw new Error('Lipsesc RESEND_API_KEY / EMAIL_DOMAIN din Netlify.')
+  if (!apiKey || (!domeniu && !process.env.MEMENTO_FROM)) throw new Error('Lipsesc SMTP_USER / SMTP_PASS (sau RESEND_API_KEY / EMAIL_DOMAIN) din Netlify.')
   const from = (process.env.MEMENTO_FROM || `notificari@${domeniu}`).replace(/[\r\n<>"]/g, '')
   const r = await fetch('https://api.resend.com/emails', {
     method: 'POST', headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
