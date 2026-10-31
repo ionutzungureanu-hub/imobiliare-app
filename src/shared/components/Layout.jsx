@@ -3,7 +3,7 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { ToastProvider, useToast } from './Toast'
 import GlobalSearch from './GlobalSearch'
-import { getIndexuriPrimite } from '../firebase/firestore'
+import { getIndexuriPrimite, getCereriPortal } from '../firebase/firestore'
 import { useMeniu } from '../context/MeniuContext'
 
 const Badge = ({ n }) => n > 0 ? (
@@ -41,11 +41,15 @@ export default function Layout() {
     return () => window.removeEventListener('resize', handler)
   }, [])
   const [inAsteptare, setInAsteptare] = useState(0)
+  const [cereriNoi, setCereriNoi] = useState(0)
   useEffect(() => {
     getIndexuriPrimite('asteptare').then(l => setInAsteptare(l.length)).catch(() => {})
+    getCereriPortal('nou').then(l => setCereriNoi(l.length)).catch(() => {})
   }, [location.pathname])
+  const nrBadge = (b) => b === 'indexuri' ? inAsteptare : b === 'cereri' ? cereriNoi : 0
   const [inchise, setInchise] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('nav_inchise') || '[]') } catch { return [] }
+    // Administrarea e strânsă implicit; după prima alegere se ține minte starea fiecărui grup
+    try { const v = localStorage.getItem('nav_inchise'); return v === null ? ['Administrare'] : JSON.parse(v) } catch { return ['Administrare'] }
   })
   const toggleGrup = sec => setInchise(prev => {
     const nou = prev.includes(sec) ? prev.filter(x => x !== sec) : [...prev, sec]
@@ -97,7 +101,7 @@ export default function Layout() {
                       onClick={() => setSidebarOpen(false)}>
                       <i className={`ti ${item.icon}`} />
                       {item.label}
-                      {item.badge && <Badge n={inAsteptare} />}
+                      {item.badge && <Badge n={nrBadge(item.badge)} />}
                     </NavLink>
                   )}
                 </div>
@@ -141,8 +145,8 @@ export default function Layout() {
                 className={({ isActive }) => `mobile-nav-item${isActive ? ' active' : ''}`}>
                 <i className={`ti ${item.icon}`} />
                 {item.label}
-                {item.badge && inAsteptare > 0 && (
-                  <span style={{ position: 'absolute', top: 2, right: '22%', background: '#9B2C2C', color: '#fff', borderRadius: 10, fontSize: 10, fontWeight: 700, padding: '0 5px' }}>{inAsteptare}</span>
+                {item.badge && nrBadge(item.badge) > 0 && (
+                  <span style={{ position: 'absolute', top: 2, right: '22%', background: '#9B2C2C', color: '#fff', borderRadius: 10, fontSize: 10, fontWeight: 700, padding: '0 5px' }}>{nrBadge(item.badge)}</span>
                 )}
               </NavLink>
             ))}
@@ -156,7 +160,7 @@ export default function Layout() {
 function getPageTitle(path) {
   const map = {
     '/dashboard': 'Dashboard', '/clienti': 'Clienți',
-    '/spatii': 'Spații & Imobile', '/utilitati': 'Utilități',
+    '/spatii': 'Imobile și spații', '/utilitati': 'Utilități',
     '/utilitati-mobile': 'Citire rapidă', '/citire': 'Citire indexuri', '/comunicare': 'Comunicare', '/facturi': 'Facturi',
     '/nota-calcul': 'Notă de calcul', '/nota-administratie': 'Notă apă bloc',
     '/validare-indexuri': 'Validare indexuri',

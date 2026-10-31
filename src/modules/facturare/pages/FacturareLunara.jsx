@@ -65,7 +65,7 @@ export default function FacturareLunara() {
       let motiv = ''
       if (!fac) {
         if (!r.entitate) motiv = 'Contractul nu are entitate emitentă (Contracte → Registru).'
-        else if (!ent) motiv = `Entitatea „${r.entitate}” nu este configurată (Setări → Entități emitente).`
+        else if (!ent) motiv = `Entitatea „${r.entitate}” nu este configurată (Administrare → Firme emitente).`
         else if (ent.activ === false) motiv = `Entitatea „${r.entitate}” este inactivă.`
         else if (asteaptaIndexare(r, an)) motiv = 'Așteaptă indexarea anuală.'
         else if (!r.clientId) motiv = 'Contractul nu are client legat.'

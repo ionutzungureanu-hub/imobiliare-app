@@ -241,7 +241,7 @@ export default function Spatii() {
 
   return (
     <>
-      <Topbar title="Spații & Imobile" subtitle="Vedere ierarhică imobile → spații">
+      <Topbar title="Imobile și spații" subtitle="Vedere ierarhică imobile → spații">
         {isAdmin && (
           <button className="btn btn-primary btn-sm" onClick={openAddImobil}>
             <i className="ti ti-plus" /> Imobil nou

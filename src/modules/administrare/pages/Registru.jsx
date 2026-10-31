@@ -379,7 +379,7 @@ export default function Registru({ tip, serii }) {
                     Facturare lunară automată (apare în „De emis luna asta”)
                   </label>
                   <div style={{ fontSize: 12, color: 'var(--slate)', marginTop: 4 }}>
-                    Chiria de mai sus se consideră <strong>fără TVA</strong>. {form.entitate && !entForm && <span style={{ color: 'var(--amber)' }}>Entitatea „{form.entitate}” nu este configurată în Setări → Entități emitente.</span>}
+                    Chiria de mai sus se consideră <strong>fără TVA</strong>. {form.entitate && !entForm && <span style={{ color: 'var(--amber)' }}>Entitatea „{form.entitate}” nu este configurată în Administrare → Firme emitente.</span>}
                   </div>
                 </div>
                 {form.factActiv && <>

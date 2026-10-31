@@ -13,7 +13,7 @@ export function NuEDisponibil() {
       <h2 style={{ fontFamily: 'var(--serif)', color: 'var(--blue)', marginBottom: 6 }}>Nu este disponibil</h2>
       <p style={{ fontSize: 14, maxWidth: 380, margin: '0 auto 18px' }}>
         {adreseaza('Această pagină nu este disponibilă pentru contul sau dispozitivul tău.')}
-        {isAdmin && ' O poți reactiva din Setări → Administrare meniu.'}
+        {isAdmin && ' O poți reactiva din Administrare → Administrare meniu.'}
       </p>
       <button className="btn btn-primary" onClick={() => navigate('/dashboard')}>Înapoi la Dashboard</button>
     </div>

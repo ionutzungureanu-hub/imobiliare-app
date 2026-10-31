@@ -124,7 +124,7 @@ export default function AccesImobile() {
             ) : persoane.length === 0 ? (
               <div className="empty"><i className="ti ti-users" /><p>Nicio persoană încă. Creează conturi din Utilizatori.</p></div>
             ) : imobile.length === 0 ? (
-              <div className="empty"><i className="ti ti-building" /><p>Nu există imobile. Creează-le din Spații & Imobile.</p></div>
+              <div className="empty"><i className="ti ti-building" /><p>Nu există imobile. Creează-le din Imobile și spații.</p></div>
             ) : (
               <table>
                 <thead>
@@ -188,7 +188,7 @@ export default function AccesImobile() {
           </div>
           <div style={{ overflowX: 'auto' }}>
             {firme.length === 0 ? (
-              <div className="empty"><i className="ti ti-building-bank" /><p>Nicio firmă emitentă. Adaug-o din Setări → Entități emitente.</p></div>
+              <div className="empty"><i className="ti ti-building-bank" /><p>Nicio firmă emitentă. Adaug-o din Administrare → Firme emitente.</p></div>
             ) : (
               <table>
                 <thead><tr><th>Persoană</th>{firme.map(f => <th key={f.id}>{f.nume}</th>)}</tr></thead>

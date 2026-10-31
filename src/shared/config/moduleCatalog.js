@@ -1,35 +1,36 @@
 // Catalogul modulelor aplicației: o singură sursă pentru meniul desktop, meniul mobil, bara de jos,
 // cartonașele din Dashboard, căutarea globală și blocarea paginilor ascunse.
 // d = vizibil pe desktop · m = vizibil pe mobil · h = apare pe pagina Acasă (cartonașe)
+// badge = 'indexuri' | 'cereri' (număr afișat lângă link)
 // fix = nu poate fi ascuns · adminOnly = doar administratorul general · inMeniu:false = nu apare ca link în meniu
-export const SECTIUNI = ['Acasă', 'Persoane și spații', 'Ciclul lunar', 'Documente și rapoarte', 'Setări']
+export const SECTIUNI = ['Acasă', 'Portofoliu', 'Chiriași', 'Ciclul lunar', 'Documente', 'Administrare']
 
 export const MODULE = [
   { key: 'dashboard',   to: '/dashboard',          paths: ['/dashboard'], icon: 'ti-layout-dashboard', label: 'Dashboard', scurt: 'Acasă', section: 'Acasă', fix: true, def: { d: true, m: true, h: true } },
 
-  { key: 'clienti',     to: '/clienti',            paths: ['/clienti', '/import-clienti'], icon: 'ti-users', label: 'Clienți', scurt: 'Clienți', section: 'Persoane și spații', def: { d: true, m: true, h: true } },
-  { key: 'spatii',      to: '/spatii',             paths: ['/spatii'], icon: 'ti-building', label: 'Spații & Imobile', section: 'Persoane și spații', def: { d: true, m: false, h: true } },
-  { key: 'contracte',   to: '/contracte',          paths: ['/contracte'], icon: 'ti-file-text', label: 'Contracte', section: 'Persoane și spații', def: { d: true, m: false, h: true } },
-  { key: 'comunicare',  to: '/comunicare',         paths: ['/comunicare'], icon: 'ti-mail', label: 'Comunicare', section: 'Persoane și spații', def: { d: true, m: false, h: false } },
-  { key: 'portal',      to: '/portal-chiriasi',    paths: ['/portal-chiriasi'], icon: 'ti-link', label: 'Portal chiriași', section: 'Persoane și spații', def: { d: true, m: true, h: true } },
+  { key: 'clienti',     to: '/clienti',            paths: ['/clienti', '/import-clienti'], icon: 'ti-users', label: 'Clienți', scurt: 'Clienți', section: 'Portofoliu', def: { d: true, m: true, h: true } },
+  { key: 'spatii',      to: '/spatii',             paths: ['/spatii'], icon: 'ti-building', label: 'Imobile și spații', section: 'Portofoliu', def: { d: true, m: false, h: true } },
+  { key: 'contracte',   to: '/contracte',          paths: ['/contracte'], icon: 'ti-file-text', label: 'Contracte', section: 'Portofoliu', def: { d: true, m: false, h: true } },
+  { key: 'comunicare',  to: '/comunicare',         paths: ['/comunicare'], icon: 'ti-mail', label: 'Comunicare', section: 'Chiriași', def: { d: true, m: false, h: false } },
+  { key: 'portal',      to: '/portal-chiriasi',    paths: ['/portal-chiriasi'], icon: 'ti-link', label: 'Portal chiriași', section: 'Chiriași', badge: 'cereri', def: { d: true, m: true, h: true } },
 
-  { key: 'citire',      to: '/citire',             paths: ['/citire', '/utilitati', '/utilitati-mobile', '/validare-indexuri'], icon: 'ti-bolt', label: '1 · Citire indexuri', scurt: 'Citire', section: 'Ciclul lunar', badge: true, def: { d: true, m: true, h: true } },
+  { key: 'citire',      to: '/citire',             paths: ['/citire', '/utilitati', '/utilitati-mobile', '/validare-indexuri'], icon: 'ti-bolt', label: '1 · Citire indexuri', scurt: 'Citire', section: 'Ciclul lunar', badge: 'indexuri', def: { d: true, m: true, h: true } },
   { key: 'nota',        to: '/nota-administratie', paths: ['/nota-administratie'], icon: 'ti-droplet', label: '2 · Notă apă bloc', section: 'Ciclul lunar', def: { d: true, m: true, h: true } },
-  { key: 'facturi',     to: '/facturi',            paths: ['/facturi', '/emite', '/emite-utilitati', '/emise'], icon: 'ti-receipt', label: '3 · Facturi', section: 'Ciclul lunar', def: { d: true, m: false, h: true } },
+  { key: 'facturi',     to: '/facturi',            paths: ['/facturi', '/emite', '/emite-utilitati', '/emise'], icon: 'ti-receipt', label: '3 · Facturare', section: 'Ciclul lunar', def: { d: true, m: false, h: true } },
+  { key: 'furnizori',   to: '/furnizori',          paths: ['/furnizori'], icon: 'ti-file-import', label: 'Furnizori (facturi primite)', section: 'Ciclul lunar', adminOnly: true, def: { d: true, m: false, h: true } },
   // Nota de calcul: pe desktop face parte din Facturi; pe mobil e pagină separată (bara de jos)
   { key: 'nota_calcul', to: '/nota-calcul',        paths: ['/nota-calcul'], icon: 'ti-calculator', label: 'Notă de calcul', scurt: 'Notă', section: 'Ciclul lunar', inMeniu: false, def: { d: true, m: true, h: true } },
 
-  { key: 'biblioteca',  to: '/biblioteca',         paths: ['/biblioteca'], icon: 'ti-books', label: 'Bibliotecă', section: 'Documente și rapoarte', def: { d: true, m: true, h: true } },
-  { key: 'firme',      to: '/firme',             paths: ['/firme'], icon: 'ti-building-bank', label: 'Registru firme', scurt: 'Firme', section: 'Documente și rapoarte', def: { d: true, m: false, h: false } },
-  { key: 'rapoarte',    to: '/rapoarte',           paths: ['/rapoarte'], icon: 'ti-chart-bar', label: 'Rapoarte', section: 'Documente și rapoarte', def: { d: true, m: false, h: true } },
+  { key: 'biblioteca',  to: '/biblioteca',         paths: ['/biblioteca'], icon: 'ti-books', label: 'Bibliotecă', section: 'Documente', def: { d: true, m: true, h: true } },
+  { key: 'firme',      to: '/firme',             paths: ['/firme'], icon: 'ti-building-bank', label: 'Registru firme', scurt: 'Firme', section: 'Documente', inMeniu: false, def: { d: true, m: false, h: false } },
+  { key: 'rapoarte',    to: '/rapoarte',           paths: ['/rapoarte'], icon: 'ti-chart-bar', label: 'Rapoarte', section: 'Documente', def: { d: true, m: false, h: true } },
 
-  { key: 'acces',       to: '/acces',              paths: ['/acces'], icon: 'ti-key', label: 'Acces imobile', section: 'Setări', adminOnly: true, fix: true, def: { d: true, m: false, h: false } },
-  { key: 'utilizatori', to: '/utilizatori',        paths: ['/utilizatori'], icon: 'ti-user-cog', label: 'Utilizatori', section: 'Setări', adminOnly: true, fix: true, def: { d: true, m: false, h: true } },
-  { key: 'config',      to: '/config',             paths: ['/config'], icon: 'ti-settings', label: 'Configurare', section: 'Setări', adminOnly: true, fix: true, def: { d: true, m: false, h: true } },
-  { key: 'audit',      to: '/audit',             paths: ['/audit'], icon: 'ti-history', label: 'Istoric modificări', section: 'Setări', adminOnly: true, def: { d: true, m: false, h: false } },
-  { key: 'meniu',       to: '/meniu',              paths: ['/meniu'], icon: 'ti-layout-sidebar', label: 'Administrare meniu', section: 'Setări', adminOnly: true, fix: true, def: { d: true, m: false, h: false } },
-  { key: 'entitati',   to: '/entitati',           paths: ['/entitati'], icon: 'ti-building-bank', label: 'Entități emitente', section: 'Setări', adminOnly: true, def: { d: true, m: false, h: false } },
-  { key: 'furnizori',   to: '/furnizori',          paths: ['/furnizori'], icon: 'ti-file-import', label: 'Furnizori', section: 'Setări', adminOnly: true, def: { d: true, m: false, h: true } },
+  { key: 'utilizatori', to: '/utilizatori',        paths: ['/utilizatori'], icon: 'ti-user-cog', label: 'Utilizatori', section: 'Administrare', adminOnly: true, fix: true, def: { d: true, m: false, h: true } },
+  { key: 'acces',       to: '/acces',              paths: ['/acces'], icon: 'ti-key', label: 'Acces imobile', section: 'Administrare', adminOnly: true, fix: true, def: { d: true, m: false, h: false } },
+  { key: 'entitati',   to: '/entitati',           paths: ['/entitati'], icon: 'ti-building-bank', label: 'Firme emitente', section: 'Administrare', adminOnly: true, def: { d: true, m: false, h: false } },
+  { key: 'config',      to: '/config',             paths: ['/config'], icon: 'ti-settings', label: 'Configurare', section: 'Administrare', adminOnly: true, fix: true, def: { d: true, m: false, h: true } },
+  { key: 'meniu',       to: '/meniu',              paths: ['/meniu'], icon: 'ti-layout-sidebar', label: 'Administrare meniu', section: 'Administrare', adminOnly: true, fix: true, def: { d: true, m: false, h: false } },
+  { key: 'audit',      to: '/audit',             paths: ['/audit'], icon: 'ti-history', label: 'Istoric modificări', section: 'Administrare', adminOnly: true, def: { d: true, m: false, h: false } },
 ]
 
 export const MODULE_PE_CHEIE = Object.fromEntries(MODULE.map(m => [m.key, m]))

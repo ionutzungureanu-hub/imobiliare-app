@@ -20,7 +20,7 @@ const GRUPURI = [
       { to: '/clienti',           icon: 'ti-users',    label: 'Clienți' },
       { to: '/citire',            icon: 'ti-bolt',      label: 'Citire indexuri' },
       { to: '/citire?tab=validare', icon: 'ti-checks', label: 'Validare indexuri' },
-      { to: '/spatii',            icon: 'ti-building', label: 'Spații & Imobile', desktopOnly: true },
+      { to: '/spatii',            icon: 'ti-building', label: 'Imobile și spații', desktopOnly: true },
     ],
   },
   {
@@ -45,7 +45,7 @@ const GRUPURI = [
     ],
   },
   {
-    titlu: 'Setări',
+    titlu: 'Administrare',
     culoare: '#6B6B70',
     itemi: [
       { to: '/utilizatori', icon: 'ti-user-cog', label: 'Utilizatori', adminOnly: true, desktopOnly: true },

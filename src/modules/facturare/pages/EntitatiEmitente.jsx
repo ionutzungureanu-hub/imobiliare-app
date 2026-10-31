@@ -64,7 +64,7 @@ export default function EntitatiEmitente() {
 
   return (
     <>
-      <Topbar title="Entități emitente" subtitle="Firmele care emit facturile de chirie">
+      <Topbar title="Firme emitente" subtitle="Firmele care emit facturile de chirie">
         <button className="btn btn-primary btn-sm" onClick={() => setForm(gol())}><i className="ti ti-plus" /> Entitate nouă</button>
       </Topbar>
       <div className="content">
