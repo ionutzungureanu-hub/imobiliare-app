@@ -1,14 +1,17 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import Topbar from '../../../shared/components/Topbar'
 import { useToast } from '../../../shared/components/Toast'
+import { useAuth } from '../../../shared/context/AuthContext'
 import { fmt } from '../../../shared/utils'
 import { mesajEroare } from '../../../shared/utils/eroare'
-import { getRegistru, updateRegistruCampuri } from '../../../shared/firebase/firestore'
+import { getRegistru, updateRegistruCampuri, getEntitatiEmitente } from '../../../shared/firebase/firestore'
 import { rotunjeste, anIndexat } from '../services/facturareUtils'
 
 // Indexarea anuală a chiriilor: rata se introduce manual când apare; fiecare sumă nouă poate fi corectată
 export default function IndexareAnuala() {
   const toast = useToast()
+  const { isAdmin } = useAuth()
+  const [numeFirme, setNumeFirme] = useState([])
   const [an, setAn] = useState(new Date().getFullYear())
   const [rata, setRata] = useState('')
   const [rotunjire, setRotunjire] = useState('2')
@@ -20,7 +23,7 @@ export default function IndexareAnuala() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    try { setRows(await getRegistru('comercial')) }
+    try { const [r, e] = await Promise.all([getRegistru('comercial'), getEntitatiEmitente()]); setRows(r); setNumeFirme(e.map(x => x.nume)) }
     catch (e) { console.error(e); toast(mesajEroare(e, 'Eroare la încărcare'), 'error') }
     setLoading(false)
   }, [])
@@ -35,13 +38,14 @@ export default function IndexareAnuala() {
   const { deIndexat, indexate } = useMemo(() => {
     const d = [], i = []
     for (const r of rows) {
+      if (!isAdmin && r.entitate && !numeFirme.includes(r.entitate)) continue   // firmă fără acces
       if (!r.factActiv || r.indexabil === false || !Number(r.chirie) || r.activManual === false) continue
       if (r.dataFinal && r.activManual !== true && r.dataFinal < `${an}-01-01`) continue
       if (anIndexat(r) < an) d.push(r); else i.push(r)
     }
     const sort = (a, b) => String(a.entitate).localeCompare(String(b.entitate)) || String(a.numar).localeCompare(String(b.numar))
     return { deIndexat: d.sort(sort), indexate: i.sort(sort) }
-  }, [rows, an])
+  }, [rows, an, numeFirme, isAdmin])
 
   const nou = (r) => noi[r.id] !== undefined && noi[r.id] !== '' ? Number(noi[r.id]) : calculeaza(r.chirie)
   const alese = deIndexat.filter(r => sel[r.id])

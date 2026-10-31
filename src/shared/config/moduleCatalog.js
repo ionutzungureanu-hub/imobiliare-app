@@ -20,6 +20,7 @@ export const MODULE = [
   { key: 'nota_calcul', to: '/nota-calcul',        paths: ['/nota-calcul'], icon: 'ti-calculator', label: 'Notă de calcul', scurt: 'Notă', section: 'Ciclul lunar', inMeniu: false, def: { d: true, m: true, h: true } },
 
   { key: 'biblioteca',  to: '/biblioteca',         paths: ['/biblioteca'], icon: 'ti-books', label: 'Bibliotecă', section: 'Documente și rapoarte', def: { d: true, m: true, h: true } },
+  { key: 'firme',      to: '/firme',             paths: ['/firme'], icon: 'ti-building-bank', label: 'Registru firme', scurt: 'Firme', section: 'Documente și rapoarte', def: { d: true, m: false, h: false } },
   { key: 'rapoarte',    to: '/rapoarte',           paths: ['/rapoarte'], icon: 'ti-chart-bar', label: 'Rapoarte', section: 'Documente și rapoarte', def: { d: true, m: false, h: true } },
 
   { key: 'acces',       to: '/acces',              paths: ['/acces'], icon: 'ti-key', label: 'Acces imobile', section: 'Setări', adminOnly: true, fix: true, def: { d: true, m: false, h: false } },

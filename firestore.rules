@@ -16,6 +16,13 @@ service cloud.firestore {
     function acc()       { return get(accPath()).data; }
     function canAny()    { return isAdmin() || hasAcc(); }
 
+    // Acces la o firmă emitentă: persoana e în lista acces[] a entității (decisă de administrator)
+    function entPath(eid) { return /databases/$(database)/documents/entitati_emitente/$(eid); }
+    function entAcc(eid) {
+      return isActive() && eid is string && exists(entPath(eid))
+        && request.auth.uid in get(entPath(eid)).data.get('acces', []);
+    }
+
     // Nivelul pe un imobil: 0 fără acces · 1 vizualizare · 2 operare · 3 administrare
     function nivel(imobilId) {
       return (hasAcc() && imobilId is string && (imobilId in acc().get('imobile', {})))
@@ -83,15 +90,29 @@ service cloud.firestore {
       allow update: if rd(2) && wr(2);
       allow delete: if rd(3);
     }
-    // Firmele care facturează: citite de orice cont cu acces, scrise doar de administrator (nu conțin chei secrete)
-    match /entitati_emitente/{id} { allow read: if canAny(); allow write: if isAdmin(); }
-    // Evidența chiriilor facturate lunar (câte un document pe contract și lună)
-    match /facturari_lunare/{id}  { allow read: if rd(1); allow create: if wr(2); allow update: if rd(2) && wr(2); allow delete: if rd(2); }
+    // Firmele care facturează: le văd doar persoanele din acces[]; le configurează doar administratorul (fără chei secrete aici)
+    match /entitati_emitente/{id} {
+      allow read:  if isAdmin() || (isActive() && request.auth.uid in resource.data.get('acces', []));
+      allow write: if isAdmin();
+    }
+    // Evidența chiriilor facturate lunar (câte un document pe contract și lună): acces pe imobil ȘI pe firmă
+    match /facturari_lunare/{id}  {
+      allow read:   if isAdmin() || (rd(1) && entAcc(resource.data.get('entitateId', null)));
+      allow create: if isAdmin() || (wr(2) && entAcc(request.resource.data.get('entitateId', null)));
+      allow update: if isAdmin() || (rd(2) && wr(2) && entAcc(resource.data.get('entitateId', null)));
+      allow delete: if isAdmin() || (rd(2) && entAcc(resource.data.get('entitateId', null)));
+    }
     match /note_calcul/{id}       { allow read: if rd(1); allow create: if wr(2); allow update: if rd(2) && wr(2); allow delete: if rd(2); }
     match /templates_nota/{id}    { allow read: if rd(1); allow create: if wr(2); allow update: if rd(2) && wr(2); allow delete: if rd(2); }
     match /istoric_spatiu/{id}    { allow read: if rd(1); allow create: if wr(2); allow update: if rd(2) && wr(2); allow delete: if rd(2); }
     match /contracte_drafturi/{id}{ allow read: if rd(1); allow create: if wr(2); allow update: if rd(2) && wr(2); allow delete: if rd(2); }
-    match /documente/{id}         { allow read: if rd(1); allow create: if wr(2); allow update: if rd(2) && wr(2); allow delete: if rd(2); }
+    // Documente: pe imobil (clienți, imobile) sau pe firmă emitentă (entityType == 'entitate', fără imobil)
+    match /documente/{id} {
+      allow read:   if rd(1) || (resource.data.get('entityType', '') == 'entitate' && entAcc(resource.data.get('entityId', null)));
+      allow create: if wr(2) || (request.resource.data.get('entityType', '') == 'entitate' && entAcc(request.resource.data.get('entityId', null)));
+      allow update: if (rd(2) && wr(2)) || (resource.data.get('entityType', '') == 'entitate' && entAcc(resource.data.get('entityId', null)));
+      allow delete: if rd(2) || (resource.data.get('entityType', '') == 'entitate' && entAcc(resource.data.get('entityId', null)));
+    }
     match /note/{id}              { allow read: if rd(1); allow create: if wr(2); allow update: if rd(2) && wr(2); allow delete: if rd(2); }
     match /emailuri/{id}          { allow read: if rd(1); allow create: if wr(2); allow update: if rd(2) && wr(2); allow delete: if rd(2); }
     match /comunicari/{id}        { allow read: if rd(1); allow create: if wr(2); allow update: if rd(2) && wr(2); allow delete: if rd(2); }

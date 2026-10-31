@@ -24,9 +24,17 @@ service firebase.storage {
                             in firestore.get(/databases/(default)/documents/acces/$(request.auth.uid)).data.get('imobile', {})));
     }
 
-    // Restul fișierelor (documente, contracte, poze): personalul cu acces
+    // Documentele firmelor emitente: doar administratorul și persoanele din acces[] al entității
+    match /documente/entitati/{eid}/{file} {
+      allow read, write: if isAdminS()
+        || (signedIn()
+            && firestore.exists(/databases/(default)/documents/entitati_emitente/$(eid))
+            && request.auth.uid in firestore.get(/databases/(default)/documents/entitati_emitente/$(eid)).data.get('acces', []));
+    }
+
+    // Restul fișierelor (documente, contracte, poze): personalul cu acces — fără folderul firmelor
     match /{allPaths=**} {
-      allow read, write: if isAdminS() || hasAccS();
+      allow read, write: if !allPaths.matches('documente/entitati/.*') && (isAdminS() || hasAccS());
     }
   }
 }

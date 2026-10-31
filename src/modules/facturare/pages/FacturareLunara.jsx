@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Topbar from '../../../shared/components/Topbar'
 import { useToast } from '../../../shared/components/Toast'
+import { useAuth } from '../../../shared/context/AuthContext'
 import { fmt } from '../../../shared/utils'
 import { mesajEroare } from '../../../shared/utils/eroare'
 import {
@@ -18,6 +19,7 @@ const suma0 = (r) => Number(r.chirie) || 0
 export default function FacturareLunara() {
   const toast = useToast()
   const navigate = useNavigate()
+  const { isAdmin } = useAuth()
   const [luna, setLuna] = useState(luna0())
   const [zi, setZi] = useState('05')
   const [curs, setCurs] = useState('')
@@ -52,6 +54,8 @@ export default function FacturareLunara() {
     const p = [], b = [], n = []
     for (const r of rows) {
       const fac = facDe(r)
+      // Cine nu are acces la firma contractului nu îl vede deloc
+      if (!isAdmin && r.entitate && !entDe(r)) continue
       if (!inLuna(r, luna) && !fac) continue
       if (!suma0(r) && !fac) continue
       if (!r.factActiv && !fac) { n.push(r); continue }
@@ -69,7 +73,7 @@ export default function FacturareLunara() {
     }
     const dupa = (x, y) => String(x.r.entitate).localeCompare(String(y.r.entitate)) || String(x.r.numar).localeCompare(String(y.r.numar))
     return { pregatite: p.sort(dupa), blocate: b.sort(dupa), neactivate: n }
-  }, [rows, entitati, facturate, luna])
+  }, [rows, entitati, facturate, luna, isAdmin])
 
   const sumaRand = (it) => it.fac ? Number(it.fac.suma) : (sumeMod[it.r.id] !== undefined ? Number(sumeMod[it.r.id]) : suma0(it.r))
   const calc = (it) => it.fac
@@ -113,7 +117,7 @@ export default function FacturareLunara() {
       for (const it of selectate) {
         const c = calc(it)
         await saveFacturareLuna({
-          contractId: it.r.id, luna, imobilId: it.r.imobilId || '', contractNr: it.r.numar || '',
+          contractId: it.r.id, luna, imobilId: it.r.imobilId || '', contractNr: it.r.numar || '', entitateId: it.ent.id,
           clientId: it.r.clientId, clientNume: clientDe(it.r)?.nume || it.r.nume || '',
           entitate: it.ent.nume, serie: it.ent.serie, numar: '',
           dataEmitere, dataScadenta: scad(it), suma: sumaRand(it), moneda: it.r.moneda || 'RON',

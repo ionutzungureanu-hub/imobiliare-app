@@ -3,7 +3,7 @@ import Topbar from '../../../shared/components/Topbar'
 import { useToast } from '../../../shared/components/Toast'
 import { useAuth } from '../../../shared/context/AuthContext'
 import { mesajEroare } from '../../../shared/utils/eroare'
-import { getImobile, getUsers, getAllAcces, setAcces, deleteUserProfile, updateUserProfile, NIVELURI } from '../../../shared/firebase/firestore'
+import { getImobile, getUsers, getAllAcces, setAcces, deleteUserProfile, updateUserProfile, NIVELURI, getEntitatiEmitente, setAccesEntitate } from '../../../shared/firebase/firestore'
 
 const esteUid = (id) => /^[A-Za-z0-9]{20,}$/.test(id || '')
 
@@ -14,6 +14,7 @@ export default function AccesImobile() {
   const [imobile,  setImobile]  = useState([])
   const [persoane, setPersoane] = useState([])   // { uid, nume, email, rol, activ, imobile:{id:nivel} }
   const [vechi,    setVechi]    = useState([])   // profile vechi (fără cont legat)
+  const [firme,    setFirme]    = useState([])   // entități emitente, cu acces[]
   const [loading,  setLoading]  = useState(true)
   const [busy,     setBusy]     = useState('')
 
@@ -32,6 +33,7 @@ export default function AccesImobile() {
       })
       setPersoane([...map.values()].sort((a, b) => String(a.nume || a.email).localeCompare(String(b.nume || b.email))))
       setVechi(users.filter(u => !esteUid(u.id)))
+      try { setFirme(await getEntitatiEmitente()) } catch (e) { console.warn('firme', e) }
     } catch (e) { console.error(e); toast(mesajEroare(e, 'Eroare la încărcare'), 'error') }
     setLoading(false)
   }
@@ -54,6 +56,15 @@ export default function AccesImobile() {
         if (nivel > 0) m[imobilId] = nivel; else delete m[imobilId]
         return { ...x, imobile: m }
       }))
+    } catch (e) { console.error(e); toast(mesajEroare(e, 'Nu s-a putut salva accesul'), 'error') }
+    setBusy('')
+  }
+
+  const comutaFirma = async (p, f, on) => {
+    setBusy(p.uid + f.id)
+    try {
+      await setAccesEntitate(f.id, p.uid, on)
+      setFirme(l => l.map(x => x.id === f.id ? { ...x, acces: on ? [...(x.acces || []), p.uid] : (x.acces || []).filter(u => u !== p.uid) } : x))
     } catch (e) { console.error(e); toast(mesajEroare(e, 'Nu s-a putut salva accesul'), 'error') }
     setBusy('')
   }
@@ -158,6 +169,38 @@ export default function AccesImobile() {
                           </button>
                         )}
                       </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+
+        <div className="card" style={{ marginTop: 16 }}>
+          <div className="card-header">
+            <div className="card-title">Acces la firme emitente</div>
+            <div className="card-subtitle">Cine are acces la o firmă vede registrul ei de documente și poate emite / marca facturile ei. Fără bifă, firma nu apare deloc.</div>
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            {firme.length === 0 ? (
+              <div className="empty"><i className="ti ti-building-bank" /><p>Nicio firmă emitentă. Adaug-o din Setări → Entități emitente.</p></div>
+            ) : (
+              <table>
+                <thead><tr><th>Persoană</th>{firme.map(f => <th key={f.id}>{f.nume}</th>)}</tr></thead>
+                <tbody>
+                  {persoane.map(p => (
+                    <tr key={p.uid} style={p.activ === false ? { opacity: .55 } : undefined}>
+                      <td><div style={{ fontWeight: 600 }}>{p.nume || p.email || p.uid}</div></td>
+                      {firme.map(f => (
+                        <td key={f.id}>
+                          {p.rol === 'admin' ? <span style={{ color: 'var(--slate)', fontSize: 12 }}>tot</span> : (
+                            <input type="checkbox" checked={(f.acces || []).includes(p.uid)} disabled={busy === p.uid + f.id}
+                              onChange={e => comutaFirma(p, f, e.target.checked)} style={{ width: 18, height: 18 }}
+                              aria-label={`Acces ${p.nume || p.email} la ${f.nume}`} />
+                          )}
+                        </td>
+                      ))}
                     </tr>
                   ))}
                 </tbody>

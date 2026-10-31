@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth'
 import { auth } from '../firebase/config'
-import { getUserProfile, getAccesUser, setScope, updateUserProfile } from '../firebase/firestore'
+import { getUserProfile, getAccesUser, setScope, updateUserProfile, getEntitatiAccesUser } from '../firebase/firestore'
 import { setApelativ, adreseaza } from '../utils/apelativ'
 
 // Confirmările din aplicație se adresează direct: „Ionuț, ștergi contractul?”
@@ -22,17 +22,21 @@ export function AuthProvider({ children }) {
   const [user,    setUser]    = useState(null)
   const [profile, setProfile] = useState(null)
   const [acces,   setAcces]   = useState(null)
+  const [entIds,  setEntIds]   = useState([])
   const [loading, setLoading] = useState(true)
 
   const incarca = useCallback(async (u) => {
-    if (!u) { setProfile(null); setAcces(null); setScope({ admin: false, ids: [] }); return }
+    if (!u) { setProfile(null); setAcces(null); setEntIds([]); setScope({ admin: false, ids: [], ent: [] }); return }
     let prof = null, acc = null
     try { prof = await getUserProfile(u.uid) } catch (e) { console.warn('profil', e) }
     try { acc  = await getAccesUser(u.uid) }  catch (e) { console.warn('acces', e) }
     const activ  = !prof || prof.activ !== false
     const admin  = !!prof && prof.rol === 'admin' && activ
     const ids    = activ && acc ? Object.keys(acc.imobile || {}).filter(k => (acc.imobile[k] || 0) >= 1) : []
-    setScope({ admin, ids })           // înainte de orice încărcare de date
+    let ent = []
+    if (activ && !admin) { try { ent = await getEntitatiAccesUser(u.uid) } catch (e) { console.warn('entități', e) } }
+    setScope({ admin, ids, ent })      // înainte de orice încărcare de date
+    setEntIds(ent)
     setApelativ(prof?.apelativ || '')
     setProfile(prof)
     setAcces(acc)
@@ -69,13 +73,14 @@ export function AuthProvider({ children }) {
   const canAdmin  = (imobilId) => nivelPe(imobilId) >= 3
   const imobileAdministrate = null
   const esteDelegat = false
-  const faraAcces = !!user && !isAdmin && accessIds.length === 0
+  const canEnt    = (entId) => isAdmin || entIds.includes(entId)
+  const faraAcces = !!user && !isAdmin && accessIds.length === 0 && entIds.length === 0
 
   return (
     <AuthContext.Provider value={{
       user, profile, acces, loading, login, logout, reload, salveazaApelativ,
       isAdmin, accessIds, nivelPe, canView, canWrite, canAdmin,
-      imobileAdministrate, esteDelegat, faraAcces,
+      imobileAdministrate, esteDelegat, faraAcces, entitatiIds: entIds, canEnt,
     }}>
       {!loading && children}
     </AuthContext.Provider>

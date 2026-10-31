@@ -1,17 +1,18 @@
 import {
   collection, doc, getDocs, getDoc,
   addDoc, updateDoc, deleteDoc, deleteField, setDoc,
-  query, where, orderBy, serverTimestamp, arrayUnion, writeBatch, Timestamp
+  query, where, orderBy, serverTimestamp, arrayUnion, arrayRemove, writeBatch, Timestamp
 } from 'firebase/firestore/lite'
-import { db } from './config'
+import { db, auth } from './config'
 
 // ══ SCOPE: accesul pe imobil ═══════════════════════════════════
 // AuthContext setează scope-ul la login. Administratorul vede tot;
 // ceilalți utilizatori văd doar documentele cu imobilId din lista lor.
 // Fiecare interogare a unui non-admin conține obligatoriu where('imobilId','==',X)
 // (cerință a regulilor Firestore: regulile nu sunt filtre).
-let _scope = { admin: false, ids: [] }
-export const setScope = (s) => { _scope = { admin: !!s.admin, ids: s.ids || [] } }
+// ent = firmele emitente la care persoana are acces (câmpul acces[] de pe entitate)
+let _scope = { admin: false, ids: [], ent: [] }
+export const setScope = (s) => { _scope = { admin: !!s.admin, ids: s.ids || [], ent: s.ent || [] } }
 export const getScope = () => _scope
 
 const _map = (snap) => snap.docs.map(d => ({ ...d.data(), id: d.id }))
@@ -362,21 +363,48 @@ export const syncRegistruDinSpatiu = async (spatiuId, clientId, { dataStart, dat
 }
 
 // ── ENTITĂȚI EMITENTE (firmele care facturează) ───────────────
-// Doar administratorul le gestionează. Legătura cu contractul: câmpul „entitate” (numele) din registru.
-export const getEntitatiEmitente = async () =>
-  _map(await getDocs(collection(db, 'entitati_emitente'))).sort((a, b) => String(a.nume).localeCompare(String(b.nume)))
+// Configurarea o face doar administratorul. Fiecare entitate are acces[] = lista persoanelor care o văd și o folosesc
+// (facturare + documente). Legătura cu contractul: câmpul „entitate” (numele) din registru.
+export const getEntitatiEmitente = async () => {
+  const snap = _scope.admin
+    ? await getDocs(collection(db, 'entitati_emitente'))
+    : await getDocs(query(collection(db, 'entitati_emitente'), where('acces', 'array-contains', auth.currentUser?.uid || '_')))
+  return _map(snap).sort((a, b) => String(a.nume).localeCompare(String(b.nume)))
+}
+// Folosit la login, înainte ca scope-ul să fie setat
+export const getEntitatiAccesUser = async (uid) =>
+  _map(await getDocs(query(collection(db, 'entitati_emitente'), where('acces', 'array-contains', uid)))).map(e => e.id)
 
 export const saveEntitateEmitenta = async (data) => {
-  const { id, ...rest } = data
+  const { id, acces, ...rest } = data     // acces[] se modifică doar din „Acces imobile” (setAccesEntitate)
   if (id) { await updateDoc(doc(db, 'entitati_emitente', id), stripUndefined({ ...rest, updatedAt: serverTimestamp() })); return id }
-  const ref = await addDoc(collection(db, 'entitati_emitente'), stripUndefined({ ...rest, creatLa: serverTimestamp() }))
+  const ref = await addDoc(collection(db, 'entitati_emitente'), stripUndefined({ ...rest, acces: acces || [], creatLa: serverTimestamp() }))
   return ref.id
 }
 export const deleteEntitateEmitenta = async (id) => deleteDoc(doc(db, 'entitati_emitente', id))
 
+// Administratorul dă / retrage accesul unei persoane la o firmă emitentă
+export const setAccesEntitate = async (entitateId, uid, on) =>
+  updateDoc(doc(db, 'entitati_emitente', entitateId), { acces: on ? arrayUnion(uid) : arrayRemove(uid) })
+
+// Documentele firmei (registrul firmei): nu au imobil, accesul se verifică pe entitate
+export const getDocumenteEntitate = async (entitateId) =>
+  _map(await getDocs(query(collection(db, 'documente'), where('entityType', '==', 'entitate'), where('entityId', '==', entitateId))))
+    .sort((a, b) => (b.uploadatLa?.seconds || 0) - (a.uploadatLa?.seconds || 0))
+export const addDocumentEntitate = async (data) =>
+  addDoc(collection(db, 'documente'), stripUndefined({ ...data, entityType: 'entitate', uploadatLa: serverTimestamp() }))
+
 // ── FACTURARE LUNARĂ (evidența chiriilor facturate) ───────────
 // ID determinist contract+lună → o chirie nu poate fi marcată de două ori
-export const getFacturariLuna = async (luna) => scoped('facturari_lunare', [where('luna', '==', luna)])
+export const getFacturariLuna = async (luna) => {
+  if (_scope.admin) return scoped('facturari_lunare', [where('luna', '==', luna)])
+  // Regulile cer filtru explicit pe firmă (și pe imobil, adăugat de scoped)
+  const out = new Map()
+  await Promise.all((_scope.ent || []).map(async eid => {
+    (await scoped('facturari_lunare', [where('luna', '==', luna), where('entitateId', '==', eid)])).forEach(f => out.set(f.id, f))
+  }))
+  return [...out.values()]
+}
 
 export const saveFacturareLuna = async (data) => {
   const id = `${data.contractId}_${data.luna}`
