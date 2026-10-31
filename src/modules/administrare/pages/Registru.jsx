@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useToast } from '../../../shared/components/Toast'
 import {
   getRegistru, saveRegistruRand, deleteRegistruRand, getNextNumarSerie,
-  getClienti, getSpatii, getImobile, addClient, setEntitateRegistru, getEntitatiEmitente,
+  getClienti, getSpatii, getImobile, addClient, updateRegistruCampuri, setEntitateRegistru, getEntitatiEmitente,
 } from '../../../shared/firebase/firestore'
 import { mesajEroare } from '../../../shared/utils/eroare'
 import { azi, esteActiv, listaEntitati, ENTITATI_IMPLICITE } from '../services/registruUtils'
@@ -14,7 +14,7 @@ const zileLa = d => d ? Math.ceil((new Date(d + 'T00:00:00') - new Date(azi() + 
 
 const gol = tip => ({
   registru: tip, serieId: '', numar: '', identificator: '', clientId: '', nume: '', administrator: '',
-  spatiuId: '', entitate: '', dataStart: '', dataFinal: '', activManual: null,
+  spatiuId: '', entitate: '', dataStart: '', dataFinal: '', activManual: null, expirareTratata: '',
   chirie: '', moneda: 'EUR', garantie: '', indexare: '', observatii: '',
   factActiv: false, tva: '', tipScadenta: '', valScadenta: '', indexabil: true, textFactura: '',
 })
@@ -52,6 +52,13 @@ export default function Registru({ tip, serii }) {
     setLoading(false)
   }, [tip])
   useEffect(() => { load() }, [load])
+
+  // „Tratată” = bifa e legată de data de final curentă; dacă data se schimbă (prelungire), memento-urile reîncep pentru noua dată
+  const tratata = r => !!r.dataFinal && r.expirareTratata === r.dataFinal
+  const comutaTratata = async (r) => {
+    try { await updateRegistruCampuri(r.id, { expirareTratata: tratata(r) ? '' : r.dataFinal }); await load() }
+    catch (e) { toast(mesajEroare(e), 'error') }
+  }
 
   const imobilDe = useMemo(() => Object.fromEntries(imobile.map(i => [i.id, i])), [imobile])
   const spatiuLabel = id => {
@@ -257,6 +264,11 @@ export default function Registru({ tip, serii }) {
                       {activ && zile !== null && zile <= 60 && (
                         <div style={{ fontSize: 11, color: zile <= 30 ? '#9B2C2C' : '#8A5A12' }}>expiră în {zile} zile</div>
                       )}
+                      {r.dataFinal && r.activManual == null && zile !== null && zile <= 7 && zile >= -60 && (
+                        <label style={{ fontSize: 11, display: 'flex', gap: 4, alignItems: 'center', cursor: 'pointer' }} title="Oprește memento-urile pe email pentru această expirare">
+                          <input type="checkbox" checked={tratata(r)} onChange={() => comutaTratata(r)} /> tratat
+                        </label>
+                      )}
                     </td>
                     <td>{r.chirie ? `${r.chirie} ${r.moneda || ''}` : '—'}</td>
                     <td><span className={`badge ${activ ? 'badge-green' : 'badge-gray'}`}>{activ ? 'Activ' : 'Inactiv'}</span></td>
@@ -339,6 +351,13 @@ export default function Registru({ tip, serii }) {
                     <option value="da">Activ (prelungit / în vigoare)</option>
                     <option value="nu">Inactiv (reziliat / încheiat)</option>
                   </select>
+                </Camp>
+                <Camp label="Memento expirare">
+                  <label style={{ display: 'flex', gap: 6, alignItems: 'center', fontWeight: 400 }}>
+                    <input type="checkbox" checked={!!form.dataFinal && form.expirareTratata === form.dataFinal}
+                      onChange={e => set('expirareTratata', e.target.checked ? form.dataFinal : '')} />
+                    Expirare tratată (nu mai trimite emailuri)
+                  </label>
                 </Camp>
                 <Camp label="Chirie lunară">
                   <div style={{ display: 'flex', gap: 6 }}>

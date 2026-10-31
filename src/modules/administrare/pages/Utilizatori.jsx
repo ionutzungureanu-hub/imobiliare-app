@@ -3,7 +3,7 @@ import Topbar from '../../../shared/components/Topbar'
 import { useToast } from '../../../shared/components/Toast'
 import { useAuth } from '../../../shared/context/AuthContext'
 import { getUsers, getAllAcces, updateUserProfile, deleteUserProfile, setAcces, NIVELURI, logAudit } from '../../../shared/firebase/firestore'
-import { creeazaUtilizator, reseteazaParola, seteazaDezactivat, stergeUtilizator } from '../../../shared/services/utilizatoriApi'
+import { creeazaUtilizator, reseteazaParola, seteazaDezactivat, stergeUtilizator, mementoApel } from '../../../shared/services/utilizatoriApi'
 import { mesajEroare } from '../../../shared/utils/eroare'
 import { useImobile } from '../../../shared/hooks/useImobile'
 
@@ -12,6 +12,14 @@ const numeIm = (i) => i.nume || i.denumire || i.id
 
 export default function Utilizatori() {
   const toast = useToast()
+  const [mem, setMem] = useState(null)
+  const [memBusy, setMemBusy] = useState(false)
+  const ruleazaMemento = async (actiune) => {
+    setMemBusy(true)
+    try { const d = await mementoApel(actiune); if (actiune === 'test') toast(d.trimis ? 'Email de test trimis către adresa ta.' : (d.mesaj || 'Nimic de trimis.')); else setMem(d) }
+    catch (e) { toast(mesajEroare(e), 'error') }
+    setMemBusy(false)
+  }
   const { user, isAdmin } = useAuth()
   const { imobile } = useImobile()
 
@@ -42,7 +50,7 @@ export default function Utilizatori() {
   const vechi   = users.filter(u => !esteUid(u.id))
 
   const deschideNou = () => { setForm({ nume: '', username: '', password: '', imobile: {} }); setSel(null); setModal('nou') }
-  const deschideEdit = (u) => { setForm({ nume: u.nume || '', rol: u.rol || 'manager', imobile: { ...(accese[u.id] || {}) } }); setSel(u); setModal('edit') }
+  const deschideEdit = (u) => { setForm({ nume: u.nume || '', emailContact: u.emailContact || '', rol: u.rol || 'manager', imobile: { ...(accese[u.id] || {}) } }); setSel(u); setModal('edit') }
   const deschideParola = (u) => { setForm({ password: '' }); setSel(u); setModal('parola') }
   const inchide = () => { setModal(null); setSel(null) }
 
@@ -91,7 +99,7 @@ export default function Utilizatori() {
     setSaving(true)
     try {
       const u = sel
-      await updateUserProfile(u.id, { nume: form.nume, ...(u.id !== user.uid ? { rol: form.rol } : {}) })
+      await updateUserProfile(u.id, { nume: form.nume, emailContact: (form.emailContact || '').trim(), ...(u.id !== user.uid ? { rol: form.rol } : {}) })
       if (form.rol !== 'admin') {
         const vechiM = accese[u.id] || {}
         for (const id of new Set([...Object.keys(vechiM), ...Object.keys(form.imobile)])) {
@@ -136,6 +144,22 @@ export default function Utilizatori() {
       </Topbar>
 
       <div className="content">
+        <div className="card" style={{ marginBottom: 16 }}><div className="card-body">
+          <strong><i className="ti ti-bell" /> Memento expirări contracte (email zilnic)</strong>
+          <div style={{ fontSize: 13, color: 'var(--slate)', margin: '4px 0 10px' }}>
+            Cu 7 zile înainte de expirare și apoi zilnic, până se bifează „tratat” în Registru sau se modifică data de final. Primesc administratorii și cei cu acces la imobil, la „Email pentru notificări” (se completează la Editare utilizator).
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button className="btn btn-ghost btn-sm" disabled={memBusy} onClick={() => ruleazaMemento('previzualizare')}><i className="ti ti-eye" /> Previzualizează cine primește</button>
+            <button className="btn btn-ghost btn-sm" disabled={memBusy} onClick={() => ruleazaMemento('test')}><i className="ti ti-send" /> Trimite test către mine</button>
+          </div>
+          {mem && (
+            <div style={{ fontSize: 13, marginTop: 10 }}>
+              Azi ({mem.azi}): <strong>{mem.contracte}</strong> contracte de semnalat, <strong>{mem.destinatari.length}</strong> destinatari.
+              {mem.destinatari.map((d, i) => <div key={i}>• {d.nume || d.email} — {d.email} ({d.contracte})</div>)}
+            </div>
+          )}
+        </div></div>
         <div className="alert alert-info" style={{ marginBottom: 16 }}>
           <i className="ti ti-info-circle" />
           <span>
@@ -223,6 +247,8 @@ export default function Utilizatori() {
                   <div className="form-grid">
                     <div className="form-group"><label>Nume</label>
                       <input value={form.nume} onChange={e => setForm(f => ({ ...f, nume: e.target.value }))} /></div>
+                    <div className="form-group"><label>Email pentru notificări</label>
+                      <input type="email" value={form.emailContact || ''} onChange={e => setForm(f => ({ ...f, emailContact: e.target.value }))} placeholder="maria@firma.ro" /></div>
                     {sel?.id !== user.uid && (
                       <div className="form-group"><label>Rol</label>
                         <select value={form.rol} onChange={e => setForm(f => ({ ...f, rol: e.target.value }))}>

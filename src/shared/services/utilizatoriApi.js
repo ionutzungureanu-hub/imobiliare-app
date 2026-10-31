@@ -27,3 +27,19 @@ export const creeazaUtilizator = ({ username, password, nume, imobile }) => apel
 export const reseteazaParola   = (uid, password) => apel({ actiune: 'resetPassword', uid, password })
 export const seteazaDezactivat = (uid, disabled) => apel({ actiune: 'setDisabled', uid, disabled })
 export const stergeUtilizator  = (uid) => apel({ actiune: 'delete', uid })
+
+// Memento expirări (funcție programată; aici doar previzualizare / test către administrator)
+export const mementoApel = async (actiune) => {
+  const user = auth.currentUser
+  if (!user) throw new Error('Nu ești autentificat.')
+  const idToken = await user.getIdToken()
+  let r
+  try {
+    r = await fetch('/.netlify/functions/memento-expirari', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` }, body: JSON.stringify({ actiune }),
+    })
+  } catch { throw new Error('Funcția de memento nu poate fi contactată.') }
+  const d = await r.json().catch(() => ({}))
+  if (!r.ok) throw new Error(d.error || `Eroare server (${r.status}).`)
+  return d
+}
