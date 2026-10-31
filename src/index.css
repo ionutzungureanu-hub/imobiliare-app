@@ -469,3 +469,21 @@ input[type=checkbox], input[type=radio] { -webkit-appearance: auto; appearance: 
 @media (max-width: 768px) { input, select, textarea { font-size: 16px; } }
 .login-wrap { min-height: 100vh; min-height: 100dvh; padding: 16px; box-sizing: border-box; }
 .login-card { position: relative; z-index: 1; }
+
+/* ── Schelete de încărcare ───────────────────────── */
+.sk {
+  background: linear-gradient(90deg, #ECE8DE 25%, #F6F3EC 50%, #ECE8DE 75%);
+  background-size: 200% 100%;
+  animation: sk-shimmer 1.4s ease-in-out infinite;
+}
+@keyframes sk-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* ── Grafice dashboard ───────────────────────────── */
+.gf-bar { height: 100%; border-radius: 4px; transform-origin: left; animation: gf-w .7s cubic-bezier(.2,.7,.2,1) both; }
+.gf-col { width: 100%; border-radius: 4px 4px 0 0; transform-origin: bottom; animation: gf-h .7s cubic-bezier(.2,.7,.2,1) both; }
+@keyframes gf-w { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes gf-h { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .sk, .gf-bar, .gf-col { animation: none; }
+}

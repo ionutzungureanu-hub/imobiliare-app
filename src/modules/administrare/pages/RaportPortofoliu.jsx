@@ -4,6 +4,7 @@ import { getImobile, getSpatii, getRegistru, getEntitatiEmitente, getFacturariLu
 import { mesajEroare } from '../../../shared/utils/eroare'
 import { esteActiv, azi } from '../services/registruUtils'
 import { construiesteCsv, descarca, fmtD } from '../../facturare/services/facturareUtils'
+import { SceletTabel } from '../../../shared/components/Schelet'
 
 const nr = (v, z = 2) => (Number(v) || 0).toLocaleString('ro-RO', { minimumFractionDigits: z, maximumFractionDigits: z })
 const LUNI = ['ian', 'feb', 'mar', 'apr', 'mai', 'iun', 'iul', 'aug', 'sep', 'oct', 'nov', 'dec']
@@ -77,7 +78,7 @@ export default function RaportPortofoliu() {
 
   const exportCsv = (nume, coloane, randuri) => descarca(`${nume}-${azi()}.csv`, construiesteCsv(coloane, randuri))
 
-  if (loading || !calc) return <div className="empty"><p>Se încarcă…</p></div>
+  if (loading || !calc) return <SceletTabel />
   const { pe_imobil, pe_firma, expiră } = calc
 
   const Titlu = ({ children, onExport }) => (

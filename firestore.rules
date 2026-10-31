@@ -1,4 +1,4 @@
-ommit & pushrules_version = '2';
+corules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 

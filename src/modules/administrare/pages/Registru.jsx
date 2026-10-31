@@ -6,6 +6,8 @@ import {
 } from '../../../shared/firebase/firestore'
 import { mesajEroare } from '../../../shared/utils/eroare'
 import { azi, esteActiv, listaEntitati, ENTITATI_IMPLICITE } from '../services/registruUtils'
+import { SceletTabel } from '../../../shared/components/Schelet'
+import StareGoala from '../../../shared/components/StareGoala'
 
 const normCui = v => String(v || '').toUpperCase().replace(/\s|-/g, '').replace(/^RO/, '')
 const normCnp = v => String(v || '').replace(/\D/g, '')
@@ -235,9 +237,9 @@ export default function Registru({ tip, serii }) {
       </div>
 
       {loading ? (
-        <div className="empty"><i className="ti ti-refresh" /><p>Se încarcă registrul...</p></div>
+        <SceletTabel />
       ) : vizibile.length === 0 ? (
-        <div className="card"><div className="empty"><i className="ti ti-list-details" /><p>Niciun contract în acest registru.</p></div></div>
+        <div className="card"><StareGoala icon="ti-list-details" titlu="Niciun contract aici" text="Schimbă filtrul de sus (Active / Toate) sau adaugă primul contract cu butonul din colțul paginii." /></div>
       ) : (
         <div className="card" style={{ overflowX: 'auto' }}>
           <table>

@@ -7,6 +7,8 @@ import { useAuth } from '../../../shared/context/AuthContext'
 import { mesajEroare } from '../../../shared/utils/eroare'
 import { getEntitatiEmitente, getDocumenteEntitate, addDocumentEntitate, updateDocument, deleteDocument } from '../../../shared/firebase/firestore'
 import { uploadDocumentFirebase, deleteDocumentFirebase, formatBytes } from '../services/storageService'
+import { SceletTabel } from '../../../shared/components/Schelet'
+import StareGoala from '../../../shared/components/StareGoala'
 
 const TIPURI = ['Act constitutiv', 'Certificat de înregistrare / CUI', 'Certificat constatator', 'Contract bancar', 'Asigurare', 'Autorizație', 'Bilanț / declarații', 'Mandat / procură', 'Altul']
 const AN = new Date().getFullYear()
@@ -101,9 +103,9 @@ export function FirmeDocumente({ incorporat = false }) {
     <>
       {!incorporat && <Topbar title="Registru firme" subtitle="Documentele firmelor emitente" />}
       <div className={incorporat ? undefined : 'content'}>
-        {loading ? <div className="empty"><p>Se încarcă…</p></div>
+        {loading ? <SceletTabel />
           : firme.length === 0 ? (
-            <div className="empty"><i className="ti ti-building-bank" /><p>Nu ai acces la nicio firmă emitentă. Administratorul îți poate da acces.</p></div>
+            <StareGoala icon="ti-building-bank" titlu="Nu ai acces la nicio firmă" text="Administratorul îți poate da acces din Acces imobile." />
           ) : firme.map(f => {
             const lista = docs[f.id] || []
             const open = deschis[f.id]

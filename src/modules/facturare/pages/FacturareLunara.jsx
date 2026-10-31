@@ -5,6 +5,8 @@ import { useToast } from '../../../shared/components/Toast'
 import { useAuth } from '../../../shared/context/AuthContext'
 import { fmt } from '../../../shared/utils'
 import { mesajEroare } from '../../../shared/utils/eroare'
+import { SceletTabel } from '../../../shared/components/Schelet'
+import StareGoala from '../../../shared/components/StareGoala'
 import {
   getRegistru, getClienti, getEntitatiEmitente, getFacturariLuna, saveFacturareLuna,
   updateFacturareLuna, deleteFacturareLuna, updateRegistruCampuri, logAudit,
@@ -166,7 +168,7 @@ export default function FacturareLunara() {
           </div>
         </div>
 
-        {loading ? <div className="empty"><p>Se încarcă…</p></div> : (
+        {loading ? <SceletTabel /> : (
           <>
             {blocate.length > 0 && (
               <div className="card" style={{ marginBottom: 16, borderLeft: '4px solid #E3A53A' }}>
@@ -185,7 +187,7 @@ export default function FacturareLunara() {
             )}
 
             {grupuri.length === 0 ? (
-              <div className="card"><div className="empty"><i className="ti ti-receipt" /><p>Nicio chirie pregătită pentru {numeLuna(luna)}.</p></div></div>
+              <div className="card"><StareGoala icon="ti-receipt" titlu={`Nicio chirie de emis pentru ${numeLuna(luna)}`} text="Chiriile apar aici după ce activezi „Facturare lunară automată” la un contract din Registru și îi alegi firma emitentă." /></div>
             ) : grupuri.map(([numeEnt, items]) => {
               const ent = items[0].ent
               const dePe = items.filter(i => !i.fac)

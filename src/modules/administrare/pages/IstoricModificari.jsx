@@ -4,6 +4,7 @@ import { useToast } from '../../../shared/components/Toast'
 import { useAuth } from '../../../shared/context/AuthContext'
 import { mesajEroare } from '../../../shared/utils/eroare'
 import { getAudit, exportaBackup } from '../../../shared/firebase/firestore'
+import { SceletTabel } from '../../../shared/components/Schelet'
 
 const ETICHETE = {
   chirie_modificata: 'Chirie modificată', chirie_indexata: 'Chirie indexată', indexare_omisa: 'Fără indexare', contract_nou: 'Contract nou',
@@ -74,7 +75,7 @@ export default function IstoricModificari() {
           <table>
             <thead><tr><th>Data</th><th>Cine</th><th>Acțiune</th><th>Detalii</th></tr></thead>
             <tbody>
-              {loading ? <tr><td colSpan={4}><div className="empty"><p>Se încarcă…</p></div></td></tr>
+              {loading ? <tr><td colSpan={4}><SceletTabel randuri={4} coloane={3} /></td></tr>
                 : vizibile.length === 0 ? <tr><td colSpan={4}><div className="empty"><i className="ti ti-history" /><p>Nicio modificare înregistrată încă. Apar de acum încolo.</p></div></td></tr>
                 : vizibile.map(r => (
                   <tr key={r.id}>

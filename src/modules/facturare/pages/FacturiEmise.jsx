@@ -5,6 +5,7 @@ import Badge from '../../../shared/components/Badge'
 import { useToast } from '../../../shared/components/Toast'
 
 import { fmt } from '../../../shared/utils'
+import { SceletTabel } from '../../../shared/components/Schelet'
 
 const DEMO = [
   { nr: 'FC-2025-0042', client: 'SC Beta Trading SRL', tip: 'Chirie',           perioada: 'Mai 2025', suma: 5800,  scadenta: '2025-06-05', status: 'Achitata'     },
@@ -85,7 +86,7 @@ export default function FacturiEmise() {
 
         <div className="card">
           {loading ? (
-            <div className="empty"><i className="ti ti-refresh" /><p>Se încarcă din FGO…</p></div>
+            <SceletTabel />
           ) : (
             <table>
               <thead>

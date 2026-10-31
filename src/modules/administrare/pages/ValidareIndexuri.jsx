@@ -3,6 +3,7 @@ import Topbar from '../../../shared/components/Topbar'
 import { useToast } from '../../../shared/components/Toast'
 import { getIndexuriPrimite, updateIndexPrimit, deleteIndexPrimit, saveCitire, getSpatii, getImobile } from '../../../shared/firebase/firestore'
 import { fmt } from '../../../shared/utils'
+import { SceletTabel } from '../../../shared/components/Schelet'
 
 export default function ValidareIndexuri() {
   const toast = useToast()
@@ -83,7 +84,7 @@ export default function ValidareIndexuri() {
 
       <div className="content">
         {loading ? (
-          <div className="empty"><i className="ti ti-refresh" /><p>Se încarcă...</p></div>
+          <SceletTabel />
         ) : indexuri.length === 0 ? (
           <div className="card">
             <div className="empty">

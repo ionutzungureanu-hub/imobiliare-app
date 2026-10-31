@@ -3,6 +3,7 @@ import { useToast } from '../../../shared/components/Toast'
 import { getRegistru } from '../../../shared/firebase/firestore'
 import { mesajEroare } from '../../../shared/utils/eroare'
 import { listaEntitati, NESPECIFICAT } from '../services/registruUtils'
+import { SceletTabel } from '../../../shared/components/Schelet'
 
 const LUNI = ['ian', 'feb', 'mar', 'apr', 'mai', 'iun', 'iul', 'aug', 'sep', 'oct', 'nov', 'dec']
 const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -120,7 +121,7 @@ export default function RaportVenituri() {
     URL.revokeObjectURL(a.href)
   }
 
-  if (loading) return <div className="empty"><i className="ti ti-refresh" /><p>Se încarcă...</p></div>
+  if (loading) return <SceletTabel />
 
   return (
     <>

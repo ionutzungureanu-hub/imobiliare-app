@@ -17,6 +17,7 @@ import {
 import { extractIndexFromImage, fileToBase64 } from '../services/ocrService'
 import { exportDateContoare, exportIstoricContor } from '../services/exportContoare'
 import { fmt } from '../../../shared/utils'
+import { SceletTabel } from '../../../shared/components/Schelet'
 
 const TODAY = new Date().toISOString().split('T')[0]
 
@@ -573,7 +574,7 @@ export default function Utilitati() {
           </div>
         </div>
 
-        {loading && <div className="empty"><i className="ti ti-refresh" /><p>Se încarcă...</p></div>}
+        {loading && <SceletTabel />}
 
         {!loading && spatiuId && (
           <>

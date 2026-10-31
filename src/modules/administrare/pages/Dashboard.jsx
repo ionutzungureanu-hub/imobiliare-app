@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getRegistru, getSpatii, getEntitatiEmitente, getFacturariLuna, getCereriPortal, getIndexuriPrimite } from '../../../shared/firebase/firestore'
+import { getRegistru, getSpatii, getImobile, getEntitatiEmitente, getFacturariLuna, getCereriPortal, getIndexuriPrimite } from '../../../shared/firebase/firestore'
 import { esteActiv, azi } from '../services/registruUtils'
 import { luna0, numeLuna, sumarDeEmis, fmtD } from '../../facturare/services/facturareUtils'
+import GraficeDashboard from '../components/GraficeDashboard'
+import { SceletCarduri } from '../../../shared/components/Schelet'
 import Topbar from '../../../shared/components/Topbar'
 import { useAuth } from '../../../shared/context/AuthContext'
 import { useMeniu } from '../../../shared/context/MeniuContext'
@@ -66,11 +68,11 @@ function Alerte({ navigate, vizibil, isAdmin }) {
     let viu = true
     Promise.allSettled([
       getRegistru('comercial'), getRegistru('rezidential'), getSpatii(), getEntitatiEmitente(), getFacturariLuna(luna),
-      getCereriPortal(), getIndexuriPrimite('asteptare'),
-    ]).then(([a, b, sp, en, fa, ce, ix]) => {
+      getCereriPortal(), getIndexuriPrimite('asteptare'), getImobile(),
+    ]).then(([a, b, sp, en, fa, ce, ix, im]) => {
       if (!viu) return
       const v = (x) => x.status === 'fulfilled' ? x.value : null
-      setD({ comercial: v(a) || [], rezidential: v(b) || [], spatii: v(sp), entitati: v(en) || [], facturate: v(fa) || [], cereri: (v(ce) || []).filter(c => c.status !== 'rezolvat'), indexuri: v(ix) })
+      setD({ comercial: v(a) || [], rezidential: v(b) || [], spatii: v(sp), entitati: v(en) || [], facturate: v(fa) || [], cereri: (v(ce) || []).filter(c => c.status !== 'rezolvat'), indexuri: v(ix), imobile: v(im) || [] })
     })
     return () => { viu = false }
   }, [])
@@ -87,7 +89,7 @@ function Alerte({ navigate, vizibil, isAdmin }) {
     return { active: active.length, exp, expirate, sumar, ocupate, totalSp: d.spatii?.length ?? null }
   }, [d])
 
-  if (!calc) return <div style={{ color: 'var(--slate)', fontSize: 13, marginBottom: 20 }}>Se calculează indicatorii…</div>
+  if (!calc) return <div style={{ marginBottom: 28 }}><SceletCarduri n={4} /></div>
 
   const Tile = ({ label, val, sub, culoare, to, icon }) => (
     <button onClick={() => to && navigate(to)} className="dashboard-btn" disabled={!to}
@@ -135,10 +137,11 @@ function Alerte({ navigate, vizibil, isAdmin }) {
         <Tile icon="ti-clock" label="Expiră în 90 de zile" val={exp.length} to="/contracte" culoare={exp30.length ? 'var(--red)' : exp.length ? 'var(--amber)' : 'var(--green)'} />
         {vizibil('facturi') && <Tile icon="ti-receipt" label={`De emis — ${numeLuna(luna)}`} val={sumar.deEmis} to="/facturi?tab=lunar" culoare="var(--blue)" />}
       </div>
-      <div className="card">
+      <div className="card" style={{ marginBottom: 16 }}>
         <div className="card-header"><div className="card-title">Necesită atenția ta</div></div>
         {alerte.length ? alerte : <div style={{ padding: '14px 16px', fontSize: 13, color: 'var(--green)' }}><i className="ti ti-circle-check" /> Nimic urgent acum.</div>}
       </div>
+      <GraficeDashboard imobile={d.imobile} spatii={d.spatii} contracte={[...d.comercial, ...d.rezidential]} arataVenituri={vizibil('facturi')} />
     </div>
   )
 }

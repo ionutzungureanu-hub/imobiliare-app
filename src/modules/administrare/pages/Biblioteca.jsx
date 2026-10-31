@@ -7,6 +7,7 @@ import { useImobile } from '../../../shared/hooks/useImobile'
 import { getDocumente, addDocument, updateDocument, deleteDocument, getClienti, getUsers, getSpatii } from '../../../shared/firebase/firestore'
 import { uploadDocumentFirebase, formatBytes } from '../services/storageService'
 import { FirmeDocumente } from './RegistruFirme'
+import { SceletTabel } from '../../../shared/components/Schelet'
 
 // Tipuri predefinite per categorie
 const TIPURI = {
@@ -286,7 +287,7 @@ export default function Biblioteca() {
         </div>
 
         {tab === 'firme' ? <FirmeDocumente incorporat /> : loading ? (
-          <div className="empty"><i className="ti ti-refresh" /><p>Se încarcă...</p></div>
+          <SceletTabel />
         ) : (
           <>
             {/* Tab Clienți */}

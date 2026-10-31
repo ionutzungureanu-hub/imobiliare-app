@@ -6,6 +6,7 @@ import { fmt } from '../../../shared/utils'
 import { mesajEroare } from '../../../shared/utils/eroare'
 import { getRegistru, updateRegistruCampuri, getEntitatiEmitente, logAudit } from '../../../shared/firebase/firestore'
 import { rotunjeste, anIndexat } from '../services/facturareUtils'
+import { SceletTabel } from '../../../shared/components/Schelet'
 
 // Indexarea anuală a chiriilor: rata se introduce manual când apare; fiecare sumă nouă poate fi corectată
 export default function IndexareAnuala() {
@@ -104,7 +105,7 @@ export default function IndexareAnuala() {
           </div>
         </div>
 
-        {loading ? <div className="empty"><p>Se încarcă…</p></div> : (
+        {loading ? <SceletTabel /> : (
           <>
             <div className="card">
               <div className="card-header" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

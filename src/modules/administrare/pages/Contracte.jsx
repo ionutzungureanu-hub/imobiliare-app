@@ -9,6 +9,7 @@ import {
 } from '../../../shared/firebase/firestore'
 import Registru from './Registru'
 import { docxToHtml, htmlToDocx } from '../services/docxService'
+import { SceletTabel } from '../../../shared/components/Schelet'
 
 export default function Contracte() {
   const toast = useToast()
@@ -198,7 +199,7 @@ export default function Contracte() {
           </div>
         )}
 
-        {loading && <div className="empty"><i className="ti ti-refresh" /><p>Se încarcă...</p></div>}
+        {loading && <SceletTabel />}
 
         {(tab === 'reg_comercial' || tab === 'reg_rezidential') && (
           <Registru key={tab} tip={tab === 'reg_comercial' ? 'comercial' : 'rezidential'} serii={serii} />

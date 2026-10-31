@@ -11,6 +11,7 @@ import {
 } from '../../../shared/firebase/firestore'
 import { mesajEroare } from '../../../shared/utils/eroare'
 import { esteActiv } from '../services/registruUtils'
+import { SceletTabel } from '../../../shared/components/Schelet'
 import {
   statusServerEmail, trimiteEmailServer, aplicaVariabile, textLaHtml, VARIABILE, SABLOANE_EXEMPLU,
 } from '../../../shared/services/comunicareService'
@@ -99,7 +100,7 @@ export default function Comunicare() {
           <Tab id="expeditori" icon="ti-at">Expeditori ({expeditori.length})</Tab>
         </div>
         {bannerServer}
-        {loading ? <div className="empty"><i className="ti ti-refresh" /><p>Se încarcă...</p></div> : (
+        {loading ? <SceletTabel /> : (
           <>
             {tab === 'compune' && <Compune {...{ clienti, registru, expeditori, sabloane, spatiuLabel, user, server, toast, reload: load, clientInitial: params.get('client') }} />}
             {tab === 'istoric' && <Istoric {...{ istoric, clienti, clientInitial: params.get('client') || '' }} />}

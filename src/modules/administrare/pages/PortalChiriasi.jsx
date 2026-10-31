@@ -6,6 +6,8 @@ import Topbar from '../../../shared/components/Topbar'
 import { useToast } from '../../../shared/components/Toast'
 import { useAuth } from '../../../shared/context/AuthContext'
 import { mesajEroare } from '../../../shared/utils/eroare'
+import { SceletTabel } from '../../../shared/components/Schelet'
+import StareGoala from '../../../shared/components/StareGoala'
 import {
   getImobile, getSpatii, getPortale, savePortal, setPortalActiv, genTokenPortal,
   getCereriPortal, updateCererePortal, deleteCererePortal, getIndexuriPrimite, logAudit,
@@ -128,7 +130,7 @@ export default function PortalChiriasi() {
           ))}
         </div>
 
-        {loading ? <div className="empty"><p>Se încarcă…</p></div> : tab === 'linkuri' ? (
+        {loading ? <SceletTabel /> : tab === 'linkuri' ? (
           <>
             {indexuri > 0 && (
               <div className="alert alert-info" style={{ marginBottom: 14 }}>
@@ -199,7 +201,7 @@ export default function PortalChiriasi() {
               ))}
             </div>
             {cereriVizibile.length === 0 ? (
-              <div className="card"><div className="empty"><i className="ti ti-inbox" /><p>Nicio cerere.</p></div></div>
+              <div className="card"><StareGoala icon="ti-inbox" titlu="Nicio cerere în această listă" text="Când un chiriaș trimite o sesizare, un document sau un index din portal, apare aici." /></div>
             ) : cereriVizibile.map(c => (
               <div className="card" key={c.id} style={{ marginBottom: 12 }}>
                 <div className="card-body">

@@ -5,6 +5,7 @@ import { useAuth } from '../../../shared/context/AuthContext'
 import { mesajEroare } from '../../../shared/utils/eroare'
 import { getEntitatiEmitente, saveEntitateEmitenta, deleteEntitateEmitenta, getRegistru, logAudit } from '../../../shared/firebase/firestore'
 import { TVA_IMPLICIT } from '../services/facturareUtils'
+import StareGoala from '../../../shared/components/StareGoala'
 
 const gol = (nume = '') => ({
   nume, cui: '', serie: '', furnizor: 'fgo', tva: TVA_IMPLICIT,
@@ -91,7 +92,7 @@ export default function EntitatiEmitente() {
             <thead><tr><th>Denumire</th><th>CUI</th><th>Serie</th><th>TVA</th><th>Scadență implicită</th><th>Furnizor</th><th>Status</th><th></th></tr></thead>
             <tbody>
               {lista.length === 0 ? (
-                <tr><td colSpan={8}><div className="empty"><i className="ti ti-building-bank" /><p>Nicio entitate. Adaugă prima firmă care facturează.</p></div></td></tr>
+                <tr><td colSpan={8}><StareGoala icon="ti-building-bank" titlu="Nicio firmă emitentă" text="Adaugă firma care emite facturile, cu seria și scadența ei implicită." label="Adaugă prima firmă" onClick={() => setForm(gol())} /></td></tr>
               ) : lista.map(e => (
                 <tr key={e.id} style={e.activ === false ? { opacity: .55 } : undefined}>
                   <td style={{ fontWeight: 600 }}>{e.nume}</td>

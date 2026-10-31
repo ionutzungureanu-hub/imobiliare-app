@@ -4,6 +4,7 @@ import { useToast } from '../../../shared/components/Toast'
 import { useAuth } from '../../../shared/context/AuthContext'
 import { mesajEroare } from '../../../shared/utils/eroare'
 import { getImobile, getUsers, getAllAcces, setAcces, deleteUserProfile, updateUserProfile, NIVELURI, getEntitatiEmitente, setAccesEntitate, logAudit } from '../../../shared/firebase/firestore'
+import { SceletTabel } from '../../../shared/components/Schelet'
 
 const esteUid = (id) => /^[A-Za-z0-9]{20,}$/.test(id || '')
 
@@ -119,7 +120,7 @@ export default function AccesImobile() {
         <div className="card">
           <div style={{ overflowX: 'auto' }}>
             {loading ? (
-              <div className="empty"><p>Se încarcă…</p></div>
+              <SceletTabel />
             ) : persoane.length === 0 ? (
               <div className="empty"><i className="ti ti-users" /><p>Nicio persoană încă. Creează conturi din Utilizatori.</p></div>
             ) : imobile.length === 0 ? (
