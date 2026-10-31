@@ -25,17 +25,14 @@ const Biblioteca                         = lazy(() => import('./modules/administ
 const Contracte                            = lazy(() => import('./modules/administrare/pages/Contracte'))
 const Rapoarte                               = lazy(() => import('./modules/administrare/pages/Rapoarte'))
 const ImportClienti                            = lazy(() => import('./modules/administrare/pages/ImportClienti'))
-const Utilizatori                                = lazy(() => import('./modules/administrare/pages/Utilizatori'))
-const Config                                       = lazy(() => import('./modules/administrare/pages/Config'))
-const AdministrareMeniu                              = lazy(() => import('./modules/administrare/pages/AdministrareMeniu'))
-const AccesImobile                                   = lazy(() => import('./modules/administrare/pages/AccesImobile'))
+const Utilizatori                                = lazy(() => import('./modules/administrare/pages/UtilizatoriAcces'))
+const Config                                       = lazy(() => import('./modules/administrare/pages/ConfigMeniu'))
 const PortalChiriasi                                 = lazy(() => import('./modules/administrare/pages/PortalChiriasi'))
 
 // ── Modul Facturare (lazy-loaded) ──────────────────────────────
 const Facturi                = lazy(() => import('./modules/facturare/pages/Facturi'))
-const FurnizoriFacturi           = lazy(() => import('./modules/facturare/pages/FurnizoriFacturi'))
 const EntitatiEmitente           = lazy(() => import('./modules/facturare/pages/EntitatiEmitente'))
-const IstoricModificari          = lazy(() => import('./modules/administrare/pages/IstoricModificari'))
+const IstoricModificari          = lazy(() => import('./modules/administrare/pages/IstoricVerificare'))
 const RegistruFirme              = lazy(() => import('./modules/administrare/pages/RegistruFirme'))
 
 // Păstrează parametrii din URL (ex. ?clientId=...) când redirecționează spre fila potrivită din Facturi
@@ -90,8 +87,8 @@ export default function App() {
               <Route path="utilitati"        element={<Navigate to="/citire" replace />} />
               <Route path="nota-calcul"      element={<RouteNota />} />
               <Route path="utilizatori"      element={<Garda k="utilizatori"><Utilizatori /></Garda>} />
-              <Route path="acces"            element={<Garda k="acces"><AccesImobile /></Garda>} />
-              <Route path="meniu"            element={<Garda k="meniu"><AdministrareMeniu /></Garda>} />
+              <Route path="acces"            element={<Navigate to="/utilizatori?tab=acces" replace />} />
+              <Route path="meniu"            element={<Navigate to="/config?tab=meniu" replace />} />
               <Route path="portal-chiriasi"  element={<Garda k="portal"><PortalChiriasi /></Garda>} />
               <Route path="config"           element={<Garda k="config"><Config /></Garda>} />
               <Route path="import-clienti"   element={<Garda k="clienti"><ImportClienti /></Garda>} />
@@ -112,7 +109,7 @@ export default function App() {
               <Route path="audit"            element={<Garda k="audit"><IstoricModificari /></Garda>} />
               <Route path="firme"            element={<Garda k="firme"><RegistruFirme /></Garda>} />
               <Route path="entitati"         element={<Garda k="entitati"><EntitatiEmitente /></Garda>} />
-              <Route path="furnizori"        element={<Garda k="furnizori"><FurnizoriFacturi /></Garda>} />
+              <Route path="furnizori"        element={<Navigate to="/facturi?tab=furnizori" replace />} />
             </Route>
           </Routes>
         </Suspense>

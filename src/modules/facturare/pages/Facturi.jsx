@@ -1,11 +1,13 @@
 import { lazy, Suspense, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { useAuth } from '../../../shared/context/AuthContext'
 
 const EmiteFactura          = lazy(() => import('./EmiteFactura'))
 const EmiteFacturaUtilitati = lazy(() => import('./EmiteFacturaUtilitati'))
 const NotaCalcul            = lazy(() => import('../../administrare/pages/NotaCalcul'))
 const FacturiEmise          = lazy(() => import('./FacturiEmise'))
 const FacturareLunara       = lazy(() => import('./FacturareLunara'))
+const FurnizoriFacturi      = lazy(() => import('./FurnizoriFacturi'))
 const Incasari              = lazy(() => import('./Incasari'))
 const IndexareAnuala        = lazy(() => import('./IndexareAnuala'))
 
@@ -16,13 +18,16 @@ const TABURI = [
   { id: 'chirie',   icon: 'ti-file-plus', label: 'Factură chirie',     sub: 'persoane juridice', C: EmiteFactura },
   { id: 'utilitati',icon: 'ti-receipt',   label: 'Factură utilități',  sub: 'din citiri',        C: EmiteFacturaUtilitati },
   { id: 'nota',     icon: 'ti-calculator',label: 'Notă de calcul',     sub: 'persoane fizice',   C: NotaCalcul },
+  { id: 'furnizori', icon: 'ti-file-import', label: 'Furnizori', sub: 'facturi primite', C: FurnizoriFacturi, adminOnly: true },
   { id: 'istoric',  icon: 'ti-files',     label: 'Istoric facturi',    sub: 'emise',             C: FacturiEmise },
 ]
 
 // Un singur loc pentru tot ce ține de facturare: emitere (chirie, utilități, notă PF) și istoric
 export default function Facturi() {
   const [params, setParams] = useSearchParams()
-  const tab = TABURI.find(t => t.id === params.get('tab')) || TABURI[0]
+  const { isAdmin } = useAuth()
+  const taburi = TABURI.filter(t => !t.adminOnly || isAdmin)
+  const tab = taburi.find(t => t.id === params.get('tab')) || taburi[0]
 
   useEffect(() => { window.scrollTo(0, 0) }, [tab.id])
 
@@ -35,7 +40,7 @@ export default function Facturi() {
   return (
     <div>
       <div style={{ display: 'flex', gap: 2, background: 'var(--white)', borderBottom: '1px solid var(--border)', padding: '0 20px', overflowX: 'auto' }}>
-        {TABURI.map(t => (
+        {taburi.map(t => (
           <button key={t.id} onClick={() => alege(t.id)} style={{
             padding: '11px 18px', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
             borderBottom: `3px solid ${tab.id === t.id ? 'var(--blue)' : 'transparent'}`,

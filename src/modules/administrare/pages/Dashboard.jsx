@@ -40,6 +40,7 @@ const GRUPURI = [
     itemi: [
       { to: '/facturi?tab=lunar',    icon: 'ti-calendar-event', label: 'De emis luna asta', desktopOnly: true },
       { to: '/facturi?tab=indexare', icon: 'ti-trending-up', label: 'Indexare anuală', desktopOnly: true },
+      { to: '/facturi?tab=incasari', icon: 'ti-cash', label: 'Încasări', desktopOnly: true },
       { to: '/facturi?tab=utilitati', icon: 'ti-receipt', label: 'Factură utilități', desktopOnly: true },
       { to: '/facturi?tab=istoric', icon: 'ti-files', label: 'Istoric facturi', desktopOnly: true },
     ],
@@ -50,7 +51,7 @@ const GRUPURI = [
     itemi: [
       { to: '/utilizatori', icon: 'ti-user-cog', label: 'Utilizatori', adminOnly: true, desktopOnly: true },
       { to: '/config',      icon: 'ti-settings',  label: 'Configurare', adminOnly: true, desktopOnly: true },
-      { to: '/furnizori',   icon: 'ti-file-import', label: 'Furnizori', adminOnly: true, desktopOnly: true },
+      
     ],
   },
 ]

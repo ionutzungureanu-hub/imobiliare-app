@@ -17,7 +17,7 @@ export const MODULE = [
   { key: 'citire',      to: '/citire',             paths: ['/citire', '/utilitati', '/utilitati-mobile', '/validare-indexuri'], icon: 'ti-bolt', label: '1 · Citire indexuri', scurt: 'Citire', section: 'Ciclul lunar', badge: 'indexuri', def: { d: true, m: true, h: true } },
   { key: 'nota',        to: '/nota-administratie', paths: ['/nota-administratie'], icon: 'ti-droplet', label: '2 · Notă apă bloc', section: 'Ciclul lunar', def: { d: true, m: true, h: true } },
   { key: 'facturi',     to: '/facturi',            paths: ['/facturi', '/emite', '/emite-utilitati', '/emise'], icon: 'ti-receipt', label: '3 · Facturare', section: 'Ciclul lunar', def: { d: true, m: false, h: true } },
-  { key: 'furnizori',   to: '/furnizori',          paths: ['/furnizori'], icon: 'ti-file-import', label: 'Furnizori (facturi primite)', section: 'Ciclul lunar', adminOnly: true, def: { d: true, m: false, h: true } },
+  { key: 'furnizori',   to: '/furnizori',          paths: ['/furnizori'], icon: 'ti-file-import', label: 'Furnizori (facturi primite)', section: 'Ciclul lunar', adminOnly: true, inMeniu: false, def: { d: true, m: false, h: true } },
   // Nota de calcul: pe desktop face parte din Facturi; pe mobil e pagină separată (bara de jos)
   { key: 'nota_calcul', to: '/nota-calcul',        paths: ['/nota-calcul'], icon: 'ti-calculator', label: 'Notă de calcul', scurt: 'Notă', section: 'Ciclul lunar', inMeniu: false, def: { d: true, m: true, h: true } },
 
@@ -25,12 +25,12 @@ export const MODULE = [
   { key: 'firme',      to: '/firme',             paths: ['/firme'], icon: 'ti-building-bank', label: 'Registru firme', scurt: 'Firme', section: 'Documente', inMeniu: false, def: { d: true, m: false, h: false } },
   { key: 'rapoarte',    to: '/rapoarte',           paths: ['/rapoarte'], icon: 'ti-chart-bar', label: 'Rapoarte', section: 'Documente', def: { d: true, m: false, h: true } },
 
-  { key: 'utilizatori', to: '/utilizatori',        paths: ['/utilizatori'], icon: 'ti-user-cog', label: 'Utilizatori', section: 'Administrare', adminOnly: true, fix: true, def: { d: true, m: false, h: true } },
-  { key: 'acces',       to: '/acces',              paths: ['/acces'], icon: 'ti-key', label: 'Acces imobile', section: 'Administrare', adminOnly: true, fix: true, def: { d: true, m: false, h: false } },
+  { key: 'utilizatori', to: '/utilizatori',        paths: ['/utilizatori'], icon: 'ti-user-cog', label: 'Utilizatori și acces', section: 'Administrare', adminOnly: true, fix: true, def: { d: true, m: false, h: true } },
+  { key: 'acces',       to: '/acces',              paths: ['/acces'], icon: 'ti-key', label: 'Acces imobile', section: 'Administrare', adminOnly: true, inMeniu: false, fix: true, def: { d: true, m: false, h: false } },
   { key: 'entitati',   to: '/entitati',           paths: ['/entitati'], icon: 'ti-building-bank', label: 'Firme emitente', section: 'Administrare', adminOnly: true, def: { d: true, m: false, h: false } },
-  { key: 'config',      to: '/config',             paths: ['/config'], icon: 'ti-settings', label: 'Configurare', section: 'Administrare', adminOnly: true, fix: true, def: { d: true, m: false, h: true } },
-  { key: 'meniu',       to: '/meniu',              paths: ['/meniu'], icon: 'ti-layout-sidebar', label: 'Administrare meniu', section: 'Administrare', adminOnly: true, fix: true, def: { d: true, m: false, h: false } },
-  { key: 'audit',      to: '/audit',             paths: ['/audit'], icon: 'ti-history', label: 'Istoric modificări', section: 'Administrare', adminOnly: true, def: { d: true, m: false, h: false } },
+  { key: 'config',      to: '/config',             paths: ['/config'], icon: 'ti-settings', label: 'Configurare și meniu', section: 'Administrare', adminOnly: true, fix: true, def: { d: true, m: false, h: true } },
+  { key: 'meniu',       to: '/meniu',              paths: ['/meniu'], icon: 'ti-layout-sidebar', label: 'Administrare meniu', section: 'Administrare', adminOnly: true, inMeniu: false, fix: true, def: { d: true, m: false, h: false } },
+  { key: 'audit',      to: '/audit',             paths: ['/audit'], icon: 'ti-history', label: 'Istoric și verificare', section: 'Administrare', adminOnly: true, def: { d: true, m: false, h: false } },
 ]
 
 export const MODULE_PE_CHEIE = Object.fromEntries(MODULE.map(m => [m.key, m]))
