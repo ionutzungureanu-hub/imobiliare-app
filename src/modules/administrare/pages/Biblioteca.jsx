@@ -6,6 +6,7 @@ import { useAuth } from '../../../shared/context/AuthContext'
 import { useImobile } from '../../../shared/hooks/useImobile'
 import { getDocumente, addDocument, updateDocument, deleteDocument, getClienti, getUsers, getSpatii } from '../../../shared/firebase/firestore'
 import { uploadDocumentFirebase, formatBytes } from '../services/storageService'
+import { FirmeDocumente } from './RegistruFirme'
 
 // Tipuri predefinite per categorie
 const TIPURI = {
@@ -20,7 +21,7 @@ const YEARS = Array.from({ length: 10 }, (_, i) => THIS_YEAR - i)
 
 export default function Biblioteca() {
   const toast = useToast()
-  const { user, profile, isAdmin } = useAuth()
+  const { user, profile, isAdmin, entitatiIds } = useAuth()
   const { imobile, spatii: mySpatii } = useImobile()
 
   const [tab,       setTab]       = useState('clienti')
@@ -261,6 +262,7 @@ export default function Biblioteca() {
   const TAB_ITEMS = [
     { key: 'clienti', icon: 'ti-users',   label: 'Clienți' },
     { key: 'imobile', icon: 'ti-building', label: 'Imobile' },
+    ...(isAdmin || (entitatiIds || []).length > 0 ? [{ key: 'firme', icon: 'ti-building-bank', label: 'Firme emitente' }] : []),
     ...(isAdmin ? [{ key: 'manageri', icon: 'ti-user-cog', label: 'Manageri' }] : []),
   ]
 
@@ -283,7 +285,7 @@ export default function Biblioteca() {
           ))}
         </div>
 
-        {loading ? (
+        {tab === 'firme' ? <FirmeDocumente incorporat /> : loading ? (
           <div className="empty"><i className="ti ti-refresh" /><p>Se încarcă...</p></div>
         ) : (
           <>

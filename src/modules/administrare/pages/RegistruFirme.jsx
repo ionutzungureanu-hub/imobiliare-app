@@ -13,7 +13,8 @@ const AN = new Date().getFullYear()
 const ANI = Array.from({ length: 12 }, (_, i) => AN - i)
 
 // Registrul firmelor emitente: documente pe firmă și an, vizibile doar celor cu acces la firma respectivă
-export default function RegistruFirme() {
+// incorporat = afișat ca tab în Bibliotecă (fără titlu propriu și fără marginile paginii)
+export function FirmeDocumente({ incorporat = false }) {
   const toast = useToast()
   const { user } = useAuth()
   const [firme, setFirme] = useState([])
@@ -98,8 +99,8 @@ export default function RegistruFirme() {
 
   return (
     <>
-      <Topbar title="Registru firme" subtitle="Documentele firmelor emitente" />
-      <div className="content">
+      {!incorporat && <Topbar title="Registru firme" subtitle="Documentele firmelor emitente" />}
+      <div className={incorporat ? undefined : 'content'}>
         {loading ? <div className="empty"><p>Se încarcă…</p></div>
           : firme.length === 0 ? (
             <div className="empty"><i className="ti ti-building-bank" /><p>Nu ai acces la nicio firmă emitentă. Administratorul îți poate da acces.</p></div>
@@ -193,3 +194,5 @@ export default function RegistruFirme() {
     </>
   )
 }
+
+export default function RegistruFirme() { return <FirmeDocumente /> }
