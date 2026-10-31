@@ -26,6 +26,7 @@ export const MODULE = [
   { key: 'acces',       to: '/acces',              paths: ['/acces'], icon: 'ti-key', label: 'Acces imobile', section: 'Setări', adminOnly: true, fix: true, def: { d: true, m: false, h: false } },
   { key: 'utilizatori', to: '/utilizatori',        paths: ['/utilizatori'], icon: 'ti-user-cog', label: 'Utilizatori', section: 'Setări', adminOnly: true, fix: true, def: { d: true, m: false, h: true } },
   { key: 'config',      to: '/config',             paths: ['/config'], icon: 'ti-settings', label: 'Configurare', section: 'Setări', adminOnly: true, fix: true, def: { d: true, m: false, h: true } },
+  { key: 'audit',      to: '/audit',             paths: ['/audit'], icon: 'ti-history', label: 'Istoric modificări', section: 'Setări', adminOnly: true, def: { d: true, m: false, h: false } },
   { key: 'meniu',       to: '/meniu',              paths: ['/meniu'], icon: 'ti-layout-sidebar', label: 'Administrare meniu', section: 'Setări', adminOnly: true, fix: true, def: { d: true, m: false, h: false } },
   { key: 'entitati',   to: '/entitati',           paths: ['/entitati'], icon: 'ti-building-bank', label: 'Entități emitente', section: 'Setări', adminOnly: true, def: { d: true, m: false, h: false } },
   { key: 'furnizori',   to: '/furnizori',          paths: ['/furnizori'], icon: 'ti-file-import', label: 'Furnizori', section: 'Setări', adminOnly: true, def: { d: true, m: false, h: true } },

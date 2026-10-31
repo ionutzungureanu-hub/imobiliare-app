@@ -102,6 +102,12 @@ service cloud.firestore {
       allow update: if isAdmin() || (rd(2) && wr(2) && entAcc(resource.data.get('entitateId', null)));
       allow delete: if isAdmin() || (rd(2) && entAcc(resource.data.get('entitateId', null)));
     }
+    // Istoric modificări: orice cont activ scrie (doar în numele lui), citește doar administratorul, nimeni nu modifică / șterge
+    match /audit/{id} {
+      allow create: if isActive() && request.resource.data.uid == request.auth.uid;
+      allow read:   if isAdmin();
+      allow update, delete: if false;
+    }
     match /note_calcul/{id}       { allow read: if rd(1); allow create: if wr(2); allow update: if rd(2) && wr(2); allow delete: if rd(2); }
     match /templates_nota/{id}    { allow read: if rd(1); allow create: if wr(2); allow update: if rd(2) && wr(2); allow delete: if rd(2); }
     match /istoric_spatiu/{id}    { allow read: if rd(1); allow create: if wr(2); allow update: if rd(2) && wr(2); allow delete: if rd(2); }

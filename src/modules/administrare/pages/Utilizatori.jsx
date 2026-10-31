@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import Topbar from '../../../shared/components/Topbar'
 import { useToast } from '../../../shared/components/Toast'
 import { useAuth } from '../../../shared/context/AuthContext'
-import { getUsers, getAllAcces, updateUserProfile, deleteUserProfile, setAcces, NIVELURI } from '../../../shared/firebase/firestore'
+import { getUsers, getAllAcces, updateUserProfile, deleteUserProfile, setAcces, NIVELURI, logAudit } from '../../../shared/firebase/firestore'
 import { creeazaUtilizator, reseteazaParola, seteazaDezactivat, stergeUtilizator } from '../../../shared/services/utilizatoriApi'
 import { mesajEroare } from '../../../shared/utils/eroare'
 import { useImobile } from '../../../shared/hooks/useImobile'
@@ -80,6 +80,7 @@ export default function Utilizatori() {
     setSaving(true)
     try {
       await creeazaUtilizator({ username: form.username, password: form.password, nume: form.nume, imobile: form.imobile })
+      logAudit({ actiune: 'cont_creat', tip: 'persoana', rezumat: `Cont creat: ${form.username}` })
       toast('Cont creat. Comunică-i username-ul și parola.')
       inchide(); load()
     } catch (e) { toast(e.message, 'error') }
@@ -106,19 +107,19 @@ export default function Utilizatori() {
   const salveazaParola = async () => {
     if (!form.password) { toast('Introdu o parolă.', 'error'); return }
     setSaving(true)
-    try { await reseteazaParola(sel.id, form.password); toast('Parolă schimbată.'); inchide() }
+    try { await reseteazaParola(sel.id, form.password); logAudit({ actiune: 'parola_resetata', tip: 'persoana', id: sel.id, rezumat: `Parolă schimbată pentru ${sel.nume || afisUser(sel)}` }); toast('Parolă schimbată.'); inchide() }
     catch (e) { toast(e.message, 'error') }
     setSaving(false)
   }
 
   const comuta = async (u) => {
-    try { await seteazaDezactivat(u.id, u.activ !== false); toast(u.activ !== false ? 'Cont dezactivat.' : 'Cont activat.'); load() }
+    try { await seteazaDezactivat(u.id, u.activ !== false); logAudit({ actiune: u.activ !== false ? 'cont_dezactivat' : 'cont_activat', tip: 'persoana', id: u.id, rezumat: `${u.nume || afisUser(u)}: cont ${u.activ !== false ? 'dezactivat' : 'activat'}` }); toast(u.activ !== false ? 'Cont dezactivat.' : 'Cont activat.'); load() }
     catch (e) { toast(e.message, 'error') }
   }
 
   const sterge = async (u) => {
     if (!confirm(`Ștergi definitiv contul „${u.nume || u.username || u.email}”?`)) return
-    try { await stergeUtilizator(u.id); toast('Cont șters.'); load() } catch (e) { toast(e.message, 'error') }
+    try { await stergeUtilizator(u.id); logAudit({ actiune: 'cont_sters', tip: 'persoana', id: u.id, rezumat: `Cont șters: ${u.nume || afisUser(u)}` }); toast('Cont șters.'); load() } catch (e) { toast(e.message, 'error') }
   }
 
   const stergeVechi = async (u) => {

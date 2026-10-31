@@ -3,7 +3,7 @@ import Topbar from '../../../shared/components/Topbar'
 import { useToast } from '../../../shared/components/Toast'
 import { useAuth } from '../../../shared/context/AuthContext'
 import { mesajEroare } from '../../../shared/utils/eroare'
-import { getEntitatiEmitente, saveEntitateEmitenta, deleteEntitateEmitenta, getRegistru } from '../../../shared/firebase/firestore'
+import { getEntitatiEmitente, saveEntitateEmitenta, deleteEntitateEmitenta, getRegistru, logAudit } from '../../../shared/firebase/firestore'
 import { TVA_IMPLICIT } from '../services/facturareUtils'
 
 const gol = (nume = '') => ({
@@ -50,6 +50,7 @@ export default function EntitatiEmitente() {
         ...form, nume: form.nume.trim(), serie: form.serie.trim().toUpperCase(), cui: form.cui.trim(),
         tva: Number(form.tva), valScadenta: Number(form.valScadenta),
       })
+      logAudit({ actiune: form.id ? 'entitate_modificata' : 'entitate_noua', tip: 'entitate', id: form.id, rezumat: `${form.nume.trim()} — seria ${form.serie.trim().toUpperCase()}, TVA ${form.tva}%` })
       toast('Entitate salvată.'); setForm(null); load()
     } catch (e) { toast(mesajEroare(e, 'Salvarea a eșuat'), 'error') }
     setSaving(false)
@@ -57,7 +58,7 @@ export default function EntitatiEmitente() {
 
   const sterge = async (e) => {
     if (!confirm(`Ștergi entitatea „${e.nume}”? Contractele rămân, dar nu vor mai putea fi facturate până o recreezi.`)) return
-    try { await deleteEntitateEmitenta(e.id); toast('Entitate ștearsă.'); load() } catch (er) { toast(mesajEroare(er), 'error') }
+    try { await deleteEntitateEmitenta(e.id); logAudit({ actiune: 'entitate_stearsa', tip: 'entitate', id: e.id, rezumat: `Entitate ștearsă: ${e.nume}` }); toast('Entitate ștearsă.'); load() } catch (er) { toast(mesajEroare(er), 'error') }
   }
 
   return (

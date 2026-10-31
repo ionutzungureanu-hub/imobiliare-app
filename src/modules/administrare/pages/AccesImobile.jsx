@@ -3,7 +3,7 @@ import Topbar from '../../../shared/components/Topbar'
 import { useToast } from '../../../shared/components/Toast'
 import { useAuth } from '../../../shared/context/AuthContext'
 import { mesajEroare } from '../../../shared/utils/eroare'
-import { getImobile, getUsers, getAllAcces, setAcces, deleteUserProfile, updateUserProfile, NIVELURI, getEntitatiEmitente, setAccesEntitate } from '../../../shared/firebase/firestore'
+import { getImobile, getUsers, getAllAcces, setAcces, deleteUserProfile, updateUserProfile, NIVELURI, getEntitatiEmitente, setAccesEntitate, logAudit } from '../../../shared/firebase/firestore'
 
 const esteUid = (id) => /^[A-Za-z0-9]{20,}$/.test(id || '')
 
@@ -50,6 +50,8 @@ export default function AccesImobile() {
     setBusy(p.uid + imobilId)
     try {
       await setAcces(p.uid, { nume: p.nume, email: p.email }, imobilId, nivel)
+      const im = imobile.find(i => i.id === imobilId)
+      logAudit({ actiune: nivel > 0 ? 'acces_imobil' : 'acces_imobil_retras', tip: 'persoana', id: p.uid, imobilId, rezumat: `${p.nume || p.email}: ${nivel > 0 ? `acces ${NIVELURI[nivel]}` : 'acces retras'} la ${im?.nume || im?.denumire || imobilId}` })
       setPersoane(list => list.map(x => {
         if (x.uid !== p.uid) return x
         const m = { ...x.imobile }
@@ -64,6 +66,7 @@ export default function AccesImobile() {
     setBusy(p.uid + f.id)
     try {
       await setAccesEntitate(f.id, p.uid, on)
+      logAudit({ actiune: on ? 'acces_firma' : 'acces_firma_retras', tip: 'persoana', id: p.uid, rezumat: `${p.nume || p.email}: ${on ? 'acces acordat' : 'acces retras'} la firma ${f.nume}` })
       setFirme(l => l.map(x => x.id === f.id ? { ...x, acces: on ? [...(x.acces || []), p.uid] : (x.acces || []).filter(u => u !== p.uid) } : x))
     } catch (e) { console.error(e); toast(mesajEroare(e, 'Nu s-a putut salva accesul'), 'error') }
     setBusy('')

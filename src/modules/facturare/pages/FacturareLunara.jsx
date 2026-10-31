@@ -7,7 +7,7 @@ import { fmt } from '../../../shared/utils'
 import { mesajEroare } from '../../../shared/utils/eroare'
 import {
   getRegistru, getClienti, getEntitatiEmitente, getFacturariLuna, saveFacturareLuna,
-  updateFacturareLuna, deleteFacturareLuna, updateRegistruCampuri,
+  updateFacturareLuna, deleteFacturareLuna, updateRegistruCampuri, logAudit,
 } from '../../../shared/firebase/firestore'
 import {
   luna0, numeLuna, fmtD, inLuna, lunaIncompleta, asteaptaIndexare, parametriScadenta, scadenta,
@@ -125,6 +125,7 @@ export default function FacturareLunara() {
           text: textFactura(it.r.textFactura || it.ent.text, luna, it.r), status: 'emis',
         })
       }
+      logAudit({ actiune: 'facturi_marcate', tip: 'facturare', id: luna, rezumat: `${selectate.length} chirii marcate ca emise pentru ${numeLuna(luna)} (${[...new Set(selectate.map(i => i.ent.nume))].join(', ')})` })
       toast(`${selectate.length} chirii marcate ca emise.`); setSel({}); load()
     } catch (e) { console.error(e); toast(mesajEroare(e, 'Marcarea a eșuat'), 'error') }
     setBusy(false)
@@ -137,7 +138,7 @@ export default function FacturareLunara() {
   }
   const anuleaza = async (it) => {
     if (!confirm('Anulezi marcajul de emitere? Chiria revine în lista „De emis”.')) return
-    try { await deleteFacturareLuna(it.fac.id); toast('Marcaj anulat.'); load() } catch (e) { toast(mesajEroare(e), 'error') }
+    try { await deleteFacturareLuna(it.fac.id); logAudit({ actiune: 'marcaj_anulat', tip: 'facturare', id: it.fac.id, imobilId: it.r.imobilId, rezumat: `Marcaj de emitere anulat: ${it.r.numar || it.r.nume}, ${numeLuna(luna)}` }); toast('Marcaj anulat.'); load() } catch (e) { toast(mesajEroare(e), 'error') }
   }
   const activeaza = async (items) => {
     try { for (const r of items) await updateRegistruCampuri(r.id, { factActiv: true }); toast('Facturare activată.'); load() }

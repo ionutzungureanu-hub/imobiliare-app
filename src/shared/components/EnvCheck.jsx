@@ -15,8 +15,6 @@ const VARS_OPTIONAL = [
   { key: 'VITE_EMAILJS_SERVICE_ID',      label: 'EmailJS Service ID',      grup: 'EmailJS',    functie: 'trimitere email facturi' },
   { key: 'VITE_EMAILJS_TEMPLATE_FACTURA',label: 'EmailJS Template Factură',grup: 'EmailJS',    functie: 'trimitere email facturi' },
   { key: 'VITE_EMAILJS_PUBLIC_KEY',      label: 'EmailJS Public Key',      grup: 'EmailJS',    functie: 'trimitere email facturi' },
-  { key: 'VITE_CLOUDINARY_CLOUD_NAME',   label: 'Cloudinary Cloud Name',   grup: 'Cloudinary', functie: 'upload documente' },
-  { key: 'VITE_CLOUDINARY_UPLOAD_PRESET',label: 'Cloudinary Upload Preset',grup: 'Cloudinary', functie: 'upload documente' },
 ]
 
 function checkVars() {

@@ -90,3 +90,19 @@ export const emailClient = (c) => {
   const e = (c.emailuri || []).find(x => (typeof x === 'string' ? x : x?.email))
   return e ? (typeof e === 'string' ? e : e.email) : ''
 }
+
+// Sinteză pentru Dashboard: câte chirii sunt de emis în luna dată (aceleași reguli ca în „De emis luna asta”)
+export const sumarDeEmis = (rows, luna, entitati, facturate, isAdmin) => {
+  const an = Number(luna.slice(0, 4))
+  const r0 = { deEmis: 0, indexare: 0, faraEntitate: 0 }
+  for (const r of rows) {
+    if (!r.factActiv || !inLuna(r, luna) || !Number(r.chirie)) continue
+    if (facturate.some(f => f.contractId === r.id)) continue
+    const ent = entitati.find(e => e.nume === r.entitate)
+    if (!isAdmin && r.entitate && !ent) continue
+    if (!r.entitate || !ent || ent.activ === false) { r0.faraEntitate++; continue }
+    if (asteaptaIndexare(r, an)) { r0.indexare++; continue }
+    r0.deEmis++
+  }
+  return r0
+}

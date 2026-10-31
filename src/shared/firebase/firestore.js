@@ -1,7 +1,7 @@
 import {
   collection, doc, getDocs, getDoc,
   addDoc, updateDoc, deleteDoc, deleteField, setDoc,
-  query, where, orderBy, serverTimestamp, arrayUnion, arrayRemove, writeBatch, Timestamp
+  query, where, orderBy, limit, serverTimestamp, arrayUnion, arrayRemove, writeBatch, Timestamp
 } from 'firebase/firestore/lite'
 import { db, auth } from './config'
 
@@ -13,7 +13,6 @@ import { db, auth } from './config'
 // ent = firmele emitente la care persoana are acces (câmpul acces[] de pe entitate)
 let _scope = { admin: false, ids: [], ent: [] }
 export const setScope = (s) => { _scope = { admin: !!s.admin, ids: s.ids || [], ent: s.ent || [] } }
-export const getScope = () => _scope
 
 const _map = (snap) => snap.docs.map(d => ({ ...d.data(), id: d.id }))
 
@@ -75,6 +74,44 @@ const stripUndefined = (obj) => {
     if (obj[k] !== undefined) clean[k] = obj[k]
   })
   return clean
+}
+
+// ── ISTORIC MODIFICĂRI (audit) ─────────────────────────────────
+// Scriere „best effort”: o eroare la audit nu trebuie să blocheze niciodată operația principală.
+export const logAudit = async ({ actiune, tip, id, imobilId, rezumat, detalii }) => {
+  try {
+    const u = auth.currentUser
+    if (!u) return
+    await addDoc(collection(db, 'audit'), stripUndefined({
+      at: serverTimestamp(), uid: u.uid, utilizator: (u.email || '').replace(/@rentis\.app$/, ''),
+      actiune, tip, id, imobilId, rezumat: String(rezumat || '').slice(0, 300), detalii,
+    }))
+  } catch (e) { console.warn('audit', e) }
+}
+export const getAudit = async (n = 300) =>
+  _map(await getDocs(query(collection(db, 'audit'), orderBy('at', 'desc'), limit(n))))
+
+// ── BACKUP (doar administrator) ────────────────────────────────
+const COLECTII_BACKUP = ['acces', 'audit', 'cereri_portal', 'citiri', 'clienti', 'comunicari', 'config', 'contoare', 'contracte_drafturi',
+  'documente', 'emailuri', 'entitati_emitente', 'expeditori_email', 'facturari_lunare', 'imobile', 'indexuri_primite', 'istoric_spatiu',
+  'note', 'note_calcul', 'portale', 'preturi_imobil', 'registru_contracte', 'serii_contracte', 'spatii', 'template_email',
+  'templates_contracte', 'templates_nota', 'users']
+const serializeaza = (v) => {
+  if (v && typeof v.toDate === 'function') return v.toDate().toISOString()
+  if (Array.isArray(v)) return v.map(serializeaza)
+  if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, serializeaza(x)]))
+  return v
+}
+export const exportaBackup = async (onProgress) => {
+  if (!_scope.admin) throw new Error('Doar administratorul poate face backup.')
+  const out = { creatLa: new Date().toISOString(), colectii: {} }
+  for (const c of COLECTII_BACKUP) {
+    onProgress?.(c)
+    const snap = await getDocs(collection(db, c))
+    // Cheile de integrare nu se exportă într-un fișier de pe calculator
+    out.colectii[c] = snap.docs.filter(d => !(c === 'config' && d.id === 'fgo')).map(d => ({ id: d.id, ...serializeaza(d.data()) }))
+  }
+  return out
 }
 
 export const getClienti = async () => {
@@ -175,10 +212,6 @@ export const deleteSpatiu = async (id) =>
 
 // ── CONTOARE ───────────────────────────────────────────────────
 export const getContoare = async (spatiuId) => scoped('contoare', [where('spatiuId', '==', spatiuId)])
-export const addContor = async (data) =>
-  addDoc(collection(db, 'contoare'), stripUndefined({ ...(await cuImobil(data)), creatLa: serverTimestamp() }))
-export const updateContor = async (id, data) =>
-  updateDoc(doc(db, 'contoare', id), stripUndefined(data))
 export const deleteContor = async (id) =>
   deleteDoc(doc(db, 'contoare', id))
 
@@ -186,13 +219,6 @@ export const deleteContor = async (id) =>
 export const getCitiri = async (contorId) => {
   return (await scoped('citiri', [where('contorId', '==', contorId)])).sort((a, b) => String(b.data || '').localeCompare(String(a.data || '')))
 }
-export const getCitiriSpatiu = async (spatiuId) => {
-  return (await scoped('citiri', [where('spatiuId', '==', spatiuId)])).sort((a, b) => String(b.data || '').localeCompare(String(a.data || '')))
-}
-export const addCitire = async (data) =>
-  addDoc(collection(db, 'citiri'), stripUndefined({ ...(await cuImobil(data)), creatLa: serverTimestamp() }))
-export const deleteCitire = async (id) =>
-  deleteDoc(doc(db, 'citiri', id))
 
 // ── USER PROFILES ──────────────────────────────────────────────
 export const getUserProfile = async (uid) => {
@@ -205,10 +231,6 @@ export const getUsers = async () => {
   if (!_scope.admin) return []
   const snap = await getDocs(collection(db, 'users'))
   return snap.docs.map(d => ({ ...d.data(), id: d.id }))
-}
-
-export const saveUserProfile = async (uid, data) => {
-  await setDoc(doc(db, 'users', uid), data, { merge: true })
 }
 
 export const updateUserProfile = async (uid, data) => {
@@ -322,10 +344,22 @@ export const saveRegistruRand = async (data0) => {
   const { id, ...rest } = await cuImobil(data0)
   let rid = id
   if (id) {
+    let prev = null
+    try { const ps = await getDoc(doc(db, 'registru_contracte', id)); prev = ps.exists() ? ps.data() : null } catch { /* audit opțional */ }
     await updateDoc(doc(db, 'registru_contracte', id), stripUndefined({ ...rest, updatedAt: serverTimestamp() }))
+    if (prev) {
+      const CAMPURI = ['chirie', 'moneda', 'dataStart', 'dataFinal', 'entitate', 'factActiv', 'activManual', 'tva', 'tipScadenta', 'valScadenta', 'indexabil', 'spatiuId', 'clientId']
+      const dif = {}
+      CAMPURI.forEach(k => { const a = prev[k] ?? '', b = rest[k] ?? ''; if (String(a) !== String(b)) dif[k] = { de: String(a), la: String(b) } })
+      if (Object.keys(dif).length) logAudit({
+        actiune: dif.chirie ? 'chirie_modificata' : 'contract_modificat', tip: 'contract', id, imobilId: rest.imobilId,
+        rezumat: `${rest.numar || rest.nume}: ${Object.entries(dif).map(([k, v]) => `${k} ${v.de || '—'} → ${v.la || '—'}`).join('; ')}`, detalii: dif,
+      })
+    }
   } else {
     const ref = await addDoc(collection(db, 'registru_contracte'), stripUndefined({ ...rest, createdAt: serverTimestamp(), updatedAt: serverTimestamp() }))
     rid = ref.id
+    logAudit({ actiune: 'contract_nou', tip: 'contract', id: rid, imobilId: rest.imobilId, rezumat: `${rest.numar || rest.nume} (${rest.nume || ''}) — chirie ${rest.chirie || '—'} ${rest.moneda || ''}` })
   }
   if (rest.spatiuId && rest.clientId) {
     const snap = await getDoc(doc(db, 'spatii', rest.spatiuId))
@@ -348,7 +382,10 @@ export const setEntitateRegistru = async (ids, entitate) => {
   for (const id of ids) await updateDoc(doc(db, 'registru_contracte', id), { entitate, updatedAt: serverTimestamp() })
 }
 
-export const deleteRegistruRand = async (id) => deleteDoc(doc(db, 'registru_contracte', id))
+export const deleteRegistruRand = async (id) => {
+  await deleteDoc(doc(db, 'registru_contracte', id))
+  logAudit({ actiune: 'contract_sters', tip: 'contract', id, rezumat: `Contract șters (${id})` })
+}
 
 export const syncRegistruDinSpatiu = async (spatiuId, clientId, { dataStart, dataFinal }) => {
   const rows = await scoped('registru_contracte', [where('spatiuId', '==', spatiuId)])
@@ -514,8 +551,6 @@ export const getPortalPublic = async (token) => {
   const snap = await getDoc(doc(db, 'portale', token))
   return snap.exists() ? { ...snap.data(), id: snap.id } : null
 }
-export const getPortal = getPortalPublic
-
 export const getPortalBySpatiu = async (spatiuId) => {
   const rows = await scoped('portale', [where('spatiuId', '==', spatiuId)])
   return rows.length ? rows[0] : null
@@ -598,10 +633,6 @@ export const deleteCererePortal = async (id) => deleteDoc(doc(db, 'cereri_portal
 export const getIndexuriPrimite = async (status = null) => {
   return (await scoped('indexuri_primite', status ? [where('status', '==', status)] : []))
     .sort((a, b) => (b.dataTrimis?.seconds || 0) - (a.dataTrimis?.seconds || 0))
-}
-
-export const getIndexuriPentruSpatiu = async (spatiuId) => {
-  return scoped('indexuri_primite', [where('spatiuId', '==', spatiuId)])
 }
 
 export const saveIndexPrimit = async (data) =>
@@ -806,12 +837,6 @@ export const setAcces = async (uid, info, imobilId, nivel) => {
   }))
 }
 
-// ── Profil propriu (cont nou care așteaptă aprobarea administratorului) ──
-export const getBootstrapFlag = async () => (await getDoc(doc(db, 'config', 'bootstrap'))).exists()
-export const creeazaProfilPropriu = async (uid, email, nume) => {
-  await setDoc(doc(db, 'users', uid), { nume: nume || email, email, rol: 'manager', activ: true, creatLa: serverTimestamp() })
-}
-
 // ── Profil administrator (doar la migrare, pentru contul care o rulează) ──
 export const asigurăProfilAdmin = async (uid, email) => {
   const r = doc(db, 'users', uid)
@@ -888,8 +913,6 @@ export const migreazaImobilId = async (onProgress, { uid, email } = {}) => {
 
   if (uid) {
     rap.profilAdmin = await asigurăProfilAdmin(uid, email || '')
-    const flag = doc(db, 'config', 'bootstrap')
-    if (!(await getDoc(flag)).exists()) await setDoc(flag, { uid, la: serverTimestamp() })
   }
   onProgress?.({ pas: 'Gata' })
   return rap

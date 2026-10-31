@@ -35,6 +35,7 @@ const PortalChiriasi                                 = lazy(() => import('./modu
 const Facturi                = lazy(() => import('./modules/facturare/pages/Facturi'))
 const FurnizoriFacturi           = lazy(() => import('./modules/facturare/pages/FurnizoriFacturi'))
 const EntitatiEmitente           = lazy(() => import('./modules/facturare/pages/EntitatiEmitente'))
+const IstoricModificari          = lazy(() => import('./modules/administrare/pages/IstoricModificari'))
 const RegistruFirme              = lazy(() => import('./modules/administrare/pages/RegistruFirme'))
 
 // Păstrează parametrii din URL (ex. ?clientId=...) când redirecționează spre fila potrivită din Facturi
@@ -108,6 +109,7 @@ export default function App() {
               <Route path="emite"            element={<Garda k="facturi"><RedirectFacturi tab="chirie" /></Garda>} />
               <Route path="emite-utilitati"  element={<Garda k="facturi"><RedirectFacturi tab="utilitati" /></Garda>} />
               <Route path="emise"            element={<Garda k="facturi"><RedirectFacturi tab="istoric" /></Garda>} />
+              <Route path="audit"            element={<Garda k="audit"><IstoricModificari /></Garda>} />
               <Route path="firme"            element={<Garda k="firme"><RegistruFirme /></Garda>} />
               <Route path="entitati"         element={<Garda k="entitati"><EntitatiEmitente /></Garda>} />
               <Route path="furnizori"        element={<Garda k="furnizori"><FurnizoriFacturi /></Garda>} />

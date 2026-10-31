@@ -4,7 +4,7 @@ import { useToast } from '../../../shared/components/Toast'
 import { useAuth } from '../../../shared/context/AuthContext'
 import { fmt } from '../../../shared/utils'
 import { mesajEroare } from '../../../shared/utils/eroare'
-import { getRegistru, updateRegistruCampuri, getEntitatiEmitente } from '../../../shared/firebase/firestore'
+import { getRegistru, updateRegistruCampuri, getEntitatiEmitente, logAudit } from '../../../shared/firebase/firestore'
 import { rotunjeste, anIndexat } from '../services/facturareUtils'
 
 // Indexarea anuală a chiriilor: rata se introduce manual când apare; fiecare sumă nouă poate fi corectată
@@ -63,6 +63,7 @@ export default function IndexareAnuala() {
       for (const r of alese) {
         const la = nou(r)
         await updateRegistruCampuri(r.id, { chirie: la, indexatAn: an, istoricChirie: istoric(r, la, Number(rata) || null) })
+        logAudit({ actiune: 'chirie_indexata', tip: 'contract', id: r.id, imobilId: r.imobilId, rezumat: `${r.numar || r.nume}: ${r.chirie} → ${la} ${r.moneda || ''} (indexare ${an}${Number(rata) ? `, ${rata}%` : ''})` })
       }
       toast(`${alese.length} contracte indexate.`); setSel({}); setNoi({}); load()
     } catch (e) { console.error(e); toast(mesajEroare(e, 'Indexarea a eșuat'), 'error') }
@@ -73,6 +74,7 @@ export default function IndexareAnuala() {
     if (!confirm(`Chiria contractului ${r.numar || r.nume} rămâne neschimbată în ${an}?`)) return
     try {
       await updateRegistruCampuri(r.id, { indexatAn: an, istoricChirie: istoric(r, Number(r.chirie), 0) })
+      logAudit({ actiune: 'indexare_omisa', tip: 'contract', id: r.id, imobilId: r.imobilId, rezumat: `${r.numar || r.nume}: fără indexare în ${an}` })
       toast('Marcat: fără indexare în acest an.'); load()
     } catch (e) { toast(mesajEroare(e), 'error') }
   }
