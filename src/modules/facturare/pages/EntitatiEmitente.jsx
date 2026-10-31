@@ -88,7 +88,7 @@ export default function EntitatiEmitente() {
         )}
 
         <div className="card" style={{ overflowX: 'auto' }}>
-          <table>
+          <table className="tabel-carduri">
             <thead><tr><th>Denumire</th><th>CUI</th><th>Serie</th><th>TVA</th><th>Scadență implicită</th><th>Furnizor</th><th>Status</th><th></th></tr></thead>
             <tbody>
               {lista.length === 0 ? (

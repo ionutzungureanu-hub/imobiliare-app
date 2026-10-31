@@ -72,7 +72,7 @@ export default function IstoricModificari() {
           </div>
         </div>
         <div className="card" style={{ overflowX: 'auto' }}>
-          <table>
+          <table className="tabel-carduri">
             <thead><tr><th>Data</th><th>Cine</th><th>Acțiune</th><th>Detalii</th></tr></thead>
             <tbody>
               {loading ? <tr><td colSpan={4}><SceletTabel randuri={4} coloane={3} /></td></tr>

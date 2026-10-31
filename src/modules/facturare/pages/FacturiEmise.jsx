@@ -88,7 +88,7 @@ export default function FacturiEmise() {
           {loading ? (
             <SceletTabel />
           ) : (
-            <table>
+            <table className="tabel-carduri">
               <thead>
                 <tr>
                   <th>Nr. factură</th><th>Client</th><th>Tip</th>

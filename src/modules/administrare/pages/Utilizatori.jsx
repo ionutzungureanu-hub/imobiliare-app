@@ -169,7 +169,7 @@ export default function Utilizatori() {
         </div>
 
         <div className="card" style={{ overflowX: 'auto' }}>
-          <table>
+          <table className="tabel-carduri">
             <thead><tr><th>Nume</th><th>Username</th><th>Rol</th><th>Imobile</th><th>Status</th><th></th></tr></thead>
             <tbody>
               {conturi.length === 0 ? (

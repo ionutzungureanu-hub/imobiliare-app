@@ -98,7 +98,7 @@ export default function FurnizoriFacturi() {
           {loading ? (
             <div className="empty"><i className="ti ti-refresh" /><p>Se importă din FGO…</p></div>
           ) : (
-            <table>
+            <table className="tabel-carduri">
               <thead>
                 <tr>
                   <th>Furnizor</th><th>Nr. factură</th><th>Tip serviciu</th>

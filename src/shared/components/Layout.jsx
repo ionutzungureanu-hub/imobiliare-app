@@ -5,6 +5,7 @@ import { ToastProvider, useToast } from './Toast'
 import GlobalSearch from './GlobalSearch'
 import { getIndexuriPrimite, getCereriPortal } from '../firebase/firestore'
 import { useMeniu } from '../context/MeniuContext'
+import { pornesteAccesibilitate } from '../utils/accesibilitate'
 
 const Badge = ({ n }) => n > 0 ? (
   <span style={{ marginLeft: 'auto', background: '#9B2C2C', color: '#fff', borderRadius: 10, fontSize: 11, fontWeight: 700, padding: '1px 7px' }}>{n}</span>
@@ -40,6 +41,7 @@ export default function Layout() {
     window.addEventListener('resize', handler)
     return () => window.removeEventListener('resize', handler)
   }, [])
+  useEffect(() => pornesteAccesibilitate(), [])
   const [inAsteptare, setInAsteptare] = useState(0)
   const [cereriNoi, setCereriNoi] = useState(0)
   useEffect(() => {
@@ -65,6 +67,7 @@ export default function Layout() {
   return (
     <ToastProvider>
       <Salut />
+      <a href="#continut" className="skip-link">Sari la conținut</a>
       <div className="app">
         <div className={`sidebar-overlay${sidebarOpen ? ' open' : ''}`} onClick={() => setSidebarOpen(false)} />
 
@@ -80,7 +83,7 @@ export default function Layout() {
             <div className="sidebar-logo-sub">Intelligent Property Management</div>
           </div>
 
-          <nav className="sidebar-nav">
+          <nav className="sidebar-nav" aria-label="Meniu principal">
             {nav.map(item => {
               const showSection = item.section !== lastSection
               if (showSection) lastSection = item.section
@@ -122,7 +125,7 @@ export default function Layout() {
           </div>
         </aside>
 
-        <div className="main">
+        <div className="main" id="continut" role="main">
           <div className="topbar" style={{ position: 'sticky', top: 0, zIndex: 50 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <button className="hamburger" onClick={() => setSidebarOpen(true)}>
@@ -138,7 +141,7 @@ export default function Layout() {
           <Outlet />
         </div>
 
-        <nav className="mobile-nav">
+        <nav className="mobile-nav" aria-label="Navigare rapidă">
           <div className="mobile-nav-items">
             {MOBILE_NAV.map(item => (
               <NavLink key={item.to} to={item.to}

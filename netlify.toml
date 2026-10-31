@@ -27,3 +27,9 @@
   for = "/apple-touch-icon.png"
   [headers.values]
     Cache-Control = "no-cache"
+
+# Service worker-ul nu se ține în cache, ca versiunile noi să ajungă imediat
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"

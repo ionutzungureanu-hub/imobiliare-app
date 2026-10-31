@@ -242,7 +242,7 @@ export default function Registru({ tip, serii }) {
         <div className="card"><StareGoala icon="ti-list-details" titlu="Niciun contract aici" text="Schimbă filtrul de sus (Active / Toate) sau adaugă primul contract cu butonul din colțul paginii." /></div>
       ) : (
         <div className="card" style={{ overflowX: 'auto' }}>
-          <table>
+          <table className="tabel-carduri">
             <thead><tr>
               <th onClick={() => sorteazaDupa('numar')} style={{ cursor: 'pointer', userSelect: 'none' }} title="Sortează după număr">Nr. contract{sageata('numar')}</th><th>{idLabel}</th><th>{comercial ? 'Firmă' : 'Nume'}</th>
               {comercial && <th>Administrator</th>}

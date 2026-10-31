@@ -270,7 +270,7 @@ export default function Clienti() {
         {/* Tabel PJ */}
         {tab === 'PJ' && (
           <div className="card">
-            <table>
+            <table className="tabel-carduri">
               <thead>
                 <tr><th>Denumire</th><th>Spațiu</th><th>Contract</th><th></th></tr>
               </thead>
@@ -296,7 +296,7 @@ export default function Clienti() {
         {/* Tabel PF */}
         {tab === 'PF' && (
           <div className="card">
-            <table>
+            <table className="tabel-carduri">
               <thead>
                 <tr><th>Nume</th><th>Spațiu</th><th>Contract</th><th></th></tr>
               </thead>

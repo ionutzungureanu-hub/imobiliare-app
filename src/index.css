@@ -487,3 +487,23 @@ input[type=checkbox], input[type=radio] { -webkit-appearance: auto; appearance: 
 @media (prefers-reduced-motion: reduce) {
   .sk, .gf-bar, .gf-col { animation: none; }
 }
+
+/* ── Accesibilitate ──────────────────────────────── */
+:focus-visible { outline: 2px solid var(--gold-dark); outline-offset: 2px; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--gold-dark); outline-offset: 2px; }
+.skip-link { position: absolute; left: -9999px; top: 8px; z-index: 1000; background: var(--navy-deep); color: #fff; padding: 8px 14px; border-radius: 6px; font-size: 13px; }
+.skip-link:focus { left: 8px; }
+
+/* ── Tabele ca fișe pe telefon (doar tabelele cu clasa tabel-carduri) ── */
+@media (max-width: 768px) {
+  table.tabel-carduri { min-width: 0; }
+  table.tabel-carduri thead { display: none; }
+  table.tabel-carduri, table.tabel-carduri tbody { display: block; }
+  table.tabel-carduri tr { display: block; margin: 10px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--white); }
+  table.tabel-carduri td { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; padding: 5px 0; border: 0; text-align: right; font-size: 13px; min-height: 0; }
+  table.tabel-carduri td::before { content: attr(data-label); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .4px; color: var(--slate); text-align: left; flex-shrink: 0; max-width: 45%; padding-top: 2px; }
+  table.tabel-carduri td[data-label=""]::before, table.tabel-carduri td[data-gol]::before { content: none; }
+  table.tabel-carduri td[data-label=""] { justify-content: flex-end; }
+  table.tabel-carduri td[data-gol] { display: block; text-align: center; }
+  table.tabel-carduri tr:has(> td[data-gol]) { border: 0; padding: 0; background: none; }
+}

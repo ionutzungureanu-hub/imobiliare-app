@@ -116,7 +116,7 @@ export default function Incasari() {
                 text={vedere === 'incasate' ? 'Facturile marcate ca încasate apar aici.' : 'Facturile apar aici după ce marchezi chiriile ca emise în „De emis luna asta”.'} /></div>
             ) : (
               <div className="card" style={{ overflowX: "auto" }}>
-                <table>
+                <table className="tabel-carduri">
                   <thead><tr><th>Client</th><th>Contract</th><th>Firmă</th><th>Factură</th><th>Luna</th><th>Scadență</th><th style={{ textAlign: 'right' }}>Total (RON)</th><th></th></tr></thead>
                   <tbody>
                     {lista.map(f => {
