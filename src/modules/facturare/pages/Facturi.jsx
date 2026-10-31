@@ -6,10 +6,12 @@ const EmiteFacturaUtilitati = lazy(() => import('./EmiteFacturaUtilitati'))
 const NotaCalcul            = lazy(() => import('../../administrare/pages/NotaCalcul'))
 const FacturiEmise          = lazy(() => import('./FacturiEmise'))
 const FacturareLunara       = lazy(() => import('./FacturareLunara'))
+const Incasari              = lazy(() => import('./Incasari'))
 const IndexareAnuala        = lazy(() => import('./IndexareAnuala'))
 
 const TABURI = [
   { id: 'lunar',    icon: 'ti-calendar-event', label: 'De emis luna asta', sub: 'chirii recurente', C: FacturareLunara },
+  { id: 'incasari', icon: 'ti-cash',           label: 'Încasări',          sub: 'restanțe',         C: Incasari },
   { id: 'indexare', icon: 'ti-trending-up',    label: 'Indexare anuală',   sub: 'ianuarie',         C: IndexareAnuala },
   { id: 'chirie',   icon: 'ti-file-plus', label: 'Factură chirie',     sub: 'persoane juridice', C: EmiteFactura },
   { id: 'utilitati',icon: 'ti-receipt',   label: 'Factură utilități',  sub: 'din citiri',        C: EmiteFacturaUtilitati },

@@ -448,6 +448,15 @@ export const saveFacturareLuna = async (data) => {
   await setDoc(doc(db, 'facturari_lunare', id), stripUndefined({ ...data, updatedAt: serverTimestamp(), creatLa: serverTimestamp() }), { merge: true })
   return id
 }
+// Facturi după stare (emis = neîncasat, incasat). Aceleași reguli de acces: administratorul vede tot, ceilalți doar firmele lor.
+export const getFacturariPeStatus = async (status) => {
+  if (_scope.admin) return scoped('facturari_lunare', [where('status', '==', status)])
+  const out = new Map()
+  await Promise.all((_scope.ent || []).map(async eid => {
+    (await scoped('facturari_lunare', [where('status', '==', status), where('entitateId', '==', eid)])).forEach(f => out.set(f.id, f))
+  }))
+  return [...out.values()]
+}
 export const updateFacturareLuna = async (id, data) =>
   updateDoc(doc(db, 'facturari_lunare', id), stripUndefined({ ...data, updatedAt: serverTimestamp() }))
 export const deleteFacturareLuna = async (id) => deleteDoc(doc(db, 'facturari_lunare', id))

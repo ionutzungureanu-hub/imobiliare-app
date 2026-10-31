@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getRegistru, getSpatii, getImobile, getEntitatiEmitente, getFacturariLuna, getCereriPortal, getIndexuriPrimite } from '../../../shared/firebase/firestore'
+import { getRegistru, getSpatii, getImobile, getEntitatiEmitente, getFacturariLuna, getCereriPortal, getIndexuriPrimite, getFacturariPeStatus } from '../../../shared/firebase/firestore'
 import { esteActiv, azi } from '../services/registruUtils'
 import { luna0, numeLuna, sumarDeEmis, fmtD } from '../../facturare/services/facturareUtils'
 import GraficeDashboard from '../components/GraficeDashboard'
@@ -68,11 +68,11 @@ function Alerte({ navigate, vizibil, isAdmin }) {
     let viu = true
     Promise.allSettled([
       getRegistru('comercial'), getRegistru('rezidential'), getSpatii(), getEntitatiEmitente(), getFacturariLuna(luna),
-      getCereriPortal(), getIndexuriPrimite('asteptare'), getImobile(),
-    ]).then(([a, b, sp, en, fa, ce, ix, im]) => {
+      getCereriPortal(), getIndexuriPrimite('asteptare'), getImobile(), getFacturariPeStatus('emis'),
+    ]).then(([a, b, sp, en, fa, ce, ix, im, ne]) => {
       if (!viu) return
       const v = (x) => x.status === 'fulfilled' ? x.value : null
-      setD({ comercial: v(a) || [], rezidential: v(b) || [], spatii: v(sp), entitati: v(en) || [], facturate: v(fa) || [], cereri: (v(ce) || []).filter(c => c.status !== 'rezolvat'), indexuri: v(ix), imobile: v(im) || [] })
+      setD({ comercial: v(a) || [], rezidential: v(b) || [], spatii: v(sp), entitati: v(en) || [], facturate: v(fa) || [], cereri: (v(ce) || []).filter(c => c.status !== 'rezolvat'), indexuri: v(ix), imobile: v(im) || [], neincasate: v(ne) || [] })
     })
     return () => { viu = false }
   }, [])
@@ -124,6 +124,9 @@ function Alerte({ navigate, vizibil, isAdmin }) {
     <strong>{sumar.indexare}</strong> contracte așteaptă indexarea anuală și nu pot fi facturate</Linie>)
   if (sumar.faraEntitate > 0) alerte.push(<Linie key="fe" icon="ti-building-bank" culoare="var(--amber)" to={isAdmin ? '/entitati' : '/facturi?tab=lunar'}>
     <strong>{sumar.faraEntitate}</strong> contracte cu facturare activă nu au o firmă emitentă configurată</Linie>)
+  const restante = (d.neincasate || []).filter(f => f.dataScadenta && f.dataScadenta < azi())
+  if (vizibil('facturi') && restante.length) alerte.push(<Linie key="rest" icon="ti-cash-off" culoare="var(--red)" to="/facturi?tab=incasari">
+    <strong>{restante.length}</strong> {restante.length === 1 ? 'factură restantă' : 'facturi restante'} (scadență depășită), în total <strong>{restante.reduce((s, f) => s + (Number(f.total) || 0), 0).toLocaleString('ro-RO', { maximumFractionDigits: 2 })} RON</strong></Linie>)
   if ((d.cereri?.length ?? 0) > 0) alerte.push(<Linie key="cer" icon="ti-message-circle" culoare="var(--blue)" to="/portal-chiriasi">
     <strong>{d.cereri.length}</strong> cereri noi din portalul chiriașilor</Linie>)
   if ((d.indexuri?.length ?? 0) > 0) alerte.push(<Linie key="ixv" icon="ti-checks" culoare="var(--blue)" to="/citire?tab=validare">
