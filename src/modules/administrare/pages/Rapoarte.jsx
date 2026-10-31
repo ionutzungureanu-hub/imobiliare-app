@@ -10,6 +10,7 @@ import {
 } from '../services/pdfRapoarte'
 import { fmt } from '../../../shared/utils'
 import RaportVenituri from './RaportVenituri'
+import RaportPortofoliu from './RaportPortofoliu'
 
 const luna = (offset = 0) => {
   const d = new Date()
@@ -187,6 +188,7 @@ export default function Rapoarte() {
             { key: 'general', icon: 'ti-users',   label: 'General toți clienții' },
             { key: 'imobil',  icon: 'ti-building', label: 'Consum pe imobil' },
             { key: 'venituri', icon: 'ti-cash',    label: 'Venituri lunare' },
+            { key: 'portofoliu', icon: 'ti-chart-pie', label: 'Portofoliu' },
           ].map(t => (
             <button key={t.key} onClick={() => setTab(t.key)} style={{
               padding: '9px 20px', fontSize: 13, fontWeight: 500, border: 'none', background: 'none',
@@ -200,6 +202,7 @@ export default function Rapoarte() {
         </div>
 
         {tab === 'venituri' && <RaportVenituri />}
+        {tab === 'portofoliu' && <RaportPortofoliu />}
 
         {/* ── TAB CLIENT ──────────────────────────────────────── */}
         {tab === 'client' && (
