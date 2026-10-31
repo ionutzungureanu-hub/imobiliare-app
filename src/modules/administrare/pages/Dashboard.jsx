@@ -66,11 +66,11 @@ function Alerte({ navigate, vizibil, isAdmin }) {
     let viu = true
     Promise.allSettled([
       getRegistru('comercial'), getRegistru('rezidential'), getSpatii(), getEntitatiEmitente(), getFacturariLuna(luna),
-      getCereriPortal('nou'), getIndexuriPrimite('asteptare'),
+      getCereriPortal(), getIndexuriPrimite('asteptare'),
     ]).then(([a, b, sp, en, fa, ce, ix]) => {
       if (!viu) return
       const v = (x) => x.status === 'fulfilled' ? x.value : null
-      setD({ comercial: v(a) || [], rezidential: v(b) || [], spatii: v(sp), entitati: v(en) || [], facturate: v(fa) || [], cereri: v(ce), indexuri: v(ix) })
+      setD({ comercial: v(a) || [], rezidential: v(b) || [], spatii: v(sp), entitati: v(en) || [], facturate: v(fa) || [], cereri: (v(ce) || []).filter(c => c.status !== 'rezolvat'), indexuri: v(ix) })
     })
     return () => { viu = false }
   }, [])

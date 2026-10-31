@@ -8,15 +8,21 @@ import { useAuth } from '../../../shared/context/AuthContext'
 import { mesajEroare } from '../../../shared/utils/eroare'
 import {
   getImobile, getSpatii, getPortale, savePortal, setPortalActiv, genTokenPortal,
-  getCereriPortal, updateCererePortal, deleteCererePortal, getIndexuriPrimite,
+  getCereriPortal, updateCererePortal, deleteCererePortal, getIndexuriPrimite, logAudit,
 } from '../../../shared/firebase/firestore'
 
 const TIPURI = { sesizare: 'Sesizare', informare: 'Informare', document: 'Document' }
+const STATUSE = { nou: 'Nou', in_lucru: 'În lucru', rezolvat: 'Rezolvat' }
+const PRIOR = { normala: 'Normală', urgenta: 'Urgentă' }
+const dataIso = (iso) => iso ? new Date(iso).toLocaleString('ro-RO', { dateStyle: 'short', timeStyle: 'short' }) : ''
 const dataRo = (ts) => ts?.seconds ? new Date(ts.seconds * 1000).toLocaleString('ro-RO', { dateStyle: 'short', timeStyle: 'short' }) : '—'
 
 export default function PortalChiriasi() {
   const toast = useToast()
-  const { canWrite, canAdmin } = useAuth()
+  const { canWrite, canAdmin, profile: profil } = useAuth()
+  const [notaDeschisa, setNotaDeschisa] = useState('')
+  const [notaText, setNotaText] = useState('')
+  const [istoricSp, setIstoricSp] = useState('')
 
   const [tab, setTab]         = useState('linkuri')
   const [imobile, setImobile] = useState([])
@@ -76,9 +82,25 @@ export default function PortalChiriasi() {
     try { await navigator.clipboard.writeText(link(p)); setCopiat(p.id); setTimeout(() => setCopiat(''), 1800) }
     catch { toast('Nu am putut copia.', 'error') }
   }
-  const marcheaza = async (c) => {
-    try { await updateCererePortal(c.id, { status: c.status === 'nou' ? 'rezolvat' : 'nou' }); await load() }
-    catch (e) { toast(mesajEroare(e), 'error') }
+  const eu = () => (profil?.nume || profil?.username || profil?.email || 'Utilizator')
+  const actualizeaza = async (c, patch, mesaj) => {
+    try {
+      const intrare = { at: new Date().toISOString(), de: eu(), text: mesaj }
+      await updateCererePortal(c.id, { ...patch, istoric: [...(c.istoric || []), intrare] })
+      logAudit({ actiune: 'modificare', tip: 'sesizare', id: c.id, imobilId: c.imobilId, rezumat: `${numeSpatiu(c.spatiuId)}: ${mesaj}` })
+      await load()
+    } catch (e) { console.error(e); toast(mesajEroare(e), 'error') }
+  }
+  const schimbaStatus = (c, status) => actualizeaza(c, { status }, `Status: ${STATUSE[status]}`)
+  const preia = (c) => actualizeaza(c, { status: 'in_lucru', responsabil: eu() }, `Preluat de ${eu()}`)
+  const setPrioritate = (c) => {
+    const p = c.prioritate === 'urgenta' ? 'normala' : 'urgenta'
+    return actualizeaza(c, { prioritate: p }, `Prioritate: ${PRIOR[p]}`)
+  }
+  const adaugaNota = async (c) => {
+    if (!notaText.trim()) return
+    await actualizeaza(c, {}, `Notă: ${notaText.trim()}`)
+    setNotaText(''); setNotaDeschisa('')
   }
   const sterge = async (c) => {
     if (!confirm('Ștergi această cerere?')) return
@@ -90,8 +112,8 @@ export default function PortalChiriasi() {
     catch (e) { console.error(e); toast(mesajEroare(e, 'Nu s-a putut deschide fișierul'), 'error') }
   }
 
-  const nouNr = cereri.filter(c => c.status === 'nou').length
-  const cereriVizibile = cereri.filter(c => filtruCereri === 'toate' || c.status === filtruCereri)
+  const nouNr = cereri.filter(c => c.status !== 'rezolvat').length
+  const cereriVizibile = cereri.filter(c => filtruCereri === 'toate' || (c.status || 'nou') === filtruCereri)
 
   return (
     <>
@@ -172,7 +194,7 @@ export default function PortalChiriasi() {
         ) : (
           <>
             <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
-              {[['nou', 'Noi'], ['rezolvat', 'Rezolvate'], ['toate', 'Toate']].map(([k, l]) => (
+              {[['nou', 'Noi'], ['in_lucru', 'În lucru'], ['rezolvat', 'Rezolvate'], ['toate', 'Toate']].map(([k, l]) => (
                 <button key={k} className={`btn btn-sm ${filtruCereri === k ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setFiltruCereri(k)}>{l}</button>
               ))}
             </div>
@@ -185,7 +207,10 @@ export default function PortalChiriasi() {
                     <span className={`badge ${c.tip === 'sesizare' ? 'badge-red' : c.tip === 'document' ? 'badge-blue' : 'badge-gray'}`}>{TIPURI[c.tip] || c.tip}</span>
                     <strong>{numeSpatiu(c.spatiuId)}</strong>
                     <span style={{ color: 'var(--slate)', fontSize: 12 }}>{numeImobil(c.imobilId)} · {dataRo(c.dataTrimis)}</span>
+                    {c.prioritate === 'urgenta' && <span className="badge badge-red">Urgent</span>}
+                    {c.status === 'in_lucru' && <span className="badge badge-amber">În lucru</span>}
                     {c.status === 'rezolvat' && <span className="badge badge-green">Rezolvat</span>}
+                    {c.responsabil && <span style={{ fontSize: 12, color: 'var(--slate)' }}><i className="ti ti-user" /> {c.responsabil}</span>}
                   </div>
                   {c.chiriasNume && <div style={{ fontSize: 13, marginBottom: 4 }}>De la: <strong>{c.chiriasNume}</strong>{c.contact ? ` · ${c.contact}` : ''}</div>}
                   {c.text && <div style={{ whiteSpace: 'pre-wrap', fontSize: 14, marginBottom: 8 }}>{c.text}</div>}
@@ -196,12 +221,38 @@ export default function PortalChiriasi() {
                       ))}
                     </div>
                   )}
+                  {(c.istoric || []).length > 0 && (
+                    <div style={{ borderLeft: '2px solid var(--border, #e2e8f0)', paddingLeft: 10, margin: '8px 0', fontSize: 12, color: 'var(--slate)' }}>
+                      {c.istoric.slice(-4).map((h, i) => <div key={i}>{dataIso(h.at)} · {h.de} — {h.text}</div>)}
+                      {c.istoric.length > 4 && <div>… {c.istoric.length - 4} intrări mai vechi</div>}
+                    </div>
+                  )}
+                  {notaDeschisa === c.id && (
+                    <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                      <input className="form-input" style={{ flex: 1 }} placeholder="Notă internă (nu o vede chiriașul)" value={notaText} onChange={e => setNotaText(e.target.value)} />
+                      <button className="btn btn-primary btn-sm" onClick={() => adaugaNota(c)}>Salvează</button>
+                    </div>
+                  )}
                   {canWrite(c.imobilId) && (
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <button className="btn btn-ghost btn-sm" onClick={() => marcheaza(c)}>
-                        <i className="ti ti-check" /> {c.status === 'nou' ? 'Marchează rezolvat' : 'Redeschide'}
-                      </button>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {(c.status || 'nou') === 'nou' && <button className="btn btn-primary btn-sm" onClick={() => preia(c)}><i className="ti ti-hand-grab" /> Preia</button>}
+                      {(c.status || 'nou') !== 'rezolvat'
+                        ? <button className="btn btn-ghost btn-sm" onClick={() => schimbaStatus(c, 'rezolvat')}><i className="ti ti-check" /> Rezolvat</button>
+                        : <button className="btn btn-ghost btn-sm" onClick={() => schimbaStatus(c, 'in_lucru')}><i className="ti ti-refresh" /> Redeschide</button>}
+                      <button className="btn btn-ghost btn-sm" onClick={() => setPrioritate(c)}><i className="ti ti-flag" /> {c.prioritate === 'urgenta' ? 'Fă normală' : 'Urgent'}</button>
+                      <button className="btn btn-ghost btn-sm" onClick={() => { setNotaDeschisa(notaDeschisa === c.id ? '' : c.id); setNotaText('') }}><i className="ti ti-note" /> Notă</button>
+                      <button className="btn btn-ghost btn-sm" onClick={() => setIstoricSp(istoricSp === c.spatiuId ? '' : c.spatiuId)}><i className="ti ti-history" /> Istoric spațiu</button>
                       {canAdmin(c.imobilId) && <button className="btn btn-danger btn-sm" onClick={() => sterge(c)}><i className="ti ti-trash" /></button>}
+                    </div>
+                  )}
+                  {istoricSp === c.spatiuId && (
+                    <div style={{ marginTop: 10, fontSize: 12.5, background: 'var(--bg, #f8fafc)', borderRadius: 8, padding: 10 }}>
+                      <strong>Toate sesizările pentru {numeSpatiu(c.spatiuId)}</strong>
+                      {cereri.filter(x => x.spatiuId === c.spatiuId).map(x => (
+                        <div key={x.id} style={{ marginTop: 4 }}>
+                          {dataRo(x.dataTrimis)} · {TIPURI[x.tip] || x.tip} · <em>{STATUSE[x.status || 'nou']}</em>{x.responsabil ? ` · ${x.responsabil}` : ''} — {(x.text || '').slice(0, 80)}
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
